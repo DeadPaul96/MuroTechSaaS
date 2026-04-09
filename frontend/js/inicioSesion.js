@@ -75,14 +75,3 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         });
-
-        // Habilitar visualización de contraseña
-        const passToggle = document.getElementById('passwordToggle');
-        const passInput = document.getElementById('password');
-        if (passToggle && passInput) {
-            passToggle.addEventListener('click', () => {
-                const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passInput.setAttribute('type', type);
-                passToggle.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
-            });
-        }
