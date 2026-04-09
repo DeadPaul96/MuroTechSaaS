@@ -259,3 +259,18 @@
             font-weight: 700;
             color: #64748b;
         }
+
+/* --- Estilos Responsivos Clientes --- 
+@media (max-width: 1024px) {
+    .inv-main { margin-left: 62px; padding: 20px 2%; }
+}
+@media (max-width: 768px) {
+    .inv-main { margin-left: 0; padding: 15px 15px 100px; }
+    .inv-card { padding: 25px 20px; border-radius: 18px; }
+    .form-grid-2, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+    .import-bar { flex-direction: column; align-items: flex-start; }
+    .table-wrap { overflow-x: auto; }
+    .inv-table { min-width: 600px; }
+    .filter-bar { flex-direction: column; gap: 15px; align-items: flex-start; }
+    .autocomplete-wrapper { width: 100%; }
+}

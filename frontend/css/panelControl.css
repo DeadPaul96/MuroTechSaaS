@@ -395,12 +395,37 @@
         }
 
         @media (max-width: 800px) {
+            .header-content {
+                gap: 20px;
+                padding: 10px 15px;
+            }
+            .header-nav {
+                display: none; /* Ocultar nav extra en móvil */
+            }
+            .header-divider {
+                display: none;
+            }
+            .dashboard-full-width {
+                padding: var(--space-10) 15px;
+            }
             .metrics-compact { grid-template-columns: repeat(2, 1fr); }
+            .quick-access-grid { grid-template-columns: 1fr; }
+            .welcome-message h2 { font-size: 1.6rem !important; }
         }
 
         @media (max-width: 480px) {
             .metrics-compact {
                 grid-template-columns: 1fr;
+            }
+            .metric-item {
+                padding: 15px;
+            }
+            .metric-value {
+                font-size: 1.5rem !important;
+            }
+            .activity-section {
+                padding: 15px !important;
+                margin: 10px 0 !important;
             }
         }
 

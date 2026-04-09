@@ -314,3 +314,54 @@
             transition: transform 0.2s, opacity 0.2s;
         }
         .btn-emitir:hover { opacity: 0.93; transform: translateY(-2px); }
+
+        /* --- Estilos Responsivos Facturación --- */
+        @media (max-width: 1024px) {
+            .fac-main {
+                margin-left: 62px;
+                padding: 20px 2%;
+            }
+            .cond-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .fac-main {
+                margin-left: 0;
+                padding: 15px 15px 100px;
+            }
+            .fac-card {
+                padding: 25px 20px;
+                border-radius: 18px;
+            }
+            .emisor-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .cliente-search-bar {
+                flex-direction: column;
+            }
+            .cliente-info-premium.visible {
+                grid-template-columns: 1fr;
+            }
+            .info-grid-inner {
+                grid-template-columns: 1fr;
+            }
+            .cond-grid {
+                grid-template-columns: 1fr;
+            }
+            .detail-table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 0 -10px;
+                padding: 0 10px;
+            }
+            .detail-table {
+                min-width: 600px; /* Asegura scroll horizontal en tablas */
+            }
+            .totals-panel h2 {
+                font-size: 1.8rem;
+            }
+        }

@@ -94,3 +94,17 @@ body.login-body {
         .auth-footer a:hover { border-bottom-color: #f97316 !important; }
         .remember-me { font-weight: 700 !important; color: #475569 !important; font-size: 0.9rem; }
         .forgot-password { font-weight: 800 !important; color: #ef4444 !important; font-size: 0.9rem; }
+
+        @media (max-width: 500px) {
+            .auth-card {
+                padding: 30px 20px !important;
+                border-radius: 25px !important;
+                margin: 0 15px;
+            }
+            .auth-header h1 {
+                font-size: 1.8rem !important;
+            }
+            .btn-finalizar {
+                padding: 15px 30px !important;
+            }
+        }

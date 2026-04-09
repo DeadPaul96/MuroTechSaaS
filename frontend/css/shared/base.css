@@ -288,6 +288,63 @@ body {
 .status-pendiente { background: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
 .status-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
+/* --- Estilos Responsivos Generales --- */
+@media (max-width: 768px) {
+    .sidebar {
+        top: auto;
+        bottom: 0px;
+        left: 0;
+        width: 100%;
+        height: 65px;
+        flex-direction: row;
+        border-radius: 0;
+        border-top: 1px solid var(--glass-border);
+        border-left: none;
+        padding: 0 var(--space-4);
+        justify-content: space-around;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+    }
+
+    .sidebar-section {
+        flex-direction: row;
+        justify-content: space-around;
+        height: 100%;
+        gap: 0;
+    }
+
+    .sidebar-btn {
+        width: 50px;
+        height: 50px;
+    }
+
+    .sidebar-pill {
+        display: none; /* Pill no funciona bien en horizontal sin ajustes complejos */
+    }
+
+    .sidebar-btn.active::before {
+        left: 50%;
+        bottom: 2px;
+        top: auto;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 3px;
+    }
+
+    /* Ocultar tooltips en móvil */
+    .sidebar-btn::after {
+        display: none !important;
+    }
+
+    main {
+        padding-left: 0 !important;
+        padding-bottom: 80px !important; /* Espacio para el menú inferior */
+    }
+
+    .register-card {
+        padding: 20px;
+    }
+}
+
 /* Partículas */
 #particles-canvas {
     position: fixed;

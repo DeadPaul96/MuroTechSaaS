@@ -125,3 +125,20 @@
         .btn-progreso { padding: 18px 35px; background: #fff; border: 2px solid #e2e8f0; border-radius: 35px; font-weight: 800; cursor: pointer; }
 
         .pass-toggle { position: absolute; right: 22px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; z-index: 6; }
+
+        @media (max-width: 800px) {
+            body { padding: 20px 10px 100px; }
+            .reg-card { 
+                padding: 25px 20px; 
+                border-radius: 25px;
+                margin: 0 !important;
+            }
+            .grid-2, .grid-3, .grid-4 { 
+                grid-template-columns: 1fr; 
+                gap: 15px;
+            }
+            .auth-header { margin-bottom: 30px; }
+            .auth-header h1 { font-size: 1.8rem; }
+            .logo-container { width: 60px; height: 60px; }
+            .section-box { padding: 20px 15px; }
+        }

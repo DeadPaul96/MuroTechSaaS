@@ -355,3 +355,19 @@
             transition: all 0.2s;
         }
         .btn-icon-circular:hover { background: var(--pos-bg); color: var(--pos-text); }
+
+/* --- Estilos Responsivos POS --- 
+@media (max-width: 900px) {
+    .pos-layout { grid-template-columns: 1fr; height: auto; min-height: 100vh; overflow: auto; }
+    body { overflow: auto; }
+    .pos-cart { border-left: none; border-top: 2px solid var(--pos-border); height: auto; position: sticky; bottom: 0; max-height: 60vh; z-index: 100; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); }
+    .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .product-card { min-height: 140px; padding: 10px; }
+    .product-icon { width: 35px; height: 35px; font-size: 1.2rem; }
+    .product-name { font-size: 0.85rem; }
+    .product-price { font-size: 1.1rem; }
+    .pos-header { padding: 10px 15px; flex-direction: column; gap: 10px; }
+    .search-wrapper { flex: 1 1 100%; width: 100%; }
+    .summary-total { font-size: 1.5rem; }
+    .btn-cobrar { padding: 15px; font-size: 1.2rem; }
+}
