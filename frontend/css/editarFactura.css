@@ -1,0 +1,147 @@
+*, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Outfit', sans-serif !important; }
+        h1, h2, h3, h4, .section-title, .fac-card, .fi, select, input, button, label {
+            font-family: 'Outfit', sans-serif !important;
+        }
+
+        /* ─── Layout & Cards (Clon de POS) ───────────────── */
+        .fac-main {
+            display: flex;
+            justify-content: center;
+            padding: 28px 4% 50px;
+            margin-left: 100px;
+        }
+        .fac-card {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(28px);
+            border: 1px solid rgba(255,255,255,0.65);
+            padding: 38px 42px;
+            border-radius: 28px;
+            box-shadow: 0 18px 55px rgba(0,0,0,0.10);
+            position: relative;
+            z-index: 2;
+        }
+
+        .section-box {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 22px 26px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.06);
+            transition: all 0.3s;
+        }
+        .section-title {
+            font-size: 0.95rem;
+            color: #0f172a;
+            margin: 0 0 18px 0;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+        .section-title i { color: var(--primary); }
+
+        /* ─── Emisor Card (Premium POS Style) ─────────────── */
+        .emisor-card {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 55%, #3b82f6 100%);
+            border-radius: 20px;
+            padding: 22px 28px;
+            box-shadow: 0 10px 30px rgba(30,64,175,0.25);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.12);
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+        .emisor-header { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
+        .emisor-icon {
+            background: rgba(255,255,255,0.18);
+            width: 56px; height: 56px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; backdrop-filter: blur(6px);
+        }
+        .emisor-badge {
+            background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: 20px;
+            font-size: 0.72rem; font-weight: 800; letter-spacing: 1px;
+            backdrop-filter: blur(5px); white-space: nowrap; margin-left: auto;
+        }
+        .emisor-chip {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.20);
+            backdrop-filter: blur(6px); border-radius: 50px;
+            padding: 7px 15px; font-size: 0.82rem; font-weight: 600; color: #ffffff;
+            transition: all 0.2s;
+        }
+        .emisor-chip:hover { background: rgba(255,255,255,0.22); }
+
+        /* ─── Inputs & Form elements ───────────────────── */
+        .fi {
+            background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0;
+            width: 100%; padding: 11px 13px; border-radius: 11px;
+            font-weight: 600; font-size: 0.88rem; transition: border 0.2s;
+        }
+        .fi:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+        .label-sm {
+            font-size: 0.72rem; font-weight: 800; color: #475569;
+            margin-bottom: 7px; display: block; letter-spacing: 0.8px; text-transform: uppercase;
+        }
+
+        /* ─── Receptor Panel (Editable) ────────────────── */
+        .info-panel-editable {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 18px;
+        }
+        .cliente-card-segment {
+            background: #ffffff; border-radius: 16px; padding: 18px;
+            border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+        .cliente-card-segment:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 10px 15px -3px rgba(30,64,175,0.1); }
+        .segment-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px; }
+        .segment-header i { color: var(--primary); font-size: 1rem; }
+        .segment-header h4 { margin: 0; font-size: 0.72rem; font-weight: 800; color: #475569; text-transform: uppercase; }
+
+        .edit-fi { 
+            border: none; background: #f1f5f9; width: 100%; font-size: 0.85rem; font-weight: 700; color: #1e293b; 
+            padding: 6px 10px; border-radius: 8px; margin-top: 4px; border-bottom: 2px solid transparent; 
+        }
+        .edit-fi:focus { outline: none; border-bottom-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 2px rgba(59,130,246,0.05); }
+
+        /* ─── Detail Table ───────────────────────────── */
+        .detail-table { width: 100%; border-collapse: collapse; }
+        .detail-table thead tr { background: #e8edf4; }
+        .detail-table th { color: #475569; padding: 10px 12px; text-align: left; font-size: 0.75rem; font-weight: 800; }
+        .detail-table tbody td { padding: 9px 12px; color: #0f172a; font-size: 0.85rem; border-bottom: 1px solid #f1f5f9; }
+        .detail-table input { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px 9px; font-weight: 600; }
+
+        /* ─── Totales Box Premium ────────────────────── */
+        .totales-grid { display: grid; grid-template-columns: 1fr 400px; gap: 40px; margin-top: 30px; border-top: 2px dashed #e2e8f0; padding-top: 30px; }
+        .total-final-box {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+            color: white; border-radius: 20px; padding: 30px; text-align: right;
+            box-shadow: 0 15px 35px rgba(30,64,175,0.3);
+        }
+        .total-final-box .amount { font-size: 2.2rem; font-weight: 950; color: white; display: block; margin-top: 5px; }
+
+        .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; }
+        .mode-draft { background: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
+        .mode-credit { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+
+        .btn-emitir {
+            width: 100%; padding: 18px; border-radius: 14px; border: none;
+            background: var(--primary); color: white; font-size: 1.1rem; font-weight: 950;
+            cursor: pointer; box-shadow: 0 10px 28px hsla(221,83%,53%,0.3);
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .btn-emitir:hover { opacity: 0.93; transform: translateY(-2px); }
+
+        #particles-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+        }

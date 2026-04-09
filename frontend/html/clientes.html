@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH POS - Gestión de Clientes</title>
+    <meta name="description" content="Administración de clientes y receptores autorizados MUROTECH">
+
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/ubicacion_data.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+    <script src="../js/shared/sidebar.js"></script>
+
+    <link rel="stylesheet" href="../css/clientes.css">
+</head>
+<body class="reg-body">
+    <canvas id="particles-canvas"></canvas>
+
+    <div id="billing-screen">
+        <aside class="sidebar"></aside>
+
+        <main class="module-content inv-main">
+            <div class="inv-card">
+
+                <!-- ─── HEADER ─────────────────────────────────────────── -->
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <div>
+                        <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Gestión de Clientes</h1>
+                        <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Administración de clientes y receptores autorizados — MH v4.4</p>
+                    </div>
+                </header>
+
+                <!-- Barra de importación masiva (compacta) -->
+                <div class="import-bar">
+                    <div class="ib-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <div class="ib-text">
+                        Importar Clientes<br>
+                        <span>Carga múltiples clientes desde Excel (.xlsx)</span>
+                    </div>
+                    <div class="ib-actions">
+                        <a href="../excel/Informacion de clientes.xlsx" download class="btn-import outline" id="btn-plantilla-clientes" style="text-decoration:none; display:inline-flex; align-items:center;"><i class="fas fa-file-excel" style="margin-right:5px;"></i>Plantilla</a>
+                        <label class="btn-import solid" for="file-upload-cli" style="cursor:pointer; display:inline-flex; align-items:center; margin:0;"><i class="fas fa-upload" style="margin-right:5px;"></i>Subir Archivo</label>
+                        <input type="file" id="file-upload-cli" accept=".xlsx, .xls" style="display:none;">
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:22px;">
+
+                    <!-- Formulario nuevo cliente -->
+                    <div class="section-box">
+                        <h3 class="section-title">
+                            <i class="fas fa-user-plus"></i> Nuevo Cliente
+                        </h3>
+
+                        <form id="addClientForm">
+                            <!-- Tipo de Identificación + Consulta MH -->
+                            <div class="form-grid-2" style="margin-bottom:14px; align-items: end;">
+                                <div>
+                                    <label class="label-sm" for="cli-tipo-id">Tipo ID</label>
+                                    <select id="cli-tipo-id" class="premium-select">
+                                        <option value="01">Cédula Física</option>
+                                        <option value="02">Cédula Jurídica</option>
+                                        <option value="03">DIMEX</option>
+                                        <option value="04">NITE</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label-sm" for="cli-identificacion">Número de Identificación</label>
+                                    <div style="display:flex; gap:8px;">
+                                        <input type="text" id="cli-identificacion" class="fi" placeholder="000000000" style="flex:1;">
+                                        <button type="button" id="btn-consultar-mh"
+                                            style="background:linear-gradient(135deg,#1e40af,#3b82f6); color:white; border:none;
+                                                   padding:0 14px; border-radius:11px; font-weight:800; font-size:0.78rem;
+                                                   cursor:pointer; white-space:nowrap; transition:opacity 0.2s;
+                                                   display:flex; align-items:center; gap:6px;"
+                                            onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+                                            <i class="fas fa-search"></i> Consultar MH
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Panel resultado MH (ancho completo) -->
+                            <div id="mh-result-panel" style="display:none; margin-bottom:14px; padding:16px 20px;
+                                 background:linear-gradient(135deg,#ecfdf5,#d1fae5); border:1.5px solid #6ee7b7;
+                                 border-radius:14px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <div style="background:#10b981; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:0.9rem;">
+                                            <i class="fas fa-user-check"></i>
+                                        </div>
+                                        <div>
+                                            <div style="font-weight:900; color:#065f46; font-size:0.95rem;" id="mh-nombre-result"></div>
+                                            <div style="font-size:0.72rem; color:#047857; font-weight:600; margin-top:1px;" id="mh-id-display"></div>
+                                        </div>
+                                    </div>
+                                    <span id="mh-estado-badge" style="font-size:0.68rem; font-weight:800; padding:4px 12px; border-radius:20px;"></span>
+                                </div>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                    <div style="background:rgba(255,255,255,0.65); border-radius:10px; padding:10px 12px;">
+                                        <div style="font-size:0.62rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Actividad Económica</div>
+                                        <div style="font-size:0.80rem; font-weight:600; color:#047857;" id="mh-actividad-result">—</div>
+                                    </div>
+                                    <div style="background:rgba(255,255,255,0.65); border-radius:10px; padding:10px 12px;">
+                                        <div style="font-size:0.62rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Régimen Tributario</div>
+                                        <div style="font-size:0.80rem; font-weight:600; color:#047857;" id="mh-regimen-result">—</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="mh-error-panel" style="display:none; margin-bottom:14px; padding:12px 16px;
+                                 background:#fef2f2; border:1.5px solid #fca5a5; border-radius:12px;
+                                 color:#dc2626; font-size:0.80rem; font-weight:600;"></div>
+                            <div id="mh-loading" style="display:none; margin-bottom:14px; text-align:center; padding:14px; color:#1e40af; font-size:0.85rem; font-weight:700; background:#eff6ff; border-radius:12px; border:1.5px solid #bfdbfe;">
+                                <i class="fas fa-sync-alt fa-spin"></i> Consultando Ministerio de Hacienda...
+                            </div>
+
+                            <!-- Nombre / Razón Social -->
+                            <div style="margin-bottom:14px;">
+                                <label class="label-sm" for="cli-nombre">Nombre o Razón Social</label>
+                                <input type="text" id="cli-nombre" class="fi" placeholder="Se auto-completa con Consultar MH">
+                            </div>
+
+                            <!-- Datos Tributarios MH -->
+                            <div class="form-grid-2" style="margin-bottom:14px;">
+                                <div>
+                                    <label class="label-sm" for="cli-actividad">Actividad Económica</label>
+                                    <input type="text" id="cli-actividad" class="fi" placeholder="Se rellena con Consultar MH" readonly
+                                           style="background:#f0fdf4; border-color:#bbf7d0; color:#065f46; cursor:default;">
+                                </div>
+                                <div>
+                                    <label class="label-sm" for="cli-regimen">Régimen Tributario</label>
+                                    <input type="text" id="cli-regimen" class="fi" placeholder="Se rellena con Consultar MH" readonly
+                                           style="background:#f0fdf4; border-color:#bbf7d0; color:#065f46; cursor:default;">
+                                </div>
+                            </div>
+
+                            <!-- Información de Contacto -->
+                            <div class="form-grid-3" style="margin-bottom:14px;">
+                                <div>
+                                    <label class="label-sm" for="cli-correo">Correo Electrónico</label>
+                                    <input type="email" id="cli-correo" class="fi" placeholder="correo@ejemplo.com">
+                                </div>
+                                <div>
+                                    <label class="label-sm" for="cli-telefono">Teléfono</label>
+                                    <input type="tel" id="cli-telefono" class="fi" placeholder="0000-0000">
+                                </div>
+                                <div>
+                                    <label class="label-sm" for="cli-movil">Móvil</label>
+                                    <input type="tel" id="cli-movil" class="fi" placeholder="0000-0000">
+                                </div>
+                            </div>
+
+                            <!-- Dirección -->
+                            <div style="margin-bottom:14px;">
+                                <label class="label-sm" for="cli-direccion">Dirección Exacta</label>
+                                <input type="text" id="cli-direccion" class="fi" placeholder="Dirección completa para facturación">
+                            </div>
+
+                            <!-- Ubicación Geográfica -->
+                            <div class="form-grid-4" style="margin-bottom:4px;">
+                                <div>
+                                    <label class="label-sm" for="cli-provincia">Provincia</label>
+                                    <select id="cli-provincia" class="premium-select">
+                                        <option value="">Cargando API...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label-sm" for="cli-canton">Cantón</label>
+                                    <select id="cli-canton" class="premium-select">
+                                        <option value="">Seleccionar...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label-sm" for="cli-distrito">Distrito</label>
+                                    <select id="cli-distrito" class="premium-select">
+                                        <option value="">Seleccionar...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label-sm" for="cli-barrio">Barrio</label>
+                                    <select id="cli-barrio" class="fi">
+                                        <option value="">Seleccionar...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-registrar" id="btn-registrar-cliente">
+                                <i class="fas fa-save" style="margin-right:10px;"></i> REGISTRAR CLIENTE
+                            </button>
+                        </form>
+                    </div><!-- /formulario nuevo cliente -->
+
+                    <!-- Header del Catálogo -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+                <div style="position:relative; flex:0 1 450px;">
+                    <div class="autocomplete-wrapper">
+                        <i class="fas fa-search" style="position:absolute; left:18px; top:50%; transform:translateY(-50%); color:#94a3b8; z-index:10;"></i>
+                        <input type="text" id="buscar-clientes" class="fi" placeholder="🔍 Buscar por nombre, cédula o correo…" autocomplete="off" style="padding-left:45px; width:100%; height:50px; font-weight:700; border-radius:25px; border:2px solid #e2e8f0; transition:all 0.3s;">
+                        <div id="clientes-dropdown" class="autocomplete-dropdown" style="border-radius:20px; box-shadow:0 15px 40px rgba(0,0,0,0.15);"></div>
+                    </div>
+                </div>
+                <div id="total-clientes-badge" style="background:var(--primary-light); color:var(--primary); padding:10px 20px; border-radius:20px; font-weight:900; font-size:0.85rem; border:1px solid #dbeafe;">
+                   <i class="fas fa-users-cog"></i> 0 Clientes
+                </div>
+            </div>
+
+            <!-- Tabla de Clientes con Scroll y Estilo Flat & Dense -->
+            <div class="data-table-container">
+                <div style="max-height: 60vh; overflow-y: auto;">
+                    <table class="premium-data-table dense-table">
+                        <thead>
+                            <tr>
+                                <th>Identificación</th>
+                                <th>Nombre Completo / Razón Social</th>
+                                <th>Correo Electrónico</th>
+                                <th>Localización</th>
+                                <th style="text-align:center;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-clientes">
+                            <!-- Los clientes se inyectarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+                </div><!-- /flex column -->
+            </div><!-- /inv-card -->
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Lógica de clientes -->
+    <script src="../js/clientes.js"></script>
+
+    <!-- Partículas animadas -->
+    
+</body>
+</html>

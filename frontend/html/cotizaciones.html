@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH - Proformas y Cotizaciones</title>
+    
+    <!-- Meta tags SEO -->
+    <meta name="description" content="Generación de propuestas comerciales premium MUROTECH">
+    <link rel="icon" type="image/png" href="../assets/shared/img/favicon.png">
+
+    <!-- Estilos base y de facturación (Reutilización de Tokens) -->
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="../css/billing/billing.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+    <script src="../js/shared/sidebar.js"></script>
+
+    <!-- jsPDF para Generación de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <link rel="stylesheet" href="../css/cotizaciones.css">
+</head>
+<body>
+
+    <div id="quotation-screen">
+        <aside class="sidebar" id="sidebar-target"></aside>
+
+        <main class="cot-main">
+            <div class="cot-container">
+                
+                <!-- HEADER & DIVISAS -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <div>
+                        <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Proformas <span style="color:var(--primary); opacity:0.8;">& Cotizaciones</span></h1>
+                        <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Gestión de propuestas comerciales profesionales</p>
+                    </div>
+
+                    <!-- Widget Divisas Rapido -->
+                    <div id="fx-widget" style="display:flex; gap:12px;">
+                        <div class="fx-card-mini" title="Venta USD Hacienda">
+                            <div style="background:#eff6ff; color:#2563eb; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:0.9rem;">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div>
+                                <div class="fx-label">USD Venta</div>
+                                <div class="fx-val" id="fx-usd-venta">₡---.--</div>
+                            </div>
+                        </div>
+                        <div class="fx-card-mini" title="Venta EUR Hacienda">
+                            <div style="background:#f5f3ff; color:#7c3aed; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:0.9rem;">
+                                <i class="fas fa-euro-sign"></i>
+                            </div>
+                            <div>
+                                <div class="fx-label">EUR Venta</div>
+                                <div class="fx-val" id="fx-eur-valor">₡---.--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="proforma-form">
+                    
+                    <!-- 1. EMISOR -->
+                    <div class="emisor-card">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <div style="display:flex; align-items:center; gap:20px;">
+                                <div style="background:rgba(255,255,255,0.2); width:55px; height:55px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.6rem;">
+                                    <i class="fas fa-briefcase"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin:0; font-size:1.4rem; font-weight:900;">MUROTECH SOLUTIONS S.A.</h3>
+                                    <p style="margin:2px 0 0; opacity:0.85; font-weight:600; font-size:0.9rem;">Cédula Jurídica: 3-101-897564</p>
+                                </div>
+                            </div>
+                            <span class="emisor-badge">Comprobante de Propuesta</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. CONFIGURACIÓN Y CLIENTE -->
+                    <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:24px;">
+                        
+                        <!-- Columna Config -->
+                        <div class="section-box">
+                            <h3 class="section-title"><i class="fas fa-cog"></i> Configuración de la Oferta</h3>
+                            <div style="display:grid; grid-template-columns:1fr; gap:18px;">
+                                <div>
+                                    <label class="label-sm">Moneda de la Proforma</label>
+                                    <select id="moneda" class="fi" data-prev="CRC">
+                                        <option value="CRC">CRC – Colón (₡)</option>
+                                        <option value="USD">USD – Dólar ($)</option>
+                                        <option value="EUR">EUR – Euro (€)</option>
+                                    </select>
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                                    <div>
+                                        <label class="label-sm">Validez (Días)</label>
+                                        <input type="number" id="validez-dias" class="fi" value="15" min="1">
+                                    </div>
+                                    <div>
+                                        <label class="label-sm">Vence el</label>
+                                        <input type="date" id="fecha-vencimiento" class="fi" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna Cliente (Prospecto) -->
+                        <div class="section-box">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                <div>
+                                    <h3 class="section-title" style="margin:0;"><i class="fas fa-user-plus"></i> Prospecto / Receptor</h3>
+                                    <p style="font-size:0.6rem; color:#94a3b8; font-weight:700; margin-top:4px; text-transform:uppercase; letter-spacing:0.5px;">Busque un cliente existente o ingrese uno nuevo</p>
+                                </div>
+                                <div class="autocomplete-wrapper" style="flex: 1;">
+                                    <input type="text" id="buscar-cliente-id" class="fi" placeholder="🔍 Buscar cliente por nombre, ID o correo..." autocomplete="off" style="width: 100%;">
+                                    <div id="cliente-dropdown" class="autocomplete-dropdown"></div>
+                                </div>
+                                <button type="button" id="btn-buscar-cliente" style="background:var(--primary); color:white; border:none; width:45px; height:45px; border-radius:12px; cursor:pointer; font-size:1rem; transition:all 0.2s; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(30,64,175,0.2);">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Estructura Agrupada Premium (Mismo que Facturacion) -->
+                            <div id="cliente-info-panel" class="cliente-info-premium" style="grid-template-columns: 1fr 1fr; gap:12px;">
+                                
+                                <!-- SEGMENTO 1: IDENTIDAD -->
+                                <div class="cliente-card-segment">
+                                    <div class="segment-header"><i class="fas fa-id-card"></i><h4>Identidad</h4></div>
+                                    <div id="cli-nombre" class="info-val highlight">---</div>
+                                    <div style="margin-top:6px; display:flex; flex-direction:column; gap:2px;">
+                                        <span class="fx-label" style="font-size:0.55rem;">TIPO / NÚMERO ID</span>
+                                        <span id="cli-full-id" class="info-val" style="font-size:0.7rem;">---</span>
+                                    </div>
+                                </div>
+
+                                <!-- SEGMENTO 2: UBICACIÓN -->
+                                <div class="cliente-card-segment">
+                                    <div class="segment-header"><i class="fas fa-map-marker-alt"></i><h4>Ubicación</h4></div>
+                                    <div id="cli-provincia" class="info-val" style="font-size:0.75rem;">---</div>
+                                    <div id="cli-canton" class="info-val" style="font-size:0.75rem; color:#64748b;">---</div>
+                                    <div id="cli-distrito" class="info-val" style="font-size:0.7rem; color:#94a3b8; font-style:italic; margin-top:4px;">---</div>
+                                </div>
+
+                                <!-- SEGMENTO 3: CONTACTO -->
+                                <div class="cliente-card-segment">
+                                    <div class="segment-header"><i class="fas fa-envelope-open-text"></i><h4>Contacto</h4></div>
+                                    <div id="cli-email" class="info-val" style="font-size:0.75rem; color:var(--primary); word-break:break-all;">---</div>
+                                    <div id="cli-telefono" class="info-val" style="font-size:0.75rem; margin-top:4px;"><i class="fas fa-phone-alt" style="opacity:0.5; font-size:0.6rem;"></i> ---</div>
+                                </div>
+
+                                <!-- SEGMENTO 4: FISCAL -->
+                                <div class="cliente-card-segment">
+                                    <div class="segment-header"><i class="fas fa-gavel"></i><h4>Fiscal</h4></div>
+                                    <div id="cli-regimen" class="info-val" style="font-size:0.7rem; color:#16a34a;">---</div>
+                                    <div id="cli-actividad" class="info-val" style="font-size:0.65rem; color:#64748b; margin-top:4px; line-height:1.2;">---</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Opción Manual si no se encuentra en DB -->
+                            <div id="manual-prospecto" style="margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:15px;">
+                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                                    <span style="font-size:0.6rem; font-weight:800; color:#ef4444; background:#fef2f2; padding:2px 8px; border-radius:10px;">PROSPECTO EXTERNO</span>
+                                    <p style="font-size:0.75rem; color:#64748b; font-weight:700; margin:0;">Complete los datos básicos para la proforma:</p>
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1.2fr 2fr; gap:12px;">
+                                    <div>
+                                        <label class="label-sm">Cédula / NIT</label>
+                                        <input type="text" id="cedula-prospecto" class="fi" placeholder="Ej: 0-0000-0000">
+                                    </div>
+                                    <div>
+                                        <label class="label-sm">Nombre o Razón Social</label>
+                                        <input type="text" id="nombre-prospecto" class="fi" placeholder="Nombre completo del cliente prospecto…">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. DETALLE DE PROPUESTA -->
+                    <div class="section-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                            <h3 class="section-title" style="margin:0;"><i class="fas fa-shopping-cart"></i> Detalle de Ítems y Servicios</h3>
+
+                            <div class="autocomplete-wrapper" style="max-width:320px;">
+                                <input type="text" id="buscar-producto" class="fi" placeholder="🔍 Buscar en inventario para añadir…" autocomplete="off">
+                                <div id="producto-dropdown" class="autocomplete-dropdown"></div>
+                            </div>
+
+                        </div>
+
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:70px;">CANT.</th>
+                                    <th>DESCRIPCIÓN COMERCIAL</th>
+                                    <th style="width:140px;" class="text-center">P. UNITARIO</th>
+                                    <th style="width:100px;" class="text-center">DESC %</th>
+                                    <th style="width:150px; text-align:right;">SUBTOTAL</th>
+                                    <th style="width:50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="detalle-tabla">
+                                <tr id="empty-row">
+                                    <td colspan="6" style="text-align:center; padding:40px; color:#94a3b8; font-weight:600;">
+                                        <i class="fas fa-clipboard-list" style="font-size:1.8rem; display:block; margin-bottom:10px; opacity:0.3;"></i>
+                                        Empieza a añadir líneas para tu proforma
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <button type="button" id="btn-add-manual" style="width:100%; padding:14px; margin-top:15px; background:#f1f5f9; border:2px dashed #cbd5e1; border-radius:12px; color:#475569; font-weight:800; cursor:pointer; transition:all 0.2s;">
+                            <i class="fas fa-plus-circle"></i> Agregar ítem manual o servicio especial
+                        </button>
+                    </div>
+
+                    <!-- 4. TOTALES Y NOTAS -->
+                    <div style="display:grid; grid-template-columns: 1fr 340px; gap:26px;">
+                        <div class="section-box" style="height:100%;">
+                            <h3 class="section-title"><i class="fas fa-comment-alt"></i> Notas Técnicas y Comerciales</h3>
+                            <textarea id="notas-cotizacion" class="fi" rows="6" style="width:100%; border:none; background:transparent; padding:0; resize:none;" placeholder="Ej: Los precios incluyen entrega a domicilio. Validez de la oferta 15 días hábiles. Forma de pago: 50% anticipo, 50% contra entrega..."></textarea>
+                        </div>
+
+                        <div class="section-box" style="background:#f8fafc;">
+                            <h3 class="section-title" style="margin-bottom:12px;">Resumen de Inversión</h3>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                                <div style="display:flex; justify-content:space-between; font-weight:600; color:#64748b; font-size:0.9rem;">
+                                    <span>Venta Bruta</span>
+                                    <span id="total-subtotal">₡0.00</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-weight:600; color:#ef4444; font-size:0.9rem;">
+                                    <span>Descuentos</span>
+                                    <span id="total-descuento">₡0.00</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-weight:600; color:#1e40af; font-size:0.9rem;">
+                                    <span>IVA Estimado (13%)</span>
+                                    <span id="total-impuesto">₡0.00</span>
+                                </div>
+                                <div style="margin-top:10px; padding-top:12px; border-top:2px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-weight:900; color:#0f172a; font-size:0.8rem; text-transform:uppercase;">Inversión Total</span>
+                                    <span id="total-final" style="font-size:1.6rem; font-weight:900; color:var(--primary); letter-spacing:-1px;">₡0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ACCIÓN FINAL -->
+                    <div style="margin-top:30px;">
+                        <button type="submit" class="btn-premium">
+                            <i class="fas fa-file-export"></i> GENERAR PROFORMA PROFESIONAL
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../js/cotizaciones.js"></script>
+
+    <canvas id="particles-canvas"></canvas>
+    
+</body>
+</html>

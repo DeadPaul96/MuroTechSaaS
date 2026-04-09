@@ -1,0 +1,31 @@
+﻿/* Animaciones y efectos visuales */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(0, 255, 0, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(0, 255, 0, 0.4); }
+    100% { box-shadow: 0 0 5px rgba(0, 255, 0, 0.2); }
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.pulse-glow {
+    animation: pulseGlow 2s infinite;
+}
+
+.gradient-bg {
+    background: linear-gradient(45deg, var(--bg-dark), var(--card-bg-dark));
+    background-size: 200% 200%;
+    animation: gradientBG 15s ease infinite;
+}

@@ -1,0 +1,186 @@
+/* Estilos para el formulario de registro unificado - Vista continua */
+
+/* Layout principal con sidebar */
+#billing-screen {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding-left: 80px;
+    position: relative;
+    z-index: 10;
+}
+
+.module-content {
+    flex: 1;
+    padding: var(--spacing-xl);
+    position: relative;
+}
+
+.module-title {
+    font-size: var(--font-size-xxl);
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    font-weight: 800;
+}
+
+/* Formulario continuo */
+#registroForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.card-like-container {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-lg);
+    position: relative;
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+}
+
+.card-like-container:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+}
+
+/* Header de cada sección */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--bg-light);
+}
+
+.section-number {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.reg-subtitle {
+    color: var(--primary-color);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    flex: 1;
+}
+
+/* Inputs con iconos */
+.input-with-icon-wrapper {
+    position: relative;
+    margin-bottom: var(--spacing-lg);
+}
+
+.info-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    cursor: help;
+    font-size: 1.1rem;
+    transition: color var(--transition-normal);
+}
+
+.info-icon:hover {
+    color: var(--primary-color);
+}
+
+/* Dirección */
+.address-label {
+    color: var(--text-main);
+    font-weight: 700;
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-md);
+    display: block;
+}
+
+.address-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Upload box */
+.upload-box {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-xl);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius-lg);
+    text-align: center;
+    transition: all var(--transition-normal);
+    background: var(--bg-light);
+}
+
+.upload-box:hover {
+    border-color: var(--primary-color);
+    background: var(--white);
+}
+
+.upload-label {
+    display: block;
+    color: var(--text-main);
+    margin-bottom: var(--spacing-md);
+    font-weight: 700;
+}
+
+.upload-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 12px 24px;
+    background: var(--primary-color);
+    color: var(--white);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--transition-normal);
+}
+
+.upload-button:hover {
+    background: var(--secondary-color);
+    transform: var(--hover-transform);
+    box-shadow: var(--shadow-blue);
+}
+
+/* Acciones del registro */
+.reg-actions {
+    display: flex;
+    gap: var(--spacing-lg);
+    justify-content: center;
+    padding: var(--spacing-xl);
+}
+
+.reg-actions .btn {
+    min-width: 220px;
+    height: 55px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    #billing-screen { padding-left: 0; }
+    .address-group { grid-template-columns: 1fr; }
+    .reg-actions { flex-direction: column; }
+    .reg-actions .btn { width: 100%; }
+}
+

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH SaaS - Panel de Control</title>
+    
+    <!-- Estilos Core MUROTECH -->
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="../css/dashboard/dashboard.css">
+    
+    <!-- Iconografía FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Scripts Base -->
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+    <script src="../js/dashboard/main.js" defer></script>
+
+    <link rel="stylesheet" href="../css/panelControl.css">
+</head>
+<body class="reg-body">
+    <!-- Canvas para Partículas Animadas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Navegación Superior -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-brand">
+                <div class="logo-mini">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h1 class="header-title">MUROTECH SaaS</h1>
+            </div>
+            
+            <nav class="header-nav">
+                <button class="header-nav-btn" onclick="irA('pantallaFacturacion.html')" title="Facturación">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </button>
+                <button class="header-nav-btn" onclick="irA('clientes.html')" title="Clientes">
+                    <i class="fas fa-users"></i>
+                </button>
+                <button class="header-nav-btn" onclick="irA('inventario.html')" title="Inventario">
+                    <i class="fas fa-boxes"></i>
+                </button>
+                <button class="header-nav-btn" onclick="irA('auditoria.html')" title="Auditoría">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="header-nav-btn" onclick="irA('notificaciones.html')" title="Notificaciones">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">8</span>
+                </button>
+                <div class="header-divider"></div>
+                <button class="header-nav-btn" onclick="cerrarSesion()" title="Cerrar Sesión">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="module-content dashboard-full-width">
+        <!-- BIENVENIDA -->
+        <div style="background: linear-gradient(135deg, #f97316 0%, #4f46e5 100%); padding: 45px 30px; border-radius: 28px; text-align: center; margin-bottom: 30px; margin-top: 10px; box-shadow: 0 15px 35px -5px rgba(0,0,0,0.2); position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%); pointer-events: none;"></div>
+            <h1 style="color: white; font-size: 3rem; font-weight: 800; margin-bottom: 8px; font-family: var(--font-display); letter-spacing: -1.5px; line-height: 1;">¡Bienvenido de nuevo!</h1>
+            <p style="color: rgba(255,255,255,0.9); font-size: 1.2rem; font-weight: 500; font-family: var(--font-main);">Tu panel de control está listo para usar</p>
+        </div>
+
+        <!-- FILA DE METRICAS UNIFORME -->
+        <section class="metrics-row" style="display: grid; grid-template-columns: 1fr 1fr 2.6fr 1fr 1fr; gap: 15px; margin-bottom: 30px; padding: 0 1%; align-items: stretch; width: 100%; box-sizing: border-box;">
+            
+            <!-- 1. FACTURAS (BALANCEADA) -->
+            <div class="metric-item modern-card" style="background:#ffffff; border-radius:24px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.04); border:1px solid #f1f5f9; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:12px;">
+                <div style="background:#1e3a8a; color:white; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:4px;"><i class="fas fa-file-invoice"></i></div>
+                <div>
+                    <div id="dash-facturas" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">7</div>
+                    <div style="color:#64748b; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:4px 0;">Facturas</div>
+                    <div style="color:#16a34a; font-size:0.75rem; font-weight:700;"><i class="fas fa-arrow-up"></i> 12%</div>
+                </div>
+            </div>
+
+            <!-- 2. INGRESOS (BALANCEADA) -->
+            <div class="metric-item modern-card" style="background:#ffffff; border-radius:24px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.04); border:1px solid #f1f5f9; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:12px;">
+                <div style="background:#f97316; color:white; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:4px;"><i class="fas fa-wallet"></i></div>
+                <div>
+                    <div id="dash-ingresos" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">₡1.1M</div>
+                    <div style="color:#64748b; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:4px 0;">Ingresos</div>
+                    <div style="color:#16a34a; font-size:0.75rem; font-weight:700;"><i class="fas fa-arrow-up"></i> 8%</div>
+                </div>
+            </div>
+
+            <!-- 3. DIVISAS (AJUSTE DE ESPACIO LATERAL) -->
+            <div class="metric-item modern-card" style="background:#ffffff; border-radius:24px; padding:15px 12px; box-shadow:0 10px 25px rgba(0,0,0,0.04); border:1px solid #f1f5f9; display: flex; flex-direction: column; gap:12px; width: 100%;">
+                <div style="display:flex; justify-content:space-between; align-items:center; width: 100%;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color:white; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem;">
+                            <i class="fas fa-university"></i>
+                        </div>
+                        <span style="font-weight:900; font-size:0.7rem; color:#1e293b; letter-spacing:0.2px; text-transform:uppercase;">DIVISAS (HACIENDA/BCCR)</span>
+                    </div>
+                    <div id="dash-tc-label" style="background:#f0fdf4; color:#16a34a; border:1px solid #dcfce7; padding:4px 10px; border-radius:20px; display:flex; align-items:center; gap:6px; font-weight:900; font-size:0.6rem; white-space: nowrap;">
+                        <i class="fas fa-check-circle" style="font-size:0.75rem;"></i> <span>Hacienda OK</span>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; width: 100%;">
+                    <!-- USD BOX -->
+                    <div style="background:#f8fafc; border-radius:16px; padding:12px; border:1.5px solid #eff6ff; display: flex; flex-direction: column;">
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                            <div style="width:3px; height:12px; background:#0369a1; border-radius:10px;"></div>
+                            <span style="font-weight:900; font-size:0.7rem; color:#0369a1;">USD / CRC</span>
+                        </div>
+                        <div style="margin-bottom:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.55rem; color:#94a3b8; font-weight:900;">COMPRA</span>
+                                <span id="fecha-usd-compra" style="font-size:0.55rem; color:#cbd5e1; font-weight:800;">Calculando...</span>
+                            </div>
+                            <div id="dash-usd-compra" style="font-size:1.5rem; font-weight:900; color:#1e293b; line-height:1;">₡---.--</div>
+                        </div>
+                        <div style="border-top:1px solid #e2e8f0; padding-top:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.55rem; color:#94a3b8; font-weight:900;">VENTA</span>
+                                <span id="fecha-usd-venta" style="font-size:0.55rem; color:#cbd5e1; font-weight:800;">Calculando...</span>
+                            </div>
+                            <div id="dash-usd-venta" style="font-size:1.5rem; font-weight:900; color:#1e293b; line-height:1;">₡---.--</div>
+                        </div>
+                    </div>
+
+                    <!-- EUR BOX -->
+                    <div style="background:#f5f3ff; border-radius:16px; padding:12px; border:1.5px solid #f3e8ff; display: flex; flex-direction: column;">
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                            <div style="width:3px; height:12px; background:#7c3aed; border-radius:10px;"></div>
+                            <span style="font-weight:900; font-size:0.7rem; color:#7c3aed;">EUR / CRC</span>
+                        </div>
+                        <div style="margin-bottom:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.55rem; color:#7c3aed; font-weight:900;">COLONES</span>
+                                <span id="fecha-euro" style="font-size:0.55rem; color:#cbd5e1; font-weight:800;">Calculando...</span>
+                            </div>
+                            <div id="dash-euro-colones" style="font-size:1.5rem; font-weight:900; color:#1e293b; line-height:1;">₡---.--</div>
+                        </div>
+                        <div style="border-top:1px solid #ddd6fe; padding-top:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.55rem; color:#7c3aed; font-weight:900;">DÓLARES</span>
+                                <span id="fecha-euro-usd" style="font-size:0.55rem; color:#cbd5e1; font-weight:800;">Calculando...</span>
+                            </div>
+                            <div id="dash-euro-dolares" style="font-size:1.5rem; font-weight:900; color:#1e293b; line-height:1;">$---.--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. CLIENTES (BALANCEADA) -->
+            <div class="metric-item modern-card" style="background:#ffffff; border-radius:24px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.04); border:1px solid #f1f5f9; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:12px;">
+                <div style="background:#10b981; color:white; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:4px;"><i class="fas fa-users"></i></div>
+                <div>
+                    <div id="dash-clientes" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">5</div>
+                    <div style="color:#64748b; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:4px 0;">Clientes</div>
+                    <div style="color:#16a34a; font-size:0.75rem; font-weight:700;"><i class="fas fa-arrow-up"></i> 23%</div>
+                </div>
+            </div>
+
+            <!-- 5. CONVERSION (BALANCEADA) -->
+            <div class="metric-item modern-card" style="background:#ffffff; border-radius:24px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.04); border:1px solid #f1f5f9; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:12px;">
+                <div style="background:#8b5cf6; color:white; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:4px;"><i class="fas fa-chart-line"></i></div>
+                <div>
+                    <div id="dash-conversion" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">94.2%</div>
+                    <div style="color:#64748b; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:4px 0;">Éxito</div>
+                    <div style="color:#16a34a; font-size:0.75rem; font-weight:700;"><i class="fas fa-arrow-up"></i> 2%</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Accesos Rápidos (Sincronizados con el Screenshot) -->
+        <section class="quick-access-section" style="padding: 0 3%; margin-top: 20px;">
+            <div style="text-align: center; margin-bottom: 35px;">
+                <div style="display: inline-flex; align-items: center; gap: 15px; margin-bottom: 12px;">
+                    <div style="background: #f97316; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);">
+                        <i class="fas fa-th-large"></i>
+                    </div>
+                    <h2 style="font-size: 2.8rem; font-weight: 900; color: #ffffff; margin: 0; font-family: var(--font-display); letter-spacing: -1.5px;">Accesos Rápidos</h2>
+                </div>
+                <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.2rem; font-weight: 500;">Navega rápidamente a cualquier módulo del sistema</p>
+            </div>
+
+            <div class="quick-access-grid">
+                <!-- Facturación -->
+                <div class="quick-access-card" onclick="irA('pantallaFacturacion.html')" style="--card-index: 0;">
+                    <div class="quick-access-icon" style="background: var(--grad-primary);">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Facturación</h3>
+                        <p>Crear y gestionar facturas electrónicas</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-aceptado">247 activas</span>
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                                <i class="fas fa-clock"></i> Última: hace 2 min
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Clientes -->
+                <div class="quick-access-card" onclick="irA('clientes.html')" style="--card-index: 1;">
+                    <div class="quick-access-icon" style="background: var(--grad-accent);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Clientes</h3>
+                        <p>Gestionar directorio de clientes</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-aceptado">156 totales</span>
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                                <i class="fas fa-user-plus"></i> 23 nuevos
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Inventario -->
+                <div class="quick-access-card" onclick="irA('inventario.html')" style="--card-index: 2;">
+                    <div class="quick-access-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Inventario</h3>
+                        <p>Control de productos y servicios</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-pendiente">89 items</span>
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                                <i class="fas fa-exclamation-triangle"></i> 5 bajo stock
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Editar Factura -->
+                <div class="quick-access-card" onclick="irA('editarFactura.html')" style="--card-index: 3;">
+                    <div class="quick-access-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Editar Factura</h3>
+                        <p>Modificar facturas existentes</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-rechazado">12 pendientes</span>
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                                <i class="fas fa-sync"></i> 3 modificadas hoy
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Auditoría -->
+                <div class="quick-access-card" onclick="irA('auditoria.html')" style="--card-index: 4;">
+                    <div class="quick-access-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Auditoría</h3>
+                        <p>Revisión y validación de documentos</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-aceptado">98.5% compliant</span>
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                                <i class="fas fa-check-circle"></i> Todo en orden
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Notificaciones -->
+                <div class="quick-access-card" onclick="irA('notificaciones.html')" style="--card-index: 5;">
+                    <div class="quick-access-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Notificaciones</h3>
+                        <p>Alertas y comunicaciones del sistema</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-pendiente">8 nuevas</span>
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                                <i class="fas fa-envelope"></i> Última: hace 1 hora
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Administrador -->
+                <div class="quick-access-card" onclick="irA('configuracion.html')" style="--card-index: 6;">
+                    <div class="quick-access-icon" style="background: linear-gradient(135deg, #475569, #1e293b);">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Administrador</h3>
+                        <p>Gestión de usuarios y configuración</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-aceptado" style="background: rgba(59, 130, 246, 0.15) !important; color: #3b82f6 !important; border-color: rgba(59, 130, 246, 0.3) !important;">Config</span>
+                            <span style="color: #64748b; font-size: 0.85rem;">
+                                <i class="fas fa-sliders-h"></i> Panel maestro
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Reportes -->
+                <div class="quick-access-card" onclick="irA('reportes.html')" style="--card-index: 7;">
+                    <div class="quick-access-icon" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Reportes</h3>
+                        <p>Análisis y reportes avanzados</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-aceptado" style="background: rgba(6,182,212,0.15) !important; color: #06b6d4 !important; border-color: rgba(6,182,212,0.3) !important;">Análisis</span>
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                                <i class="fas fa-chart-line"></i> Datos en tiempo real
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Cotizaciones -->
+                <div class="quick-access-card" onclick="irA('cotizaciones.html')" style="--card-index: 8;">
+                    <div class="quick-access-icon" style="background: linear-gradient(135deg, #14b8a6, #0f766e);">
+                        <i class="fas fa-file-signature"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Cotizaciones</h3>
+                        <p>Genera proformas al instante</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-aceptado" style="background: rgba(20, 184, 166, 0.15) !important; color: #14b8a6 !important; border-color: rgba(20, 184, 166, 0.3) !important;">Nuevo</span>
+                            <span style="color: #64748b; font-size: 0.85rem;">
+                                <i class="fas fa-rocket"></i> Flujo ágil
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Punto de Venta (POS) -->
+                <div class="quick-access-card" onclick="irA('pos.html')" style="--card-index: 9;">
+                    <div class="quick-access-icon" style="background: linear-gradient(135deg, #ec4899, #be185d);">
+                        <i class="fas fa-cash-register"></i>
+                    </div>
+                    <div class="quick-access-content">
+                        <h3>Punto de Venta</h3>
+                        <p>Ventas de mostrador rápidas</p>
+                        <div class="quick-access-stats">
+                            <span class="stat-badge status-aceptado" style="background: rgba(236, 72, 153, 0.15) !important; color: #ec4899 !important; border-color: rgba(236, 72, 153, 0.3) !important;">Premium</span>
+                            <span style="color: #64748b; font-size: 0.85rem;">
+                                <i class="fas fa-bolt"></i> Ultra rápido
+                            </span>
+                        </div>
+                    </div>
+                    <div class="quick-access-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabla de Actividad Reciente -->
+        <section class="activity-section">
+            <div class="section-header" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; margin-bottom: 30px;">
+                <h2 class="section-title" style="margin: 0; color: #0f172a; font-weight: 800; font-size: 1.8rem; text-shadow: 0 2px 10px rgba(255,255,255,0.4); text-align: center;">Actividad Reciente</h2>
+                <button class="btn btn-primary" style="border-radius: 20px; padding: 10px 25px; font-weight: 700; background: var(--primary); color: white; border: none; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3);">
+                    <i class="fas fa-eye" style="margin-right: 5px;"></i> Ver Todas
+                </button>
+            </div>
+
+            <div class="data-table-container">
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Factura</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activity-list">
+                        <!-- Generado por mockDB -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- El Botón Flotante ha sido removido -->
+
+    <script src="../js/panelControl.js"></script>
+    <!-- Script para Partículas Animadas (Style Yesterday) -->
+    
+</body>
+</html>

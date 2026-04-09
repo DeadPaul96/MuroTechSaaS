@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH POS - Facturación Electrónica v4.4</title>
+    <meta name="description" content="Emisión de comprobantes electrónicos bajo normativa Ministerio de Hacienda Costa Rica v4.4">
+
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="../css/billing/billing.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+    <script src="../js/shared/sidebar.js"></script>
+
+    <!-- jsPDF para Generación de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <link rel="stylesheet" href="../css/pantallaFacturacion.css">
+</head>
+<body class="reg-body">
+    <canvas id="particles-canvas"></canvas>
+
+    <div id="billing-screen">
+        <aside class="sidebar"></aside>
+
+        <main class="module-content fac-main">
+            <div class="fac-card">
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <div>
+                        <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Facturación Electrónica</h1>
+                        <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Emisión de comprobantes bajo normativa MH v4.4 — Costa Rica</p>
+                    </div>
+                </header>
+
+                <form id="factura-form" class="fac-form">
+
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!--  TARJETA 1 – DATOS DEL EMISOR                      -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div class="emisor-card">
+                        <div class="emisor-header">
+                            <div class="emisor-icon"><i class="fas fa-building"></i></div>
+                            <div style="flex:1;">
+                                <h3 style="margin:0; font-size:1.2rem; font-family:var(--font-display); font-weight:800;">MUROTECH SOLUTIONS S.A.</h3>
+                                <p style="margin:4px 0 0; color:rgba(255,255,255,0.80); font-size:0.82rem;">
+                                    <i class="fas fa-id-card" style="margin-right:4px;"></i>Cédula Jurídica: 3-101-897564
+                                </p>
+                            </div>
+                            <span class="emisor-badge"><i class="fas fa-check-circle" style="margin-right:5px;"></i>EMISOR ACTIVO</span>
+                        </div>
+
+                        <!-- Chips de info compactos -->
+                        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:6px;">
+                            <div class="emisor-chip"><i class="fas fa-id-card"></i> Céd. Jurídica &nbsp;<strong>3-101-897564</strong></div>
+                            <div class="emisor-chip"><i class="fas fa-map-marker-alt"></i> San José, Costa Rica</div>
+                            <div class="emisor-chip"><i class="fas fa-phone"></i> +506 2234-5678</div>
+                            <div class="emisor-chip"><i class="fas fa-envelope"></i> facturacion@murotech.cr</div>
+                            <div class="emisor-chip"><i class="fas fa-briefcase"></i> 620100 – Prog. Informática</div>
+                            <div class="emisor-chip" style="background:rgba(255,255,255,0.25);"><i class="fas fa-shield-alt"></i> Régimen Simplificado Digital</div>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!--  TARJETA 2 – CONFIGURACIÓN RÁPIDA + DIVISAS        -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div class="section-box" style="display: flex; gap: 24px; align-items: flex-start;">
+                        
+                        <!-- Columna Formulario (Izquierda) -->
+                        <div style="flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;">
+                            <!-- TIPO DE DOCUMENTO -->
+                            <div style="grid-column: span 2;">
+                                <label class="label-sm" for="tipo-documento">Tipo de Documento</label>
+                                <select id="tipo-documento" class="premium-select">
+                                    <option value="01">01 – Factura Electrónica</option>
+                                    <option value="02">02 – Nota de Débito Electrónica</option>
+                                    <option value="03">03 – Nota de Crédito Electrónica</option>
+                                    <option value="04">04 – Tiquete Electrónico</option>
+                                    <option value="08">08 – Comprobante Electrónico de Exportación</option>
+                                    <option value="09">09 – Comprobante Electrónico de Compra</option>
+                                </select>
+                            </div>
+
+                            <!-- ACTIVIDAD ECONÓMICA -->
+                            <div>
+                                <label class="label-sm" for="actividad-economica">Actividad Económica</label>
+                                <select id="actividad-economica" class="premium-select">
+                                    <option value="620100">620100 – Programación y Consultoría Informática</option>
+                                    <option value="620200">620200 – Consultoría TI</option>
+                                </select>
+                            </div>
+
+                            <!-- MONEDA -->
+                            <div>
+                                <label class="label-sm" for="moneda">Moneda de Facturación</label>
+                                <select id="moneda" class="premium-select" style="border: 2px solid var(--primary); background: #f0f7ff;">
+                                    <option value="CRC">CRC – Colón Costarricense (₡)</option>
+                                    <option value="USD">USD – Dólar Estadounidense ($)</option>
+                                    <option value="EUR">EUR – Euro (€)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Columna Widget de Divisas (Derecha - Realtime) -->
+                        <div id="tc-widget" style="width: 380px; background: #ffffff; border: 1px solid rgba(14, 165, 233, 0.2); border-radius: 16px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px; margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="background: var(--grad-premium, linear-gradient(135deg,#1e40af,#3b82f6)); width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                        <i class="fas fa-university"></i>
+                                    </div>
+                                    <span style="font-weight: 800; font-size: 0.75rem; color: #1e293b; letter-spacing: 0.5px;">TASA MH ACTUAL</span>
+                                </div>
+                                <div id="dash-tc-status" style="font-size: 0.6rem; font-weight: 700; color: #10b981; background: #ecfdf5; padding: 2px 8px; border-radius: 12px;">
+                                    <i class="fas fa-sync-alt fa-spin"></i> SINCRONIZANDO
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <!-- Dólar -->
+                                <div style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-radius: 10px; padding: 10px; border: 1px solid #dbeafe;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                        <span style="font-size:0.6rem; font-weight:800; color:#1e40af;">USD / VENTA</span>
+                                        <i class="fas fa-dollar-sign" style="color:#1e40af; opacity:0.4; font-size:0.7rem;"></i>
+                                    </div>
+                                    <div id="fx-usd-venta" style="font-size: 1.2rem; font-weight: 900; color: #0f172a; letter-spacing: -0.5px;">---</div>
+                                    <div id="fx-usd-fecha" style="font-size: 0.5rem; color: #94a3b8; font-weight: 600; margin-top: 2px;">--/--/--</div>
+                                </div>
+                                <!-- Euro -->
+                                <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-radius: 10px; padding: 10px; border: 1px solid #e9d5ff;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                        <span style="font-size:0.6rem; font-weight:800; color:#6b21a8;">EUR / CRC</span>
+                                        <i class="fas fa-euro-sign" style="color:#6b21a8; opacity:0.4; font-size:0.7rem;"></i>
+                                    </div>
+                                    <div id="fx-eur-valor" style="font-size: 1.2rem; font-weight: 900; color: #0f172a; letter-spacing: -0.5px;">---</div>
+                                    <div id="fx-eur-fecha" style="font-size: 0.5rem; color: #94a3b8; font-weight: 600; margin-top: 2px;">--/--/--</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!--  TARJETA 3 – DATOS DEL CLIENTE (BUSCADOR)          -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div class="section-box">
+                        <h3 class="section-title">
+                            <i class="fas fa-user-circle"></i> Datos del Cliente / Receptor
+                        </h3>
+
+                        <!-- Buscador -->
+                        <div class="cliente-search-bar">
+                            <select id="tipo-id-cliente" class="premium-select" style="max-width:230px;">
+                                <option value="01">01 – Cédula Física</option>
+                                <option value="02">02 – Cédula Jurídica</option>
+                                <option value="03">03 – DIMEX</option>
+                                <option value="04">04 – NITE</option>
+                            </select>
+                            <div class="autocomplete-wrapper" style="flex: 1;">
+                                <input type="text" id="buscar-cliente-id" class="fi" placeholder="🔍 Buscar cliente por nombre, ID o correo..." autocomplete="off">
+                                <div id="cliente-dropdown" class="autocomplete-dropdown"></div>
+                            </div>
+                            <button type="button" id="btn-buscar-cliente" class="btn-buscar">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <button type="button" id="btn-limpiar-cliente" class="btn-buscar" style="background:#64748b;">
+                                <i class="fas fa-times"></i> Limpiar
+                            </button>
+                        </div>
+
+                        <!-- Info del cliente (Rediseño Premium Agrupado) -->
+                        <div id="cliente-info-panel" class="cliente-info-premium">
+                            
+                            <!-- TARJETA 1 – IDENTIDAD -->
+                            <div class="cliente-card-segment">
+                                <div class="segment-header">
+                                    <i class="fas fa-id-card"></i>
+                                    <h4>Identificación y Nombre</h4>
+                                </div>
+                                <div class="info-item" style="margin-bottom:14px;">
+                                    <span class="info-label">Nombre o Razón Social</span>
+                                    <span id="cli-nombre" class="info-val highlight">–</span>
+                                </div>
+                                <div class="info-grid-inner">
+                                    <div class="info-item">
+                                        <span class="info-label">Tipo ID</span>
+                                        <span id="cli-tipo-id" class="info-val">–</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Número ID</span>
+                                        <span id="cli-num-id" class="info-val">–</span>
+                                    </div>
+                                    <div class="info-item" style="grid-column: span 2;">
+                                        <span class="info-label">Nombre Comercial</span>
+                                        <span id="cli-nombre-com" class="info-val" style="color:#64748b;">–</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TARJETA 2 – UBICACIÓN -->
+                            <div class="cliente-card-segment">
+                                <div class="segment-header">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                    <h4>Ubicación Geográfica</h4>
+                                </div>
+                                <div class="info-grid-inner">
+                                    <div class="info-item">
+                                        <span class="info-label">Provincia</span>
+                                        <span id="cli-provincia" class="info-val">–</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Cantón</span>
+                                        <span id="cli-canton" class="info-val">–</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Distrito</span>
+                                        <span id="cli-distrito" class="info-val">–</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Sector</span>
+                                        <span class="info-val">Costa Rica</span>
+                                    </div>
+                                </div>
+                                <div class="info-item" style="margin-top:12px; border-top: 1px dashed #e2e8f0; padding-top:10px;">
+                                    <span class="info-label">Dirección / Otras Señas</span>
+                                    <span id="cli-otras-senas" class="info-val" style="font-size:0.78rem; font-weight:600; color:#475569;">–</span>
+                                </div>
+                            </div>
+
+                            <!-- TARJETA 3 – CONTACTO DIRECTO -->
+                            <div class="cliente-card-segment">
+                                <div class="segment-header">
+                                    <i class="fas fa-headset"></i>
+                                    <h4>Información de Contacto</h4>
+                                </div>
+                                <div class="info-grid-inner">
+                                    <div class="info-item">
+                                        <span class="info-label">Teléfono</span>
+                                        <span class="info-val"><i class="fas fa-phone-alt" style="margin-right:5px; opacity:0.6;"></i> <span id="cli-telefono">–</span></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Newsletter</span>
+                                        <span class="info-val"><span class="stat-badge status-aceptado" style="font-size:0.6rem;">Suscrito</span></span>
+                                    </div>
+                                    <div class="info-item" style="grid-column: span 2;">
+                                        <span class="info-label">Correo Electrónico Principal</span>
+                                        <span id="cli-email" class="info-val" style="color:var(--primary);"><i class="fas fa-envelope" style="margin-right:5px; opacity:0.7;"></i> –</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TARJETA 4 – SITUACIÓN TRIBUTARIA -->
+                            <div class="cliente-card-segment">
+                                <div class="segment-header">
+                                    <i class="fas fa-gavel"></i>
+                                    <h4>Datos Fiscales & Tributarios</h4>
+                                </div>
+                                <div class="info-item" style="margin-bottom:12px;">
+                                    <span class="info-label">Actividad Económica Registrada</span>
+                                    <span id="cli-actividad" class="info-val" style="font-size:0.75rem;">–</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Régimen de Tributación</span>
+                                    <span class="info-val"><i class="fas fa-shield-alt" style="margin-right:6px; color:#16a34a;"></i> <span id="cli-regimen">–</span></span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!--  TARJETA 4 – DETALLE DE VENTA                       -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div class="section-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+                            <h3 class="section-title" style="margin:0;">
+                                <i class="fas fa-shopping-cart"></i> Detalle de Venta
+                            </h3>
+
+                            <div class="autocomplete-wrapper" style="width:320px;">
+                                <input type="text" id="buscar-cabys" class="fi" placeholder="🔍 Buscar código CAByS o nombre…" autocomplete="off">
+                                <div id="cabys-dropdown" class="autocomplete-dropdown"></div>
+                            </div>
+
+                        </div>
+
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:11px; overflow:hidden;">
+                            <table class="detail-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width:70px;">LÍNEA</th>
+                                        <th style="width:110px;">CÓDIGO CAByS</th>
+                                        <th>DESCRIPCIÓN</th>
+                                        <th style="width:80px;">CANT.</th>
+                                        <th style="width:125px;">P. UNITARIO</th>
+                                        <th style="width:100px;">DESCUENTO</th>
+                                        <th style="width:130px;">SUBTOTAL</th>
+                                        <th style="width:44px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detalle-lineas">
+                                    <tr id="empty-row">
+                                        <td colspan="8" style="text-align:center; padding:28px; color:#94a3b8; font-weight:500;">
+                                            <i class="fas fa-box-open" style="font-size:1.4rem; margin-bottom:6px; display:block;"></i>
+                                            No hay líneas agregadas
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" id="btn-agregar-linea" class="btn-add-line">
+                            <i class="fas fa-plus-circle"></i> Agregar ítem manualmente
+                        </button>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!--  TARJETA 5 – CONDICIONES DE PAGO + IMPUESTOS        -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div class="section-box">
+                        <!-- Condición, Medio de Pago, Plazo -->
+                        <h3 class="section-title">
+                            <i class="fas fa-sliders-h"></i> Condiciones de Pago
+                        </h3>
+                        <div class="cond-grid">
+                            <div>
+                                <label class="label-sm" for="condicion-venta">Condición de Venta</label>
+                                <select id="condicion-venta" class="premium-select">
+                                    <option value="01">01 – Contado</option>
+                                    <option value="02">02 – Crédito</option>
+                                    <option value="03">03 – Consignación</option>
+                                    <option value="04">04 – Apartado</option>
+                                    <option value="05">05 – Arrendamiento con opción de compra</option>
+                                    <option value="06">06 – Arrendamiento en función financiera</option>
+                                    <option value="07">07 – Cobro a favor de un tercero</option>
+                                    <option value="08">08 – Servicios prestados al Estado a crédito</option>
+                                    <option value="09">09 – Pago del servicios prestado al Estado</option>
+                                    <option value="99">99 – Otros</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="label-sm" for="medio-pago">Medio de Pago</label>
+                                <select id="medio-pago" class="premium-select">
+                                    <option value="01">01 – Efectivo</option>
+                                    <option value="02">02 – Tarjeta</option>
+                                    <option value="03">03 – Cheque</option>
+                                    <option value="04">04 – Transferencia – depósito bancario</option>
+                                    <option value="05">05 – Recaudado por terceros</option>
+                                    <option value="99">99 – Otros</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="label-sm" for="plazo-credito">Plazo Crédito (días)</label>
+                                <input type="number" id="plazo-credito" class="fi" placeholder="Ej. 30" min="0" max="999">
+                            </div>
+                        </div>
+
+                        <!-- Impuestos MH v4.4 -->
+                        <div class="tax-section">
+                            <h3 class="section-title" style="margin-bottom:14px;">
+                                <i class="fas fa-percent"></i> Impuesto
+                            </h3>
+
+                            <!-- Selector de impuesto a aplicar en la factura -->
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+                                <div>
+                                    <label class="label-sm" for="tipo-impuesto">Tipo de Impuesto a Aplicar</label>
+                                    <select id="tipo-impuesto" class="premium-select">
+                                        <option value="01_13">IVA – 13% (Tarifa General)</option>
+                                        <option value="01_08">IVA – 8% (Salud, seguros)</option>
+                                        <option value="01_04">IVA – 4% (Canasta básica ampliada)</option>
+                                        <option value="01_02">IVA – 2% (Canasta básica reducida)</option>
+                                        <option value="01_01">IVA – 1% (Canasta básica especial)</option>
+                                        <option value="01_00">IVA – 0% (Exento)</option>
+                                        <option value="02">ISC – Según partida arancelaria</option>
+                                        <option value="03">Impuesto Único Combustibles</option>
+                                        <option value="04">Imp. Ley 6946 (alcohol)</option>
+                                        <option value="05">Imp. bebidas no alcohólicas</option>
+                                        <option value="06">Imp. productos del tabaco</option>
+                                        <option value="07">IVA cálculo especial</option>
+                                        <option value="08">IVA Bienes Usados – 13%</option>
+                                        <option value="99">Otros</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label-sm" for="porcentaje-impuesto">Tarifa (%)</label>
+                                    <input type="number" id="porcentaje-impuesto" class="fi" value="13" min="0" max="100" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!--  RESUMEN DE TOTALES                                  -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div class="section-box" style="padding:20px 26px;">
+                        <div style="display:grid; grid-template-columns:1fr 300px; gap:28px; align-items:center;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; font-size:0.88rem;">
+                                <div>
+                                    <p class="label-sm" style="margin:0 0 4px;">Subtotal</p>
+                                    <p id="total-subtotal" style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:0;">₡0.00</p>
+                                </div>
+                                <div>
+                                    <p class="label-sm" style="margin:0 0 4px;">Total Descuento</p>
+                                    <p id="total-descuento" style="font-size:1.05rem; font-weight:800; color:#ef4444; margin:0;">₡0.00</p>
+                                </div>
+                                <div>
+                                    <p class="label-sm" style="margin:0 0 4px;">Total Impuesto</p>
+                                    <p id="total-impuesto" style="font-size:1.05rem; font-weight:800; color:#1e40af; margin:0;">₡0.00</p>
+                                </div>
+                            </div>
+                            <div class="totals-panel">
+                                <p>TOTAL COMPROBANTE</p>
+                                <h2 id="total-final">₡0.00</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!--  BOTÓN EMITIR                                        -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <button type="submit" id="btn-emitir-factura" class="btn-emitir">
+                        <i class="fas fa-paper-plane" style="margin-right:14px;"></i> EMITIR COMPROBANTE ELECTRÓNICO
+                    </button>
+
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- ─── SCRIPTS ──────────────────────────────────────────────────────── -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Lógica de búsqueda de cliente (Conectado a mockDB) -->
+    <script src="../js/pantallaFacturacion.js"></script>
+
+    <!-- Partículas animadas -->
+    
+</body>
+</html>

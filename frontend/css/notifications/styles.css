@@ -1,0 +1,105 @@
+/* --- Estilos específicos para Notificaciones Premium --- */
+
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.notification-item {
+    background: var(--white);
+    padding: 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.notification-item:hover {
+    transform: translateX(10px);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.notification-item.unread {
+    border-left: 4px solid var(--primary);
+    background: var(--primary-light);
+}
+
+.notif-icon-container {
+    width: 45px;
+    height: 45px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+/* Tipos de Alerta */
+.type-mh { background: #dcfce7; color: #166534; } /* Hacienda */
+.type-system { background: #dbeafe; color: #1e40af; } /* Sistema */
+.type-inventory { background: #fef9c3; color: #854d0e; } /* Inventario */
+.type-danger { background: #fee2e2; color: #991b1b; } /* Crítica */
+
+.notif-content {
+    flex: 1;
+}
+
+.notif-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.notif-title {
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.notif-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.notif-body {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    line-height: 1.4;
+}
+
+.notif-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 15px;
+}
+
+.notif-btn {
+    font-size: 0.8rem;
+    color: var(--primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0;
+}
+
+.notif-btn:hover { text-decoration: underline; }
+
+/* Separadores de tiempo */
+.time-divider {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 20px 0 10px 0;
+    border-bottom: 2px solid var(--bg-main);
+}

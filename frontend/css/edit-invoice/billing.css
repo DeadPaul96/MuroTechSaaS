@@ -1,0 +1,213 @@
+﻿/* --- Estilos específicos para pantallaFacturacion.html --- */
+
+/* Contenedor principal hereda de .module-content */
+
+/* Títulos con fondo */
+.module-title { /* Título principal "Facturar" */
+    font-size: var(--font-size-xxl);
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    text-shadow: var(--glow-effect);
+    background: rgba(34, 34, 34, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+}
+.module-subtitle { /* Subtítulos generales */
+    font-size: var(--font-size-xl);
+    color: var(--text-light); /* Verde para subtítulos */
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(34, 34, 34, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+/* Contenedores de tarjetas/grupos de información */
+.card-like-container {
+    background: rgba(34, 34, 34, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Grupos de información (Emisor / Receptor) */
+.info-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+.group-title {
+    color: var(--primary-color);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-sm);
+    border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+    padding-bottom: var(--spacing-sm);
+}
+.billing-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+/* Estilos para el input de fecha */
+.date-input-group {
+    display: flex;
+    align-items: center;
+    position: relative;
+    flex-grow: 1;
+}
+
+.date-input-group input[type="date"] {
+    position: relative;
+    width: 100%;
+    background: #333;
+    border: none;
+    outline: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    height: 44px; /* Altura fija para alineación */
+}
+
+/* Icono de calendario dentro del input de fecha */
+.date-input-group input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(0.8) sepia(1) hue-rotate(80deg);
+    cursor: pointer;
+    padding-left: 5px;
+}
+
+/* Input y output para la tarifa de impuesto (slider) */
+.input-range-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.input-range-group label {
+    color: var(--text-light);
+    font-size: var(--font-size-sm);
+}
+.input-range-group input[type="range"] {
+    flex-grow: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+.input-range-group input[type="range"]::-webkit-slider-runnable-track {
+    background: rgba(0, 255, 0, 0.3);
+    height: 8px;
+    border-radius: 4px;
+}
+.input-range-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    margin-top: -4px;
+    background-color: var(--primary-color);
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    box-shadow: var(--glow-effect);
+}
+.input-range-group input[type="number"] {
+    width: 60px;
+    background: #333;
+    border: none;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+/* Selector estilizado (Dropdown) */
+.styled-select select {
+    position: relative;
+    width: 100%;
+    background: #333;
+    border: none;
+    outline: none;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    padding: 10px 15px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22%230f0%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7.247%2011.14l3.086%203.086a.5.5%200%200%200%20.707%200l3.086-3.086a.5.5%200%200%200-.353-.854H7.6a.5.5%200%200%200-.353.854z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    height: 44px;
+}
+.billing-details-input-style {
+    position: relative;
+    flex-grow: 1;
+    margin-bottom: 0;
+} 
+.billing-details-input-style input { 
+    position: relative; width: 100%; background: #333; border: none; outline: none; 
+    padding: 10px 15px; 
+    border-radius: 4px; color: #fff !important; 
+    font-weight: 500; font-size: var(--font-size-sm); 
+    height: 44px;
+}
+.billing-details-input-style i { 
+    position: absolute; left: 0; 
+    padding: 12px 15px; 
+    font-style: normal; 
+    color: #aaa; transition: 0.5s; pointer-events: none; 
+    font-size: var(--font-size-sm);
+}
+.billing-details-input-style input:focus ~ i, 
+.billing-details-input-style input:valid ~ i,
+.billing-details-input-style input:not(:placeholder-shown) ~ i { 
+    transform: translateY(-24px); 
+    font-size: 0.7em; 
+    color: #fff !important; 
+}
+
+
+/* Estilos para botones de acción dentro de la tabla */
+.action-buttons-row td {
+    border-bottom: none !important;
+    text-align: right !important; /* Alinea los botones a la derecha */
+    padding: var(--spacing-md) !important;
+}
+
+.action-buttons-row button {
+    margin-left: var(--spacing-md); /* Espacio entre botones */
+    min-width: 150px; /* Asegura un tamaño mínimo consistente */
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* Estilo para botón de Cancelar */
+.cancel-btn {
+    /* Color rojo (var(--accent-color) */
+    background-color: var(--accent-color); 
+    color: #fff;
+}
+
+.cancel-btn:hover {
+    background-color: #ff6666; 
+    box-shadow: 0 0 10px rgba(255, 65, 54, 0.5);
+}
+
+.edit-btn {
+    /* Utiliza el estilo .btn-primary de components.css */
+}

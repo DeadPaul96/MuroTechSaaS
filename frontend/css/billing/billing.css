@@ -1,0 +1,208 @@
+/* --- Estilos POS Premium MUROTECH (Compatible con Glassmorphism) --- */
+@import url("../../shared/css/tokens.css");
+
+.billing-screen {
+    background-color: var(--primary-dark);
+}
+
+.pos-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Modificando tarjetas del POS para que sean "Cristal" */
+.pos-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-premium);
+    overflow: hidden;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.pos-header {
+    background: var(--grad-premium);
+    padding: 20px 40px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pos-section {
+    padding: 30px 40px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.section-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Tablas dentro del POS */
+.pos-table-area {
+    background: rgba(255,255,255,0.3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+    overflow: hidden;
+}
+
+/* Grid de Formulario Ágil */
+.pos-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+/* Pie de Página (Totales) */
+.pos-footer {
+    padding: 30px 40px;
+    background: rgba(0,0,0,0.02);
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 40px;
+}
+
+.totals-summary {
+    background: var(--white);
+    padding: 25px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--primary-light);
+}
+
+.total-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.total-final {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid var(--bg-light);
+}
+
+.total-final .amount {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--primary);
+}
+
+/* Botón de Emisión Principal */
+.btn-emitir {
+    width: 100%;
+    padding: 22px;
+    background: var(--grad-premium);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1.3rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.btn-emitir:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(37, 99, 235, 0.4);
+}
+
+/* --- Autocomplete Premium Dropdown --- */
+.autocomplete-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.autocomplete-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1.5px solid #dbeafe;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 9999;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.autocomplete-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.autocomplete-item:hover {
+    background: #f0f7ff;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.autocomplete-name {
+    font-weight: 800;
+    font-size: 0.88rem;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.autocomplete-subinfo {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.autocomplete-badge {
+    font-family: monospace;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.autocomplete-price {
+    font-weight: 900;
+    font-size: 0.95rem;
+    color: #1e40af;
+    margin-left: 15px;
+    white-space: nowrap;
+}

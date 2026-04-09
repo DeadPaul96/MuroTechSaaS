@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Editor de Comprobantes | MUROTECH</title>
+    
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="../css/billing/billing.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+    <script src="../js/shared/sidebar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- jsPDF para Generación de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <link rel="stylesheet" href="../css/editarFactura.css">
+</head>
+<body class="reg-body" style="margin:0; overflow-x:hidden;">
+    <!-- Sidebar Premium MUROTECH -->
+    <aside class="sidebar"></aside>
+
+    <canvas id="particles-canvas"></canvas>
+
+    <div id="edit-billing-screen">
+        <main class="module-content fac-main">
+            <div class="fac-card">
+                
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Editor de Comprobantes</h1>
+                            <button type="button" onclick="mostrarSelectorComprobantes()" style="background:var(--primary); border:none; padding:8px 20px; border-radius:10px; font-size:0.8rem; font-weight:800; color:white; cursor:pointer; box-shadow:0 10px 20px rgba(30,64,175,0.2); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                <i class="fas fa-search-plus"></i> CAMBIAR DOCUMENTO
+                            </button>
+                            <div id="doc-status-badge">
+                                <span class="status-badge" style="background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0; font-size:0.8rem;"><i class="fas fa-search"></i> ESPERANDO SELECCIÓN</span>
+                            </div>
+                        </div>
+                        <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Modificación y corrección técnica de documentos electrónicos v4.4</p>
+                    </div>
+                </header>
+
+                <!-- TARJETA DE EMISOR PREMIUM (Fiel al POS) -->
+                <div class="emisor-card">
+                    <div class="emisor-header">
+                        <div class="emisor-icon"><i class="fas fa-building"></i></div>
+                        <div>
+                            <h3 style="margin:0; font-size:1.3rem; font-weight:800; letter-spacing:-0.5px;">MUROTECH SOLUTIONS S.A.</h3>
+                            <p style="margin:4px 0 0; opacity:0.85; font-size:0.85rem;"><i class="fas fa-id-card"></i> Cédula Jurídica: 3-101-897564</p>
+                        </div>
+                        <span class="emisor-badge"><i class="fas fa-check-circle"></i> EMISOR AUTORIZADO MH</span>
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                        <div class="emisor-chip"><i class="fas fa-map-marker-alt"></i> San José, Costa Rica</div>
+                        <div class="emisor-chip"><i class="fas fa-phone"></i> +506 2234-5678</div>
+                        <div class="emisor-chip"><i class="fas fa-envelope"></i> facturacion@murotech.cr</div>
+                        <div class="emisor-chip"><i class="fas fa-briefcase"></i> Actividad: 620100</div>
+                    </div>
+                </div>
+
+                <form id="edit-form" class="fac-form">
+                    
+                    <!-- SECCIÓN 1: CONFIGURACIÓN Y DIVISAS -->
+                    <div style="display:grid; grid-template-columns: 1fr 380px; gap:25px; margin-bottom:25px;">
+                        <div class="section-box" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:0;">
+                            <div style="grid-column: span 2;">
+                                <label class="label-sm">Número de Documento / Borrador</label>
+                                <input type="text" id="document-id" class="fi highlight" readonly style="font-family:monospace; letter-spacing:1px;">
+                            </div>
+                            <div>
+                                <label class="label-sm">Fecha de Gestión</label>
+                                <input type="date" id="fecha-emision" class="fi">
+                            </div>
+                            <div>
+                                <label class="label-sm">Moneda del Documento</label>
+                                <select id="moneda" class="fi" style="border:2px solid var(--primary); background:#f0f7ff;">
+                                    <option value="CRC">CRC – Colones (₡)</option>
+                                    <option value="USD">USD – Dólares ($)</option>
+                                    <option value="EUR">EUR – Euros (€)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta de Divisas Oficial MUROTECH (Conectada a Hacienda) -->
+                        <div id="tc-widget" style="width: 380px; background: #ffffff; border: 1px solid rgba(14, 165, 233, 0.2); border-radius: 16px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px; margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="background: linear-gradient(135deg,#1e40af,#3b82f6); width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                        <i class="fas fa-university"></i>
+                                    </div>
+                                    <span style="font-weight: 800; font-size: 0.75rem; color: #1e293b; letter-spacing: 0.5px;">TASA MH ACTUAL</span>
+                                </div>
+                                <div id="dash-tc-status" style="font-size: 0.6rem; font-weight: 700; color: #0369a1; background: #e0f2fe; padding: 2px 8px; border-radius: 12px;">
+                                    <i class="fas fa-sync-alt fa-spin"></i> SINCRONIZANDO
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <!-- Dólar -->
+                                <div style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-radius: 10px; padding: 10px; border: 1px solid #dbeafe;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                        <span style="font-size:0.6rem; font-weight:800; color:#1e40af;">USD / VENTA</span>
+                                        <i class="fas fa-dollar-sign" style="color:#1e40af; opacity:0.4; font-size:0.7rem;"></i>
+                                    </div>
+                                    <div id="fx-usd-venta" style="font-size: 1.2rem; font-weight: 900; color: #94a3b8; letter-spacing: -0.5px;">---</div>
+                                    <div id="fx-usd-fecha" style="font-size: 0.5rem; color: #94a3b8; font-weight: 600; margin-top: 2px;">--/--/--</div>
+                                </div>
+                                <!-- Euro -->
+                                <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-radius: 10px; padding: 10px; border: 1px solid #e9d5ff;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                        <span style="font-size:0.6rem; font-weight:800; color:#6b21a8;">EUR / CRC</span>
+                                        <i class="fas fa-euro-sign" style="color:#6b21a8; opacity:0.4; font-size:0.7rem;"></i>
+                                    </div>
+                                    <div id="fx-eur-valor" style="font-size: 1.2rem; font-weight: 900; color: #94a3b8; letter-spacing: -0.5px;">---</div>
+                                    <div id="fx-eur-fecha" style="font-size: 0.5rem; color: #94a3b8; font-weight: 600; margin-top: 2px;">--/--/--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN 2: RECEPTOR (Editable) -->
+                    <div class="section-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                            <h2 style="margin:0; font-size:1.1rem; color:var(--primary-dark);"><i class="fas fa-user-tag" style="margin-right:10px;"></i>Información del Receptor</h2>
+                            <div style="display:flex; gap:10px;">
+                            <div class="autocomplete-wrapper" style="flex: 1;">
+                                <input type="text" id="buscar-cliente" placeholder="🔍 Buscar cliente por nombre, ID o correo..." class="fi" autocomplete="off">
+                                <div id="cliente-dropdown" class="autocomplete-dropdown"></div>
+                            </div>
+                            <button type="button" onclick="buscarNuevoCliente()" style="background:var(--primary-dark); border:none; color:white; padding:0 15px; border-radius:10px; cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+                            </div>
+                        </div>
+                        <div id="cliente-info-panel" class="info-panel-editable"></div>
+                    </div>
+
+                    <!-- SECCIÓN 3: DETALLE DE PRODUCTOS -->
+                    <div class="section-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h2 style="margin:0; font-size:1.1rem; color:var(--primary-dark);"><i class="fas fa-list-ul" style="margin-right:10px;"></i>Detalle de Líneas</h2>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <!-- Buscador con Autocomplete conectado al inventario -->
+                                <div id="cabys-wrapper" style="position:relative;">
+                                    <div style="position:relative; display:flex; align-items:center;">
+                                        <i class="fas fa-search" style="position:absolute; left:12px; color:#94a3b8; font-size:0.8rem; pointer-events:none;"></i>
+                                        <input type="text" id="buscar-cabys"
+                                               placeholder="Buscar producto / servicio / código CAByS..."
+                                               class="fi"
+                                               autocomplete="off"
+                                               style="width:340px; padding:9px 12px 9px 34px; font-size:0.82rem;">
+                                    </div>
+                                    <div id="cabys-dropdown" style="
+                                        display:none; position:absolute; top:calc(100% + 4px); left:0; right:0;
+                                        background:#ffffff; border:1.5px solid #dbeafe; border-radius:14px;
+                                        box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:9999;
+                                        max-height:280px; overflow-y:auto;
+                                    "></div>
+                                </div>
+                                <button type="button" onclick="agregarLineaManual()" style="background:var(--primary); color:white; border:none; padding:9px 18px; border-radius:10px; font-weight:800; font-size:0.75rem; white-space:nowrap;"><i class="fas fa-plus"></i> LÍNEA VACÍA</button>
+                            </div>
+                        </div>
+
+                        <table class="detail-table">
+                            <thead>
+                                <tr>
+                                    <th width="40">#</th>
+                                    <th width="140">Cod. CAByS</th>
+                                    <th>Descripción / Ítem</th>
+                                    <th width="90" style="text-align:center;">Cant.</th>
+                                    <th width="120">P. Unitario</th>
+                                    <th width="110">Desc.</th>
+                                    <th width="140" style="text-align:right;">Subtotal</th>
+                                    <th width="45"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="detalle-lineas">
+                                <tr id="empty-row"><td colspan="8" style="text-align:center; padding:40px; color:#94a3b8; font-weight:600;">No hay líneas en este comprobante.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- SECCIÓN 4: REFERENCIAS Y TOTALES -->
+                    <div id="box-referencia" class="section-box" style="display:none; border:2px solid #fbcfe8; background:#fff1f2;">
+                        <h2 style="margin:0 0 15px; font-size:1.1rem; color:#be185d;"><i class="fas fa-link" style="margin-right:10px;"></i>Referencia Fiscal v4.4</h2>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 2fr; gap:20px;">
+                            <div>
+                                <label class="label-sm">Documento Original</label>
+                                <input type="text" id="ref-id" class="fi" readonly>
+                            </div>
+                            <div>
+                                <label class="label-sm">Código Tipo Ref.</label>
+                                <select id="ref-codigo" class="fi">
+                                    <option value="01">01 – Anula Documento</option>
+                                    <option value="02">02 – Corrige Monto</option>
+                                    <option value="03">03 – Corrige Texto</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-sm">Razón de la corrección</label>
+                                <input type="text" id="ref-razon" class="fi" placeholder="Ej: Error en cantidad facturada">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="totales-grid">
+                        <div class="section-box" style="margin-bottom:0;">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:15px;">
+                                <div>
+                                    <label class="label-sm">Condición de Venta</label>
+                                    <select id="condicion-venta" class="fi">
+                                        <option value="01">01 – Contado</option>
+                                        <option value="02">02 – Crédito</option>
+                                        <option value="03">03 – Consignación</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label-sm">Medio de Pago</label>
+                                    <select id="medio-pago" class="fi">
+                                        <option value="01">01 – Efectivo</option>
+                                        <option value="02">02 – Tarjeta</option>
+                                        <option value="03">03 – Transferencia</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <label class="label-sm">Observaciones / Notas del Sistema</label>
+                            <textarea id="observaciones" class="fi" style="height:80px; resize:none;"></textarea>
+                        </div>
+
+                        <div class="total-final-box">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                                <span style="font-weight:600; font-size:0.95rem; opacity:0.9;">Subtotal Neto:</span>
+                                <span id="total-subtotal" style="font-weight:800; font-size:1.1rem;">₡0.00</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:12px; opacity:0.8;">
+                                <span style="font-weight:600; font-size:0.95rem;">(-) Descuento:</span>
+                                <span id="total-descuentos" style="font-weight:800; font-size:1.1rem;">₡0.00</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:12px; padding-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.2);">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-weight:600; font-size:0.95rem; opacity:0.9;">(+) IVA:</span>
+                                    <select id="tipo-impuesto" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.3); color:white; font-weight:900; border-radius:4px; padding:2px 5px; font-size:0.75rem; cursor:pointer;">
+                                        <option value="13" style="color:black">13%</option>
+                                        <option value="4" style="color:black">4%</option>
+                                        <option value="2" style="color:black">2%</option>
+                                        <option value="1" style="color:black">1%</option>
+                                        <option value="0" style="color:black">0%</option>
+                                    </select>
+                                </div>
+                                <span id="total-impuesto" style="font-weight:800; font-size:1.1rem;">₡0.00</span>
+                            </div>
+                            <div style="margin-top:20px;">
+                                <span style="font-size:0.85rem; font-weight:900; text-transform:uppercase; letter-spacing:1px; opacity:0.75;">TOTAL GENERAL DEL DOCUMENTO</span>
+                                <span id="total-final" class="amount">₡0.00</span>
+                            </div>
+                            <button type="submit" id="btn-finalizar" class="btn-emitir" style="margin-top:25px; background:white; color:var(--primary-dark); padding:15px;">
+                                <i class="fas fa-check-circle"></i> GUARDAR CAMBIOS
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/editarFactura.js"></script>
+</body>
+</html>

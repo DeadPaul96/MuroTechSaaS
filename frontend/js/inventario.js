@@ -1,0 +1,280 @@
+(function () {
+        const cabysData = window.CABYS_DATA || [];
+        const searchInput = document.getElementById('inv-buscar-cabys');
+        const resultsDiv  = document.getElementById('cabys-results');
+        const cabysInput  = document.getElementById('inv-cabys-numero');
+        const nombreInput = document.getElementById('inv-nombre');
+        const ivaSelect   = document.getElementById('inv-iva');
+        const statusTxt   = document.getElementById('cabys-status-txt');
+        const statusEl    = document.getElementById('cabys-status');
+
+        if (cabysData.length) {
+            statusEl.style.color = '#10b981';
+            statusTxt.textContent = `Catálogo CAByS listo — ${cabysData.length.toLocaleString()} ítems`;
+        }
+
+
+        searchInput.addEventListener('input', function () {
+            const q = this.value.trim().toLowerCase();
+            resultsDiv.innerHTML = '';
+            if (q.length < 2) { 
+                resultsDiv.style.display = 'none'; 
+                return; 
+            }
+
+            const matches = cabysData.filter(m => multiWordMatch(`${m.d} ${m.c}`, q)).slice(0, 30);
+            if (!matches.length) { 
+                resultsDiv.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No se encontraron resultados</div>';
+                resultsDiv.style.display = 'block';
+                return; 
+            }
+
+            matches.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerHTML = `
+                    <div class="autocomplete-info">
+                        <div class="autocomplete-name">${m.d}</div>
+                        <div class="autocomplete-subinfo">
+                            <span class="autocomplete-badge">${m.c}</span>
+                            <span>IVA Sugerido: ${m.i}%</span>
+                        </div>
+                    </div>
+                    <div class="autocomplete-tax">${m.i}% IVA</div>
+                `;
+                div.addEventListener('click', () => {
+                    // ── Auto-completar TODOS los campos posibles ──
+                    cabysInput.value = m.c;
+                    nombreInput.value = m.d;
+                    searchInput.value = m.d;
+                    ivaSelect.value = String(m.i);
+                    document.getElementById('inv-tipo-impuesto').value = '01';
+
+                    // Unidad de medida inteligente
+                    const desc = m.d.toLowerCase();
+                    const unidadSel = document.getElementById('inv-unidad-medida');
+                    if (/servicio|consultor|asesor|mantenimiento|reparaci|instalaci|limpieza|capacitaci|transporte|diseño|desarrollo|auditor/i.test(desc)) {
+                        unidadSel.value = 'Svc';
+                    } else if (/kg|kilogram/i.test(desc)) {
+                        unidadSel.value = 'Kg';
+                    } else if (/litro|galon/i.test(desc)) {
+                        unidadSel.value = 'L';
+                    } else if (/metro|m²|m2/i.test(desc)) {
+                        unidadSel.value = 'm';
+                    } else if (/gramo/i.test(desc)) {
+                        unidadSel.value = 'g';
+                    } else if (/mililitro|ml/i.test(desc)) {
+                        unidadSel.value = 'ml';
+                    } else {
+                        unidadSel.value = 'Unid';
+                    }
+
+                    const prefix = m.d.replace(/[^A-Za-z]/g, '').substring(0, 3).toUpperCase();
+                    const suffix = m.c.slice(-4);
+                    document.getElementById('inv-codigo-interno').value = `${prefix}-${suffix}`;
+
+                    resultsDiv.style.display = 'none';
+                    toggleCtxPanels();
+
+                    ['inv-cabys-numero','inv-nombre','inv-iva','inv-unidad-medida','inv-tipo-impuesto','inv-codigo-interno'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.style.transition = 'box-shadow 0.3s';
+                            el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.25)';
+                            setTimeout(() => el.style.boxShadow = '', 1500);
+                        }
+                    });
+                    setTimeout(() => document.getElementById('inv-precio-linea').focus(), 200);
+                });
+                resultsDiv.appendChild(div);
+            });
+            resultsDiv.style.display = 'block';
+        });
+
+        // Cerrar al click afuera
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+                resultsDiv.style.display = 'none';
+            }
+        });
+
+
+        function calcularPrecioVenta() {
+            const costo = parseFloat(document.getElementById('inv-precio-linea').value) || 0;
+            const ganancia = parseFloat(document.getElementById('inv-ganancia').value) || 0;
+            if (costo > 0) {
+                document.getElementById('inv-precio').value = (costo * (1 + ganancia / 100)).toFixed(2);
+            }
+        }
+        document.getElementById('inv-precio-linea').addEventListener('input', calcularPrecioVenta);
+        document.getElementById('inv-ganancia').addEventListener('input', calcularPrecioVenta);
+
+        /* ── Paneles contextuales Producto / Servicio ──────────── */
+        const ctxProducto = document.getElementById('ctx-producto');
+        const ctxServicio = document.getElementById('ctx-servicio');
+        const stockRow = document.getElementById('stock-row');
+        const btnSubmitTxt = document.getElementById('btn-submit-txt');
+        const unidadMedidaSel = document.getElementById('inv-unidad-medida');
+
+        function toggleCtxPanels() {
+            const esServicio = unidadMedidaSel.value === 'Svc';
+            
+            ctxProducto.classList.toggle('active', !esServicio);
+            ctxServicio.classList.toggle('active', esServicio);
+
+            // Servicios no tienen stock
+            if (esServicio) {
+                stockRow.style.display = 'none';
+                btnSubmitTxt.textContent = 'REGISTRAR SERVICIO';
+            } else {
+                stockRow.style.display = '';
+                btnSubmitTxt.textContent = 'REGISTRAR PRODUCTO';
+            }
+        }
+
+        unidadMedidaSel.addEventListener('change', toggleCtxPanels);
+        // Inicial: mostrar panel producto por defecto
+        toggleCtxPanels();
+
+        let inventario = window.muroDB ? window.muroDB.getProductos() : [];
+
+        function renderTabla() {
+            const tbody = document.getElementById('lista-inventario');
+            tbody.innerHTML = '';
+            inventario.forEach(item => {
+                const esServicio = item.unidadMedida === 'Svc';
+                const tipo = esServicio ? 'Svc' : 'Prod';
+                const tipoBadge = esServicio
+                    ? '<span style="font-size:0.65rem;background:#f3e8ff;color:#7c3aed;padding:2px 6px;border-radius:4px;font-weight:700;">SERVICIO</span>'
+                    : '<span style="font-size:0.65rem;background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-weight:700;">PRODUCTO</span>';
+
+                let detalle = '';
+                if (esServicio) {
+                    const parts = [];
+                    if (item.nombreServicio) parts.push(`<strong>${item.nombreServicio}</strong>`);
+                    if (item.detalleServicio) parts.push(item.detalleServicio);
+                    if (parts.length) detalle = `<div style="font-size:0.72rem;color:#7c3aed;margin-top:2px;">${parts.join(' — ')}</div>`;
+                } else if (item.marca || item.modelo || item.caracteristicas) {
+                    const parts = [];
+                    if (item.marca) parts.push(item.marca);
+                    if (item.modelo) parts.push(item.modelo);
+                    if (item.caracteristicas) parts.push(item.caracteristicas);
+                    detalle = `<div style="font-size:0.72rem;color:#64748b;margin-top:2px;">${parts.join(' · ')}</div>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #f1f5f9';
+                tr.style.transition = 'all 0.2s';
+                tr.onmouseover = () => tr.style.background = '#f8fafc';
+                tr.onmouseout = () => tr.style.background = '';
+
+                tr.innerHTML = `
+                    <td style="padding:15px 20px; font-family:monospace; font-size:0.75rem; color:#64748b;">${item.cabys}</td>
+                    <td style="padding:15px 20px; font-weight:800; color:var(--primary); font-size:0.85rem;">${item.codigo}</td>
+                    <td style="padding:15px 20px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            ${tipoBadge}
+                            <span style="font-weight:700; color:#1e293b;">${item.descripcion}</span>
+                        </div>
+                        ${detalle}
+                    </td>
+                    <td style="padding:15px 20px; font-weight:900; color:#1e293b; font-family:'Outfit';">₡${item.precioVenta ? item.precioVenta.toLocaleString() : '0'}</td>
+                    <td style="padding:15px 20px;"><span style="background:#f1f5f9; padding:2px 8px; border-radius:6px; font-weight:800; font-size:0.7rem; color:#64748b;">${item.impuesto}% IVA</span></td>
+                    <td style="padding:15px 20px; text-align:center;">
+                        ${esServicio ? '<span style="color:#94a3b8; font-style:italic;">N/A</span>' : `<span style="font-weight:900; color:${item.stock > 0 ? '#10b981' : '#ef4444'}">${item.stock}</span>`}
+                    </td>
+                    <td style="padding:15px 20px; text-align:center;">
+                        <button class="btn-action del" onclick="eliminarItem(${item.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer; transition:all 0.2s;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('total-items-badge').innerHTML = `<i class="fas fa-box"></i> ${inventario.length} Ítems en Inventario`;
+        }
+
+        window.eliminarItem = function(id) {
+            if (window.muroDB) window.muroDB.deleteProducto(id);
+            inventario = window.muroDB.getProductos();
+            renderTabla();
+        };
+
+        document.getElementById('addItemForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const esServicio = unidadMedidaSel.value === 'Svc';
+            const producto = {
+                id: Date.now(),
+                cabys: cabysInput.value,
+                codigo: document.getElementById('inv-codigo-interno').value || `SKU-${Date.now()}`,
+                descripcion: nombreInput.value,
+                unidadMedida: unidadMedidaSel.value,
+                impuesto: ivaSelect.value,
+                precioVenta: parseFloat(document.getElementById('inv-precio').value),
+                stock: esServicio ? 0 : parseInt(document.getElementById('inv-stock').value),
+                // Campos según tipo
+                marca: esServicio ? '' : (document.getElementById('inv-marca').value || ''),
+                modelo: esServicio ? '' : (document.getElementById('inv-modelo').value || ''),
+                caracteristicas: esServicio ? '' : (document.getElementById('inv-caracteristicas').value || ''),
+                nombreServicio: esServicio ? (document.getElementById('inv-nombre-servicio').value || '') : '',
+                detalleServicio: esServicio ? (document.getElementById('inv-detalle-servicio').value || '') : ''
+            };
+            if (window.muroDB) window.muroDB.addProducto(producto);
+            inventario = window.muroDB.getProductos();
+            renderTabla();
+            this.reset();
+            toggleCtxPanels();
+            Swal.fire('Éxito', esServicio ? 'Servicio registrado' : 'Producto registrado', 'success');
+        });
+
+        /* ======= FILTRADO DE TABLA DE INVENTARIO ======= */
+        document.getElementById('buscar-inventario').addEventListener('input', function() {
+            const q = this.value.trim().toLowerCase();
+            const rows = document.querySelectorAll('#lista-inventario tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = multiWordMatch(text, q) ? '' : 'none';
+            });
+        });
+
+        /* ======= IMPORTACIÓN MASIVA EXCEL ======= */
+        document.getElementById('file-upload-inv').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                
+                let count = 0;
+                for (let i = 1; i < json.length; i++) { // Omitir el header
+                    const row = json[i];
+                    if (!row || !row.length) continue;
+                    
+                    const p = {
+                        id: Date.now() + i,
+                        cabys: row[0] || '0000000000000',
+                        codigo: row[1] || `IMP-${Date.now()}-${i}`,
+                        descripcion: row[2] || 'Producto Generico',
+                        unidadMedida: row[3] || 'Unid',
+                        impuesto: parseFloat(row[4]) || 13,
+                        precioVenta: parseFloat(row[5]) || 0,
+                        stock: parseInt(row[6]) || 0
+                    };
+                    if (window.muroDB) window.muroDB.addProducto(p);
+                    count++;
+                }
+                inventario = window.muroDB.getProductos();
+                renderTabla();
+                Swal.fire('Catálogo Actualizado', `Se importaron ${count} ítems correctamente.`, 'success');
+                document.getElementById('file-upload-inv').value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        renderTabla();
+    })();

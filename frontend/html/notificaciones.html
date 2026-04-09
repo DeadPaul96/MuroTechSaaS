@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH - Centro de Notificaciones</title>
+    
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+    <script src="../js/shared/sidebar.js"></script>
+
+    <link rel="stylesheet" href="../css/notificaciones.css">
+</head>
+<body class="reg-body">
+    <canvas id="particles-canvas"></canvas>
+
+    <div id="billing-screen">
+        <aside class="sidebar"></aside>
+
+        <main class="module-content notif-main">
+            <div class="notif-card">
+                
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <div>
+                        <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Centro de Notificaciones</h1>
+                        <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Alertas automáticas y comunicaciones críticas del sistema</p>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <span id="unread-count" style="background:#1e40af; color:white; padding:8px 16px; border-radius:12px; font-size:0.85rem; font-weight:800; display:flex; align-items:center;">5 Sin Leer</span>
+                        <button class="btn-clear" onclick="markAllRead()" style="background: white; border: 1.5px solid #e2e8f0; color: #475569; padding: 10px 20px; border-radius: 12px; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-check-double"></i>Marcar todas
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Acciones consolidadas en el header -->
+
+                <div class="notif-tabs">
+                    <button class="tab-btn active" data-filter="all">Todas</button>
+                    <button class="tab-btn" data-filter="hacienda">Hacienda</button>
+                    <button class="tab-btn" data-filter="inventario">Inventario</button>
+                    <button class="tab-btn" data-filter="sistema">Sistema</button>
+                </div>
+
+                <div class="notif-list" id="notif-container">
+                    <!-- JS Populated -->
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../js/notificaciones.js"></script>
+
+    <canvas id="particles-canvas"></canvas>
+    
+</body>
+</html>

@@ -1,0 +1,146 @@
+﻿/* --- Estilos específicos para auditoria.html --- */
+
+/* Contenedor principal hereda centrado de .module-content */
+/* .module-title ya está definido en module-base.css */
+
+/* Contenedor general para secciones con fondo */
+.card-like-container {
+    background: rgba(34, 34, 34, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* ============================================== */
+/* ¡¡CORRECCI�"N PARA CENTRAR CONTROLES!!         */
+/* ============================================== */
+/* Contenedor de los controles de búsqueda */
+.controls-area-container {
+    /* Hacemos este contenedor flex para poder centrar su contenido */
+    display: flex;
+    justify-content: center; /* Centra los elementos hijos horizontalmente */
+    align-items: center; /* Centra verticalmente si hay varias líneas */
+    flex-wrap: wrap; /* Permite que pasen a la línea de abajo si no caben */
+    gap: var(--spacing-md); /* Espacio entre controles si van a otra línea */
+}
+
+/* Área interna que contiene los inputs/botones */
+.controls-area {
+    display: flex; 
+    flex-wrap: wrap; /* Envolver si no caben */
+    gap: var(--spacing-md); /* Espacio entre los inputs/grupos */
+    align-items: flex-end; 
+    /* Quitamos márgenes/bordes de aquí, los maneja el contenedor padre */
+    margin-bottom: 0; 
+    padding-bottom: 0;
+    border-bottom: none; 
+    /* Quitamos width: 100% si lo tuviera para que se ajuste al contenido */
+    width: auto; 
+}
+/* ============================================== */
+/* FIN DE CORRECCI�"N PARA CENTRAR                 */
+/* ============================================== */
+
+
+/* Estilos Search Input (Más cortos) */
+.search-input { 
+    position: relative;
+    display: flex;
+    flex-grow: 0; /* No crecer automáticamente */
+    width: 280px; /* Ancho un poco más corto */
+    margin-bottom: 0; /* Quitamos margen inferior si está en flex */
+}
+.search-input input { 
+    background: #333; border: none; outline: none; 
+    padding: 16px 10px; border-radius: 4px 0 0 4px; 
+    color: #fff !important; 
+    font-weight: 500; font-size: 1em; width: 100%; flex: 1; 
+}
+.search-input input::placeholder { color: #aaa; opacity: 1; }
+.search-input button { 
+    background: #333; border: none; border-left: 1px solid #444; 
+    color: var(--primary-color); padding: 0 12px; cursor: pointer; 
+    font-size: 16px; border-radius: 0 4px 4px 0; 
+}
+
+/* Estilo para Input de Fecha (Corto) */
+.date-input-group {
+    display: flex;
+    flex-grow: 0; 
+    width: auto; 
+    margin-bottom: 0; /* Quitamos margen inferior si está en flex */
+}
+.date-input-group input[type="date"] {
+    background: #333;
+    border: none;
+    outline: none;
+    padding: 15px 10px; 
+    border-radius: 4px 0 0 4px;
+    color: #fff !important; 
+    font-weight: 500;
+    font-size: 1em;
+    font-family: "Quicksand", sans-serif; 
+    border-right: 1px solid #444; 
+    max-width: 160px; /* Limitar ancho del campo fecha */
+}
+.date-input-group input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(0.8) sepia(1) hue-rotate(80deg); 
+    cursor: pointer;
+    padding-left: 5px;
+}
+.date-input-group button {
+     background: #333; border: none; 
+     color: var(--primary-color); padding: 0 12px; cursor: pointer; 
+     font-size: 16px; border-radius: 0 4px 4px 0; 
+}
+
+
+/* --- Tabla de Auditoría --- */
+.data-table-container { 
+    /* No necesita estilos extra aquí */
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0; /* Quitamos margen superior si ya está espaciado por el container */
+}
+
+.data-table thead th {
+    background-color: transparent; 
+    color: var(--primary-color);
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: 2px solid var(--primary-color);
+    font-size: var(--font-size-sm); 
+    white-space: nowrap; 
+}
+
+.data-table tbody td {
+    border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+    padding: var(--spacing-md);
+    color: #fff; 
+    font-size: var(--font-size-sm);
+    vertical-align: middle; 
+}
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.data-table tbody tr:hover {
+     background-color: rgba(0, 255, 0, 0.05); 
+}
+
+
+/* Estilos para iconos PDF/XML */
+.pdf-icon, .xml-icon {
+    font-size: 1.5em; 
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+.pdf-icon { color: #ff5b5b; }
+.pdf-icon:hover { color: #ff8c8c; }
+.xml-icon { color: #7a7aff; }
+.xml-icon:hover { color: #a0a0ff; }

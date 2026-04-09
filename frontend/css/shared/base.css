@@ -1,0 +1,299 @@
+/* --- Estructura Global Premium SaaS (Glassmorphism) --- */
+@import url("./tokens.css");
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--primary-dark); /* Fondo oscuro para resaltar el cristal */
+    background-image: 
+        radial-gradient(at 0% 0%, hsla(221, 83%, 15%, 1) 0, transparent 50%), 
+        radial-gradient(at 100% 100%, hsla(25, 95%, 15%, 1) 0, transparent 50%);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+/* --- Sidebar Glass Premium --- */
+.sidebar {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    width: 62px; /* Reducido de 68px */
+    height: calc(100vh - 30px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 12px 0; /* Reducido de 15px */
+    z-index: 9000;
+}
+
+.sidebar-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px; /* Tighter spacing */
+}
+
+.sidebar-btn {
+    position: relative;
+    width: 38px; /* Reducido de 42px */
+    height: 38px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1rem; /* Reducido de 1.1rem */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Delay staggered manual (controlado por JS o manual si son fijos) */
+.sidebar-section button:nth-child(1) { animation-delay: 0.1s; }
+.sidebar-section button:nth-child(2) { animation-delay: 0.15s; }
+.sidebar-section button:nth-child(3) { animation-delay: 0.2s; }
+.sidebar-section button:nth-child(4) { animation-delay: 0.25s; }
+.sidebar-section button:nth-child(5) { animation-delay: 0.3s; }
+.sidebar-section button:nth-child(6) { animation-delay: 0.35s; }
+.sidebar-section button:nth-child(7) { animation-delay: 0.4s; }
+.sidebar-section button:nth-child(8) { animation-delay: 0.45s; }
+.sidebar-section button:nth-child(9) { animation-delay: 0.5s; }
+.sidebar-section button:nth-child(10) { animation-delay: 0.55s; }
+.sidebar-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--primary);
+    transform: scale(1.05);
+}
+
+.sidebar-btn.active {
+    color: var(--white);
+    /* El background ahora lo maneja el pill */
+}
+
+/* El Pill Flotante - Corazón de la animación */
+.sidebar-pill {
+    position: absolute;
+    left: 12px;
+    width: 38px;
+    height: 38px;
+    background: var(--grad-premium, var(--primary));
+    border-radius: 10px;
+    box-shadow: var(--shadow-blue, 0 4px 15px rgba(59, 130, 246, 0.4));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: -1;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+
+/* Indicador lateral sutil DENTRO del sidebar */
+.sidebar-btn.active::before {
+    content: '';
+    position: absolute;
+    left: 3px; /* Ahora está adentro */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 16px;
+    background: var(--white);
+    border-radius: var(--radius-full);
+    
+    /* Animación del indicador blanco lateral */
+    animation: barSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes barSlide {
+    0% { height: 0; transform: translateY(-50%) scaleY(0); }
+    100% { height: 16px; transform: translateY(-50%) scaleY(1); }
+}
+
+/* Tooltips Premium (CSS puro) */
+.sidebar-btn::after {
+    content: attr(data-title);
+    position: absolute;
+    left: 70px;
+    background: var(--primary-dark);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-10px);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: var(--shadow-lg);
+}
+
+.sidebar-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+/* --- Tarjeta Universal (ADN Registro) --- */
+.register-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: 40px;
+    box-shadow: var(--shadow-premium);
+    animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes fadeInScale {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* --- Inputs Premium --- */
+.premium-input {
+    width: 100%;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    transition: all var(--transition-fast);
+    outline: none;
+}
+
+.premium-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-light);
+}
+
+/* --- Premium Select (Dropdown) --- */
+.premium-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 100%;
+    padding: 12px 42px 12px 20px;
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 18px;
+    border: 1.5px solid var(--murotech-gray-200, #e2e8f0);
+    border-radius: var(--radius-md, 12px);
+    font-family: var(--font-display, 'Outfit'), sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-main, #1e293b);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.premium-select:hover {
+    border-color: var(--murotech-gray-300, #cbd5e1);
+    background-color: #f8fafc;
+}
+
+.premium-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-light);
+    background-color: #ffffff;
+}
+
+/* Tablas Premium en UI de Cristal - Estilo Flat & Dense */
+.data-table-container {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+}
+
+.premium-data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.premium-data-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.premium-data-table th {
+    background: #f1f5f9;
+    padding: 12px 16px;
+    text-align: left;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.premium-data-table td {
+    padding: 14px 16px;
+    color: #1e293b;
+    font-size: 0.88rem;
+    font-weight: 500;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s ease;
+}
+
+.premium-data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.premium-data-table tbody tr:hover td {
+    background: #f8fbff;
+}
+
+/* Variante Densa */
+.dense-table th { padding: 8px 12px; font-size: 0.7rem; }
+.dense-table td { padding: 8px 12px; font-size: 0.82rem; }
+
+/* Badges de Estado */
+.stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.status-aceptado { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.status-pendiente { background: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
+.status-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* Partículas */
+#particles-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}

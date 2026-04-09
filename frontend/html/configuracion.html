@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH POS - Administrador</title>
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/sidebar.js"></script>
+    <link rel="stylesheet" href="../css/configuracion.css">
+</head>
+<body class="reg-body">
+<canvas id="particles-canvas"></canvas>
+<div id="billing-screen">
+    <aside class="sidebar"></aside>
+    <main class="module-content adm-main">
+        <div class="adm-card">
+
+            <!-- ─── HEADER PREMIUM ─────────────────────────────────────────── -->
+            <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                <div>
+                    <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Panel de Administrador</h1>
+                    <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Gestión de usuarios, permisos y configuración técnica del sistema</p>
+                </div>
+                <!-- Status Widget -->
+                <div style="display:flex; gap:16px;">
+                    <div style="background:#f0fdf4; border:1.5px solid #dcfce7; padding:10px 18px; border-radius:14px; display:flex; align-items:center; gap:10px;">
+                        <div style="width:10px; height:10px; background:#22c55e; border-radius:50%; box-shadow:0 0 10px rgba(34,197,94,0.4);"></div>
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-size:0.6rem; font-weight:800; color:#15803d; letter-spacing:0.5px;">API HACIENDA</span>
+                            <span style="font-size:0.85rem; font-weight:800; color:#166534;">EN LÍNEA</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- TABS -->
+            <div class="tab-bar">
+                <button class="tab-btn active" data-tab="usuarios">Usuarios</button>
+                <button class="tab-btn" data-tab="empresa">Empresa</button>
+                <button class="tab-btn" data-tab="facturacion">Facturación</button>
+                <button class="tab-btn" data-tab="seguridad">Seguridad</button>
+                <button class="tab-btn" data-tab="actividad">Actividad</button>
+                <button class="tab-btn" data-tab="sistema">Sistema</button>
+            </div>
+
+            <!-- TAB: USUARIOS -->
+            <div class="tab-panel active" id="tab-usuarios">
+                <!-- METRICAS RAPIDAS USUARIOS -->
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:24px;">
+                    <div style="background:white; padding:18px; border-radius:18px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:16px;">
+                        <div style="background:#eff6ff; color:#1e40af; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fas fa-users"></i></div>
+                        <div><span style="display:block; font-size:1.4rem; font-weight:900; color:#0f172a;">12</span><span style="font-size:0.65rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Usuarios Totales</span></div>
+                    </div>
+                    <div style="background:white; padding:18px; border-radius:18px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:16px;">
+                        <div style="background:#ecfdf5; color:#059669; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fas fa-user-check"></i></div>
+                        <div><span style="display:block; font-size:1.4rem; font-weight:900; color:#0f172a;">8</span><span style="font-size:0.65rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">En Línea Ahora</span></div>
+                    </div>
+                    <div style="background:white; padding:18px; border-radius:18px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:16px;">
+                        <div style="background:#fff7ed; color:#ea580c; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;"><i class="fas fa-key"></i></div>
+                        <div><span style="display:block; font-size:1.4rem; font-weight:900; color:#0f172a;">3</span><span style="font-size:0.65rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Admins</span></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    <!-- Nuevo usuario -->
+                    <div class="section-box">
+                        <h3 class="section-title"><i class="fas fa-user-plus"></i> Nuevo Usuario</h3>
+                        <div class="form-grid-3" style="margin-bottom:14px;">
+                            <div>
+                                <label class="label-sm">Nombre Completo</label>
+                                <input type="text" class="fi" placeholder="Nombre del usuario" id="usr-nombre">
+                            </div>
+                            <div>
+                                <label class="label-sm">Correo Electrónico</label>
+                                <input type="email" class="fi" placeholder="correo@empresa.com" id="usr-correo">
+                            </div>
+                            <div>
+                                <label class="label-sm">Rol</label>
+                                <select class="fi" id="usr-rol">
+                                    <option value="admin">Administrador</option>
+                                    <option value="user" selected>Usuario</option>
+                                    <option value="viewer">Solo Lectura</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-grid-2">
+                            <div>
+                                <label class="label-sm">Contraseña Temporal</label>
+                                <input type="password" class="fi" placeholder="Mínimo 8 caracteres" id="usr-pass">
+                            </div>
+                            <div>
+                                <label class="label-sm">Confirmar Contraseña</label>
+                                <input type="password" class="fi" placeholder="Repetir contraseña" id="usr-pass2">
+                            </div>
+                        </div>
+                        <button class="btn-save" id="btn-crear-usuario">
+                            <i class="fas fa-user-plus" style="margin-right:8px;"></i> CREAR USUARIO
+                        </button>
+                    </div>
+                    <!-- Lista usuarios -->
+                    <div class="section-box">
+                        <h3 class="section-title"><i class="fas fa-users-cog"></i> Usuarios del Sistema</h3>
+                        <div class="table-wrap">
+                            <table class="inv-table">
+                                <thead><tr>
+                                    <th>NOMBRE</th><th>CORREO</th><th style="width:110px;">ROL</th>
+                                    <th style="width:100px;">ESTADO</th><th style="width:80px;"></th>
+                                </tr></thead>
+                                <tbody id="lista-usuarios">
+                                    <tr><td>Admin Principal</td><td>admin@murotech.cr</td>
+                                        <td><span class="role-badge role-admin">Admin</span></td>
+                                        <td><span style="color:#15803d;font-weight:700;font-size:0.82rem;">● Activo</span></td>
+                                        <td><button class="btn-action edit"><i class="fas fa-edit"></i></button></td></tr>
+                                    <tr><td>María Rodríguez</td><td>maria@murotech.cr</td>
+                                        <td><span class="role-badge role-user">Usuario</span></td>
+                                        <td><span style="color:#15803d;font-weight:700;font-size:0.82rem;">● Activo</span></td>
+                                        <td><button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                            <button class="btn-action del"><i class="fas fa-trash-alt"></i></button></td></tr>
+                                    <tr><td>Carlos Méndez</td><td>carlos@murotech.cr</td>
+                                        <td><span class="role-badge role-viewer">Lectura</span></td>
+                                        <td><span style="color:#94a3b8;font-weight:700;font-size:0.82rem;">● Inactivo</span></td>
+                                        <td><button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                            <button class="btn-action del"><i class="fas fa-trash-alt"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: EMPRESA -->
+            <div class="tab-panel" id="tab-empresa">
+                <div class="section-box">
+                    <h3 class="section-title"><i class="fas fa-building"></i> Datos de la Empresa</h3>
+                    <div class="form-grid-2" style="margin-bottom:14px;">
+                        <div><label class="label-sm">Razón Social</label>
+                            <input type="text" class="fi" value="MUROTECH SOLUTIONS S.A." id="emp-razon"></div>
+                        <div><label class="label-sm">Nombre Comercial</label>
+                            <input type="text" class="fi" value="MUROTECH" id="emp-comercial"></div>
+                        <div><label class="label-sm">Cédula Jurídica</label>
+                            <input type="text" class="fi" value="3-101-897564" id="emp-cedula"></div>
+                        <div><label class="label-sm">Actividad Económica</label>
+                            <input type="text" class="fi" value="620100 – Programación Informática" id="emp-actividad"></div>
+                        <div><label class="label-sm">Correo Hacienda</label>
+                            <input type="email" class="fi" value="facturacion@murotech.cr" id="emp-correo"></div>
+                        <div><label class="label-sm">Teléfono</label>
+                            <input type="tel" class="fi" value="+506 2234-5678" id="emp-telefono"></div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <label class="label-sm">Dirección Exacta</label>
+                        <input type="text" class="fi" value="San José, Costa Rica, Edificio MUROTECH, Piso 3" id="emp-direccion">
+                    </div>
+                    <button class="btn-save" id="btn-guardar-empresa">
+                        <i class="fas fa-save" style="margin-right:8px;"></i> GUARDAR DATOS DE EMPRESA
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB: FACTURACIÓN -->
+            <div class="tab-panel" id="tab-facturacion">
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    <div class="section-box">
+                        <h3 class="section-title"><i class="fas fa-cog"></i> Configuración API Hacienda</h3>
+                        <div class="form-grid-2" style="margin-bottom:14px;">
+                            <div><label class="label-sm">Usuario API</label>
+                                <input type="text" class="fi" placeholder="cpj-03-101-897564@stag.comprobanteselectronicos.go.cr" id="api-user"></div>
+                            <div><label class="label-sm">Contraseña API</label>
+                                <input type="password" class="fi" placeholder="••••••••" id="api-pass"></div>
+                            <div><label class="label-sm">N° Sucursal</label>
+                                <input type="text" class="fi" value="001" id="api-sucursal"></div>
+                            <div><label class="label-sm">N° Terminal</label>
+                                <input type="text" class="fi" value="00001" id="api-terminal"></div>
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label class="label-sm">Ambiente</label>
+                            <select class="fi" id="api-ambiente">
+                                <option value="stag">Pruebas (Staging)</option>
+                                <option value="prod">Producción</option>
+                            </select>
+                        </div>
+                        <button class="btn-save" id="btn-guardar-api">
+                            <i class="fas fa-plug" style="margin-right:8px;"></i> GUARDAR CONFIGURACIÓN API
+                        </button>
+                    </div>
+                    <div class="section-box">
+                        <h3 class="section-title"><i class="fas fa-key"></i> Llave Criptográfica (.p12)</h3>
+                        <div class="form-grid-2">
+                            <div>
+                                <label class="label-sm">Archivo .p12 / .pfx</label>
+                                <input type="file" class="fi" accept=".p12,.pfx" id="p12-file" style="padding:8px;">
+                            </div>
+                            <div>
+                                <label class="label-sm">PIN de la Llave</label>
+                                <input type="password" class="fi" placeholder="PIN (4 dígitos)" maxlength="4" id="p12-pin">
+                            </div>
+                        </div>
+                        <div style="margin-top:12px; padding:12px 16px; background:#f0f7ff; border:1px solid #bfdbfe; border-radius:11px; font-size:0.82rem; color:#1e40af; font-weight:600;">
+                            <i class="fas fa-info-circle" style="margin-right:6px;"></i>
+                            Llave actual: <strong>murotech_cert.p12</strong> — Vence: <strong>15 Dic 2026</strong>
+                        </div>
+                        <button class="btn-save" id="btn-subir-p12" style="margin-top:14px;">
+                            <i class="fas fa-upload" style="margin-right:8px;"></i> SUBIR NUEVA LLAVE
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SEGURIDAD -->
+            <div class="tab-panel" id="tab-seguridad">
+                <div class="section-box">
+                    <h3 class="section-title"><i class="fas fa-shield-alt"></i> Configuración de Seguridad</h3>
+                    <div class="config-row">
+                        <div><div class="config-label">Autenticación de dos factores (2FA)</div>
+                            <div class="config-desc">Requiere código adicional al iniciar sesión</div></div>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-2fa" checked><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="config-row">
+                        <div><div class="config-label">Bloqueo por intentos fallidos</div>
+                            <div class="config-desc">Bloquea la cuenta tras 5 intentos incorrectos</div></div>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-bloqueo" checked><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="config-row">
+                        <div><div class="config-label">Sesión automática (timeout)</div>
+                            <div class="config-desc">Cierra sesión tras 30 minutos de inactividad</div></div>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-timeout"><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="config-row">
+                        <div><div class="config-label">Registro de auditoría de accesos</div>
+                            <div class="config-desc">Guarda log de todos los inicios de sesión</div></div>
+                        <label class="toggle-switch"><input type="checkbox" id="toggle-log" checked><span class="toggle-slider"></span></label>
+                    </div>
+                    <div style="margin-top:20px;">
+                        <label class="label-sm">Cambiar Contraseña de Administrador</label>
+                        <div class="form-grid-2" style="margin-top:8px;">
+                            <input type="password" class="fi" placeholder="Contraseña actual" id="sec-pass-actual">
+                            <input type="password" class="fi" placeholder="Nueva contraseña" id="sec-pass-nueva">
+                        </div>
+                    </div>
+                    <button class="btn-save" id="btn-guardar-seguridad" style="margin-top:16px;">
+                        <i class="fas fa-shield-alt" style="margin-right:8px;"></i> GUARDAR CONFIGURACIÓN
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB: ACTIVIDAD (NUEVO) -->
+            <div class="tab-panel" id="tab-actividad">
+                <div class="section-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h3 class="section-title" style="margin:0;"><i class="fas fa-history"></i> Log de Auditoría</h3>
+                        <button class="btn-notif btn-notif-outline" onclick="Swal.fire('Exportar','Generando reporte de actividad...','info')">
+                            <i class="fas fa-file-download"></i> EXPORTAR LOG
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="inv-table">
+                            <thead><tr>
+                                <th>FECHA / HORA</th><th>USUARIO</th><th>ACCIÓN</th><th>DETALLE</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-family:monospace; font-size:0.75rem;">2024-04-09 10:15:22</td>
+                                    <td><span style="font-weight:700;">Admin</span></td>
+                                    <td><span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:6px; font-size:0.7rem; font-weight:800;">CAMBIO_CONFIG</span></td>
+                                    <td style="font-style:italic; color:#64748b;">Modificó parámetros de API Hacienda</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:monospace; font-size:0.75rem;">2024-04-09 09:44:01</td>
+                                    <td><span style="font-weight:700;">María R.</span></td>
+                                    <td><span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:6px; font-size:0.7rem; font-weight:800;">LOGIN</span></td>
+                                    <td style="font-style:italic; color:#64748b;">Inicio de sesión desde IP: 190.113.4.22</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:monospace; font-size:0.75rem;">2024-04-08 17:20:10</td>
+                                    <td><span style="font-weight:700;">Admin</span></td>
+                                    <td><span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:6px; font-size:0.7rem; font-weight:800;">NUEVO_USUARIO</span></td>
+                                    <td style="font-style:italic; color:#64748b;">Creó cuenta para Juan Pérez (Vendedor)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SISTEMA -->
+            <div class="tab-panel" id="tab-sistema">
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    <div class="section-box">
+                        <h3 class="section-title"><i class="fas fa-sliders-h"></i> Preferencias del Sistema</h3>
+                        <div class="config-row">
+                            <div><div class="config-label">Notificaciones por correo</div>
+                                <div class="config-desc">Envía alertas de Hacienda al correo registrado</div></div>
+                            <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="config-row">
+                            <div><div class="config-label">Respaldo automático diario</div>
+                                <div class="config-desc">Genera copia de seguridad cada 24 horas</div></div>
+                            <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="config-row">
+                            <div><div class="config-label">Modo mantenimiento</div>
+                                <div class="config-desc">Bloquea acceso a usuarios no administradores</div></div>
+                            <label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div style="margin-top:16px;" class="form-grid-2">
+                            <div><label class="label-sm">Moneda por defecto</label>
+                                <select class="fi"><option>CRC – Colón (₡)</option><option>USD – Dólar ($)</option></select></div>
+                            <div><label class="label-sm">Zona Horaria</label>
+                                <select class="fi"><option>America/Costa_Rica (UTC-6)</option></select></div>
+                        </div>
+                        <button class="btn-save" id="btn-guardar-sistema">
+                            <i class="fas fa-save" style="margin-right:8px;"></i> GUARDAR PREFERENCIAS
+                        </button>
+                    </div>
+                    <div class="section-box">
+                        <h3 class="section-title" style="color:#dc2626;"><i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i> Zona de Peligro</h3>
+                        <p style="font-size:0.85rem; color:#64748b; margin-bottom:16px; font-weight:500;">Estas acciones son irreversibles. Procede con precaución.</p>
+                        <div class="form-grid-2">
+                            <button class="btn-danger" id="btn-limpiar-cache" style="background:linear-gradient(135deg,#d97706,#f59e0b);">
+                                <i class="fas fa-broom" style="margin-right:8px;"></i> Limpiar Caché del Sistema
+                            </button>
+                            <button class="btn-danger" id="btn-reset-sistema">
+                                <i class="fas fa-trash-alt" style="margin-right:8px;"></i> Restablecer Configuración
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /adm-card -->
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../js/configuracion.js"></script>
+
+</body>
+</html>

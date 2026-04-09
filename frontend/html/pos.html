@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH POS - Terminal Punto de Venta</title>
+    
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+
+    <link rel="stylesheet" href="../css/pos.css">
+</head>
+<body>
+    
+    <div class="pos-layout">
+        <!-- ÁREA PRINCIPAL: CATEGORIAS Y PRODUCTOS -->
+        <main class="pos-main">
+            <!-- Header Navegación / Buscador -->
+            <header class="pos-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button class="btn-icon-circular" onclick="window.location.href='panelControl.html'" title="Volver al Panel">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div style="font-family: 'Outfit'; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.5px;">
+                        <i class="fas fa-bolt" style="color: var(--pos-primary);"></i> MURO<span style="color: var(--pos-accent);">POS</span>
+                    </div>
+                </div>
+                
+
+                <div class="search-wrapper">
+                    <div class="autocomplete-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="pos-search-input" placeholder="Código de barras, SKUs o nombre del producto..." autocomplete="off">
+                        <div id="pos-search-dropdown" class="autocomplete-dropdown"></div>
+                    </div>
+                </div>
+
+
+                <div style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #475569;">
+                    <div style="text-align: right; line-height: 1.2;">
+                        <div style="font-size: 0.85rem; color: #94a3b8;">Cajero Activo</div>
+                        <div style="color: var(--pos-text);">Carlos M.</div>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Carlos+M&background=8b5cf6&color=fff" style="width: 40px; height: 40px; border-radius: 50%;">
+                </div>
+            </header>
+
+            <!-- Chips de Categorías -->
+            <div class="category-chips">
+                <div class="chip active"><i class="fas fa-star" style="margin-right: 5px;"></i> Favoritos</div>
+                <div class="chip">Abarrotes</div>
+                <div class="chip">Lácteos</div>
+                <div class="chip">Bebidas</div>
+                <div class="chip">Limpieza</div>
+                <div class="chip">Tecnología</div>
+                <div class="chip"><i class="fas fa-plus"></i> Más</div>
+            </div>
+
+            <!-- Grilla Visual de Productos -->
+            <div class="products-grid">
+                <!-- Tarjeta Demo 1 -->
+                <div class="product-card" onclick="agregarAlCarrito('Leche Dos Pinos 1L', 1250)">
+                    <div>
+                        <div class="product-icon" style="color: #3b82f6; background: #eff6ff;"><i class="fas fa-wine-bottle"></i></div>
+                        <div class="product-name">Leche Dos Pinos Semidescremada 1L</div>
+                    </div>
+                    <div class="product-price">₡1,250</div>
+                </div>
+
+                <!-- Tarjeta Demo 2 -->
+                <div class="product-card" onclick="agregarAlCarrito('Coca Cola 2L', 2100)">
+                    <div>
+                        <div class="product-icon" style="color: #ef4444; background: #fef2f2;"><i class="fas fa-glass-whiskey"></i></div>
+                        <div class="product-name">Bebida Gaseosa Coca Cola 2.5L</div>
+                    </div>
+                    <div class="product-price">₡2,100</div>
+                </div>
+
+                <!-- Tarjeta Demo 3 -->
+                <div class="product-card" onclick="agregarAlCarrito('Café Britt 340g', 4500)">
+                    <div>
+                        <div class="product-icon" style="color: #8b5cf6; background: #f5f3ff;"><i class="fas fa-mug-hot"></i></div>
+                        <div class="product-name">Café Tarrazú Puro Tostado 340g</div>
+                    </div>
+                    <div class="product-price">₡4,500</div>
+                </div>
+
+                <!-- Tarjeta Demo 4 -->
+                <div class="product-card" onclick="agregarAlCarrito('Pan Integral BIMBO', 1850)">
+                    <div>
+                        <div class="product-icon" style="color: #f59e0b; background: #fffbeb;"><i class="fas fa-bread-slice"></i></div>
+                        <div class="product-name">Pan Sandwich Integral 500g</div>
+                    </div>
+                    <div class="product-price">₡1,850</div>
+                </div>
+                
+                 <!-- Tarjeta Demo 5 -->
+                 <div class="product-card">
+                    <div>
+                        <div class="product-icon" style="color: #10b981; background: #ecfdf5;"><i class="fas fa-apple-alt"></i></div>
+                        <div class="product-name">Manzana Gala Kg</div>
+                    </div>
+                    <div class="product-price">₡2,300</div>
+                </div>
+                
+                <div class="product-card">
+                    <div>
+                        <div class="product-icon" style="color: #14b8a6; background: #f0fdfa;"><i class="fas fa-soap"></i></div>
+                        <div class="product-name">Jabón Líquido Antibacterial</div>
+                    </div>
+                    <div class="product-price">₡1,550</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- PANEL LATERAL: CARRITO DE COMPRAS -->
+        <aside class="pos-cart">
+            <div class="cart-header">
+                <h2><i class="fas fa-shopping-basket" style="color: var(--pos-primary);"></i> Ticket #00293</h2>
+                <div class="btn-icon-circular" title="Limpiar Ticket" onclick="document.getElementById('cart-list').innerHTML=''; calcularTotal();">
+                    <i class="fas fa-trash-alt" style="color: #ef4444;"></i>
+                </div>
+            </div>
+
+            <div class="cart-items" id="cart-list">
+                <!-- Los items se inyectan acá vía JS -->
+            </div>
+
+            <div class="cart-footer">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="txt-subtotal">₡0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>IVA (13%)</span>
+                    <span id="txt-iva">₡0.00</span>
+                </div>
+                <div class="summary-total">
+                    <span>Total</span>
+                    <span id="txt-total">₡0.00</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                    <div class="chip" style="text-align:center; padding: 12px; margin:0;"><i class="fas fa-money-bill-wave"></i> Efectivo</div>
+                    <div class="chip" style="text-align:center; padding: 12px; margin:0; border-color: var(--pos-primary); color: var(--pos-primary);"><i class="fas fa-credit-card"></i> Tarjeta</div>
+                </div>
+
+                <button class="btn-cobrar">
+                    COBRAR <span id="btn-total">₡0.00</span>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Micro Lógica del POS Base -->
+    <script src="../js/pos.js"></script>
+</body>
+</html>

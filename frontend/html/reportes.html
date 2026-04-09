@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH POS - Inteligencia de Negocios</title>
+    
+    <!-- Librerías Externas -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Componentes Compartidos -->
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+    <script src="../js/shared/sidebar.js"></script>
+
+    <link rel="stylesheet" href="../css/reportes.css">
+</head>
+<body class="reg-body">
+    <canvas id="particles-canvas"></canvas>
+
+    <div id="billing-screen">
+        <aside class="sidebar"></aside>
+
+        <main class="module-content rep-main">
+            <div class="rep-card">
+
+                <!-- ─── HEADER ─────────────────────────────────────────── -->
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <div>
+                        <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Centro de Inteligencia</h1>
+                        <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Informes analíticos y exportación masiva fiscal v4.4</p>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button class="btn-action btn-outline" id="btn-demo-data" style="background: #fdf2f2; border-color: #fecaca; color: #dc2626;">
+                            <i class="fas fa-magic"></i> Cargar Datos de Prueba
+                        </button>
+                        <button class="btn-action btn-outline" id="btn-reload-data">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                        <button class="btn-action btn-primary" id="btn-export-all">
+                            <i class="fas fa-cloud-download-alt"></i> Descargar Todo
+                        </button>
+                    </div>
+                </header>
+
+                <!-- ─── FILTROS GLOBALES ─────────────────────────────────── -->
+                <div class="section-box">
+                    <div class="section-title"><i class="fas fa-filter"></i> Motores de Filtrado Avanzado</div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:15px; align-items:end;">
+                        <div>
+                            <label class="label-sm">Período de Análisis</label>
+                            <select class="premium-select" id="filter-periodo">
+                                <option value="today">Hoy (Día)</option>
+                                <option value="month" selected>Este Mes</option>
+                                <option value="quarter">Trimestre Actual</option>
+                                <option value="semester">Semestre Actual</option>
+                                <option value="year">Año Fiscal</option>
+                                <option value="all">Todo el Histórico</option>
+                                <option value="custom">Rango Personalizado</option>
+                            </select>
+                        </div>
+                        <div id="range-picker" style="display:contents;">
+                            <div>
+                                <label class="label-sm">Desde</label>
+                                <input type="date" id="filter-desde" class="fi">
+                            </div>
+                            <div>
+                                <label class="label-sm">Hasta</label>
+                                <input type="date" id="filter-hasta" class="fi">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="label-sm">Cliente / Receptor</label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="filter-cliente-search" class="fi" placeholder="🔍 Buscar receptor…" autocomplete="off">
+                                <input type="hidden" id="filter-cliente-id" value="all">
+                                <div id="report-cliente-dropdown" class="autocomplete-dropdown"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="label-sm">Usuario / Cajero</label>
+                            <select class="premium-select" id="filter-usuario">
+                                <option value="all">Todos los Usuarios</option>
+                                <option value="admin">Administrador Principal</option>
+                                <option value="pos1">Caja 01 - Principal</option>
+                            </select>
+                        </div>
+                        <button class="btn-action btn-primary" id="btn-filtrar" style="justify-content:center; height:42px;">
+                            <i class="fas fa-search"></i> Consultar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ─── KPIs DINÁMICOS ──────────────────────────────────── -->
+                <div class="kpi-grid" id="kpi-container">
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background:#1e40af;"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="val-ventas">₡0</div>
+                            <div class="kpi-label">Ventas Brutas</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background:#ef4444;"><i class="fas fa-shopping-cart"></i></div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="val-compras">₡0</div>
+                            <div class="kpi-label">Compras / Gastos</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background:#10b981;"><i class="fas fa-hand-holding-usd"></i></div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="val-utilidad">₡0</div>
+                            <div class="kpi-label">Utilidad Estimada</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background:#f59e0b;"><i class="fas fa-university"></i></div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="val-impuestos">₡0</div>
+                            <div class="kpi-label">IVA Recaudado</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ─── TABS DE REPORTES ─────────────────────────────────── -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="ventas"><i class="fas fa-chart-line"></i> Ventas & Facturación</button>
+                    <button class="tab-btn" data-tab="compras"><i class="fas fa-shopping-bag"></i> Compras & Gastos</button>
+                    <button class="tab-btn" data-tab="inventario"><i class="fas fa-boxes"></i> Inventario & Stock</button>
+                    <button class="tab-btn" data-tab="comprobantes"><i class="fas fa-shield-alt"></i> Comprobantes Hacienda</button>
+                    <button class="tab-btn" data-tab="cotizaciones"><i class="fas fa-file-signature"></i> Cotizaciones</button>
+                </div>
+
+                <!-- TAB: VENTAS -->
+                <div class="tab-panel active" id="tab-ventas">
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+                        <div class="section-box">
+                            <div class="section-title">Análisis de Ingresos Mensuales</div>
+                            <div class="chart-container">
+                                <canvas id="chart-ventas"></canvas>
+                            </div>
+                        </div>
+                        <div class="section-box">
+                            <div class="section-title">Top Productos</div>
+                            <div class="chart-container">
+                                <canvas id="chart-pie-productos"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-box" style="margin-top:20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3 class="section-title" style="margin:0;"><i class="fas fa-list-ul"></i> Detalle de Operaciones de Venta</h3>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-action btn-outline btn-export-xl" onclick="exportToExcel('table-ventas', 'Reporte_Ventas')">
+                                    <i class="fas fa-file-excel"></i> Excel
+                                </button>
+                                <button class="btn-action btn-outline btn-export-pdf" onclick="exportToPDF('table-ventas', 'Reporte_Ventas')">
+                                    <i class="fas fa-file-pdf"></i> PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="data-table-container">
+                            <table class="premium-data-table dense-table" id="table-ventas">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Doc. #</th>
+                                        <th>Cliente</th>
+                                        <th>Monto Bruto</th>
+                                        <th>Impuestos</th>
+                                        <th>Total</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-ventas"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: COMPRAS -->
+                <div class="tab-panel" id="tab-compras">
+                    <div class="section-box">
+                        <div class="section-title">Registro de Adquisiciones y Gastos Operativos</div>
+                        <p style="color:#64748b; font-size:0.85rem;">Lista de compras registradas para crédito fiscal e inventario.</p>
+                        <div class="data-table-container">
+                            <table class="premium-data-table dense-table" id="table-compras">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Proveedor</th>
+                                        <th>Concepto</th>
+                                        <th>Monto Net</th>
+                                        <th>IVA</th>
+                                        <th>Total</th>
+                                        <th>Categoría</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-compras">
+                                    <tr><td colspan="7" style="text-align:center; padding:30px; color:#94a3b8;">No se encontraron registros de compras en este período.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: INVENTARIO -->
+                <div class="tab-panel" id="tab-inventario">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; margin-bottom:20px;">
+                        <div class="kpi-card">
+                            <div class="kpi-content">
+                                <div class="kpi-value" id="val-sku-total">0</div>
+                                <div class="kpi-label">Productos SKU</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-content">
+                                <div class="kpi-value" id="val-stock-economico">₡0</div>
+                                <div class="kpi-label">Valorización Inventario</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card" style="border-left: 4px solid #ef4444;">
+                            <div class="kpi-content">
+                                <div class="kpi-value" style="color:#ef4444;" id="val-stock-bajo">0</div>
+                                <div class="kpi-label">Productos con Stock Crítico</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3 class="section-title" style="margin:0;"><i class="fas fa-boxes"></i> Informe de Existencias Actuales</h3>
+                            <button class="btn-action btn-outline btn-export-xl" onclick="exportToExcel('table-inventario', 'Inventario_Stock')">
+                                <i class="fas fa-file-excel"></i> Exportar Inventario
+                            </button>
+                        </div>
+                        <div class="data-table-container">
+                            <table class="premium-data-table dense-table" id="table-inventario">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Descripción</th>
+                                        <th>Categoría</th>
+                                        <th>Precio Compra</th>
+                                        <th>Precio Venta</th>
+                                        <th>Existencia</th>
+                                        <th>Estatus</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-inventario"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: COMPROBANTES -->
+                <div class="tab-panel" id="tab-comprobantes">
+                    <div class="section-box">
+                        <div class="section-title">Estatus de Comprobantes ante Hacienda (MH)</div>
+                        <div class="data-table-container">
+                            <table class="premium-data-table dense-table" id="table-comprobantes">
+                                <thead>
+                                    <tr>
+                                        <th>Consecutivo</th>
+                                        <th>Fecha Envío</th>
+                                        <th>Receptor</th>
+                                        <th>Estatus MH</th>
+                                        <th>Clave Numérica</th>
+                                        <th>Logs MH</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-comprobantes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: COTIZACIONES -->
+                <div class="tab-panel" id="tab-cotizaciones">
+                    <div class="section-box">
+                        <div class="section-title">Bitácora de Cotizaciones y Proformas</div>
+                        <p style="color:#64748b; font-size:0.85rem;">Seguimiento de proformas emitidas no fiscalizadas.</p>
+                        <div class="data-table-container">
+                            <table class="premium-data-table dense-table" id="table-cotizaciones">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Proforma #</th>
+                                        <th>Cliente</th>
+                                        <th>Vencimiento</th>
+                                        <th>Monto</th>
+                                        <th>Estatus</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-cotizaciones">
+                                    <tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">Sin cotizaciones emitidas en el período.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /rep-card -->
+        </main>
+    </div>
+
+    <!-- ─── LOGICA DE NEGOCIO (JS) ────────────────────────────── -->
+    <script src="../js/reportes.js"></script>
+
+    <!-- Canvas Particles (Aesthetic) -->
+    
+</body>
+</html>

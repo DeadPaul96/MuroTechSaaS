@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH POS - Auditoría Maestro</title>
+    
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+    <script src="../js/shared/sidebar.js"></script>
+
+    <link rel="stylesheet" href="../css/auditoria.css">
+</head>
+<body class="reg-body">
+    <canvas id="particles-canvas"></canvas>
+
+    <div id="billing-screen">
+        <aside class="sidebar"></aside>
+
+        <main class="aud-main">
+            <div class="aud-card">
+                
+                <!-- ─── HEADER ─────────────────────────────────────────── -->
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <div>
+                        <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Auditoría Maestro</h1>
+                        <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Trazabilidad 360° de operaciones y cumplimiento fiscal</p>
+                    </div>
+                    <div style="display:flex; gap:14px;">
+                        <button class="btn-p btn-p-outline" onclick="location.reload()">
+                            <i class="fas fa-sync-alt"></i> Sincronizar
+                        </button>
+                        <button class="btn-p btn-p-primary" onclick="Swal.fire('Exportar','Generando reporte de auditoría completo...','success')">
+                            <i class="fas fa-file-export"></i> Exportar Datos
+                        </button>
+                    </div>
+                </header>
+
+                <!-- ─── TABS ───────────────────────────────────────── -->
+                <div class="aud-tabs">
+                    <button class="tab-btn active" data-tab="comprobantes">
+                        <i class="fas fa-file-invoice"></i> Comprobantes
+                    </button>
+                    <button class="tab-btn" data-tab="inventario">
+                        <i class="fas fa-cubes"></i> Mov. Inventario
+                    </button>
+                    <button class="tab-btn" data-tab="ventas">
+                        <i class="fas fa-history"></i> Bitácora Ventas
+                    </button>
+                </div>
+
+                <!-- ─── FILTROS ─── -->
+                <div class="filter-section">
+                    <div class="filter-grid">
+                        <div>
+                            <label class="label-sm">Rango de Fechas</label>
+                            <div class="date-inputs">
+                                <input type="date" id="aud-desde" class="fi">
+                                <input type="date" id="aud-hasta" class="fi">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="label-sm">Estado Hacienda</label>
+                            <select id="aud-estado" class="fi">
+                                <option value="todos">Todos los registros</option>
+                                <option value="aceptado">Aceptados</option>
+                                <option value="pendiente">Pendientes</option>
+                                <option value="rechazado">Rechazados</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label-sm">Búsqueda Inteligente</label>
+                            <input type="text" id="aud-search" class="fi" placeholder="Filtrar por consecutivo, cliente o descripción...">
+                        </div>
+                        <div>
+                            <button class="btn-p btn-p-primary" id="btn-do-filter" style="width:100%;">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ─── PANELES ─── -->
+                <div id="panel-comprobantes" class="tab-panel active">
+                    <div class="table-container">
+                        <table class="premium-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Consecutivo / Clave</th>
+                                    <th>Receptor</th>
+                                    <th>Monto</th>
+                                    <th>Estado MH</th>
+                                    <th style="text-align:center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-mh">
+                                <!-- JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="panel-inventario" class="tab-panel">
+                    <div class="table-container">
+                        <table class="premium-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Producto / SKU</th>
+                                    <th>Movimiento</th>
+                                    <th>Anterior</th>
+                                    <th>Ajuste</th>
+                                    <th>Actual</th>
+                                    <th>Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-inv">
+                                <!-- JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="panel-ventas" class="tab-panel">
+                    <div class="table-container">
+                        <table class="premium-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Transacción</th>
+                                    <th>Caja</th>
+                                    <th>Vendedor</th>
+                                    <th>Monto</th>
+                                    <th>Pago</th>
+                                    <th style="text-align:center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-sales">
+                                <!-- JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../js/auditoria.js"></script>
+
+    
+</body>
+</html>

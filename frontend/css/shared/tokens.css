@@ -1,0 +1,86 @@
+/* Design Tokens: colores, tipografías, spacing, radios, sombras, transiciones */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap");
+
+:root {
+  /* Colores del tema Profesional (Azul, Naranja, Blanco) */
+  --white: #ffffff;
+  --bg-light: #f8fafc;
+  --primary-color: #1e3a8a; /* Azul profundo */
+  --secondary-color: #3b82f6; /* Azul brillante */
+  --accent-color: #f97316; /* Naranja vibrante */
+  --accent-orange: #fb923c;
+  
+    /* --- Paleta de Colores MUROTECH SaaS (Equilibrio Azul/Naranja) --- */
+    --primary: hsl(221, 83%, 53%);         /* Azul Cobalto Vibrante (Base) */
+    --primary-dark: hsl(222, 47%, 11%);
+    --primary-light: hsl(221, 83%, 95%);
+    
+    --accent: hsl(25, 95%, 53%);          /* Naranja MUROTECH (Protagonista) */
+    --accent-dark: hsl(25, 95%, 43%);
+    --accent-light: hsl(25, 95%, 90%);
+    
+    /* Gradiente que mezcla ambos pero resalta el naranja */
+    --grad-premium: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+    
+    --success: hsl(142, 70%, 45%);
+    --warning: hsl(38, 92%, 50%);
+    --danger: hsl(350, 89%, 60%);
+    
+    --white: #ffffff;
+    --bg-main: hsl(210, 40%, 98%);         /* Fondo ultra limpio */
+    --bg-card: #ffffff;
+    
+    /* --- Texto --- */
+    --text-main: hsl(217, 19%, 27%);
+    --text-muted: hsl(215, 16%, 47%);
+    --text-white: #ffffff;
+    
+    /* --- Glassmorphism --- */
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --bg-glass: rgba(255, 255, 255, 0.05); /* Cristal Oscuro por defecto para Hero */
+    --bg-glass-light: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-blur: 20px;
+    
+    /* --- Sombras Elevadas (Premium) --- */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 8px 16px -4px rgba(0,0,0,0.08), 0 4px 8px -2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+    --shadow-premium: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    --shadow-orange: 0 10px 25px hsla(25, 95%, 53%, 0.4);
+    --shadow-blue: 0 10px 25px hsla(221, 83%, 53%, 0.4);
+    --glow-orange: 0 0 20px hsla(25, 95%, 53%, 0.3);
+    
+    /* --- Gradientes Específicos Login --- */
+    --grad-hero: radial-gradient(circle at 10% 20%, rgba(0, 52, 102, 1) 0%, rgba(0, 10, 30, 1) 90%);
+    --grad-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    --grad-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    --text-gradient: linear-gradient(to right, var(--primary), var(--accent));
+    
+    /* --- Espaciado (Space System) --- */
+    --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+    --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
+    
+    /* --- Sistema de Grises y Estados --- */
+    --murotech-gray-50: #f9fafb;
+    --murotech-gray-200: #e5e7eb;
+    --murotech-gray-300: #d1d5db;
+    --murotech-gray-400: #9ca3af;
+    --success-light: hsla(142, 70%, 45%, 0.1);
+    
+    /* --- Bordes y Radios login --- */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-2xl: 24px;
+    --radius-xl: 24px;
+    --radius-3xl: 32px;
+    --radius-full: 9999px;
+    
+    --font-main: 'Inter', sans-serif;
+    --font-heading: 'Outfit', sans-serif;
+    --font-display: 'Outfit', sans-serif;
+    
+    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

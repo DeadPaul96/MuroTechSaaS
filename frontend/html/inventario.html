@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH POS - Catálogo de Inventario</title>
+    <meta name="description" content="Administración premium de productos y servicios fiscalizados MUROTECH">
+
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/mockDB.js"></script>
+    <script src="../js/shared/cabys_data.js"></script>
+    <script src="../js/shared/sidebar.js"></script>
+
+    <link rel="stylesheet" href="../css/inventario.css">
+</head>
+<body class="reg-body">
+    <canvas id="particles-canvas"></canvas>
+
+
+    <div id="billing-screen">
+        <aside class="sidebar"></aside>
+
+        <main class="module-content inv-main">
+            <div class="inv-card">
+
+                <!-- HEADER MÓDULO -->
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                    <div>
+                        <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Catálogo de Inventario</h1>
+                        <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Administración de productos y servicios fiscalizados — MH v4.4</p>
+                    </div>
+                </header>
+
+                <!-- Barra de importación masiva (compacta) -->
+                <div class="import-bar">
+                    <div class="ib-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <div class="ib-text">
+                        Importar Masivo<br>
+                        <span>Carga productos desde Excel (.xlsx)</span>
+                    </div>
+                    <div class="ib-actions">
+                        <a href="../excel/Importacion masiva Productos Servicios.xlsx" download class="btn-import outline" id="btn-plantilla" style="text-decoration:none; display:inline-flex; align-items:center;"><i class="fas fa-file-excel" style="margin-right:5px;"></i>Plantilla</a>
+                        <label class="btn-import solid" for="file-upload-inv" style="cursor:pointer; display:inline-flex; align-items:center; margin:0;"><i class="fas fa-upload" style="margin-right:5px;"></i>Subir Archivo</label>
+                        <input type="file" id="file-upload-inv" accept=".xlsx, .xls" style="display:none;">
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:22px;">
+
+                        <!-- Formulario nuevo ítem -->
+                        <div class="section-box">
+                            <h3 class="section-title">
+                                <i class="fas fa-plus-circle"></i> Nuevo Ítem — MH v4.4
+                            </h3>
+
+                            <form id="addItemForm">
+                                <div style="margin-bottom:16px;">
+                                    <label class="label-sm" for="inv-buscar-cabys">Buscador CAByS — por nombre o código (20,501 ítems)</label>
+
+                                    <div class="autocomplete-wrapper">
+                                        <input type="text" id="inv-buscar-cabys" class="fi" placeholder="🔍 Escribe el nombre o código de 13 dígitos…" autocomplete="off">
+                                        <div id="cabys-results" class="autocomplete-dropdown"></div>
+                                    </div>
+
+                                    <p id="cabys-status" style="font-size:0.75rem; color:#10b981; margin:5px 0 0;">
+                                        <i class="fas fa-check-circle" style="margin-right:4px;"></i>
+                                        <span id="cabys-status-txt">Catálogo CAByS listo — 20,501 ítems disponibles</span>
+                                    </p>
+                                </div>
+
+                                <div style="background:#f0f7ff; border:1px solid #bfdbfe; border-radius:13px; padding:16px 18px; margin-bottom:14px;">
+                                    <p style="font-size:0.72rem; font-weight:800; color:#1e40af; text-transform:uppercase; margin:0 0 14px;">
+                                        <i class="fas fa-file-invoice" style="margin-right:6px;"></i> Datos requeridos por API MH v4.4
+                                    </p>
+
+                                    <div class="form-grid-3" style="margin-bottom:12px;">
+                                        <div>
+                                            <label class="label-sm" for="inv-cabys-numero">Código CAByS</label>
+                                            <input type="text" id="inv-cabys-numero" class="fi" readonly placeholder="Auto-completado" style="background:#e8f0fe;">
+                                        </div>
+                                        <div>
+                                            <label class="label-sm" for="inv-codigo-interno">Código Interno</label>
+                                            <input type="text" id="inv-codigo-interno" class="fi" placeholder="Ej. LAP-001">
+                                        </div>
+                                        <div>
+                                            <label class="label-sm" for="inv-unidad-medida">Unidad Medida</label>
+                                            <select id="inv-unidad-medida" class="premium-select">
+                                                <option value="Unid">Unid — Unidad</option>
+                                                <option value="Kg">Kg — Kilogramo</option>
+                                                <option value="g">g — Gramo</option>
+                                                <option value="L">L — Litro</option>
+                                                <option value="ml">ml — Mililitro</option>
+                                                <option value="m">m — Metro</option>
+                                                <option value="Svc">Svc — Servicio</option>
+                                                <option value="Os">Os — Otros</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div style="margin-bottom:12px;">
+                                        <label class="label-sm" for="inv-nombre">Descripción del Ítem</label>
+                                        <input type="text" id="inv-nombre" class="fi" placeholder="Descripción completa">
+                                    </div>
+
+                                    <!-- Panel contextual: PRODUCTO -->
+                                    <div id="ctx-producto" class="ctx-panel producto">
+                                        <p class="ctx-title"><i class="fas fa-box"></i> Detalles del Producto</p>
+                                        <div class="form-grid-2" style="margin-bottom:10px;">
+                                            <div>
+                                                <label class="label-sm" for="inv-marca">Marca</label>
+                                                <input type="text" id="inv-marca" class="fi" placeholder="Ej. Samsung, Sony, HP…">
+                                            </div>
+                                            <div>
+                                                <label class="label-sm" for="inv-modelo">Modelo / Referencia</label>
+                                                <input type="text" id="inv-modelo" class="fi" placeholder="Ej. Galaxy S24, WH-1000XM5…">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="label-sm" for="inv-caracteristicas">Características</label>
+                                            <textarea id="inv-caracteristicas" class="fi" rows="2" placeholder="Color, tamaño, material, capacidad, garantía…" style="resize:vertical;"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Panel contextual: SERVICIO -->
+                                    <div id="ctx-servicio" class="ctx-panel servicio">
+                                        <p class="ctx-title"><i class="fas fa-concierge-bell"></i> Detalles del Servicio</p>
+                                        <div style="margin-bottom:10px;">
+                                            <label class="label-sm" for="inv-nombre-servicio">Nombre del Servicio</label>
+                                            <input type="text" id="inv-nombre-servicio" class="fi" placeholder="Ej. Mantenimiento preventivo, Consultoría fiscal, Diseño web…">
+                                        </div>
+                                        <div style="margin-bottom:10px;">
+                                            <label class="label-sm" for="inv-detalle-servicio">Descripción detallada</label>
+                                            <textarea id="inv-detalle-servicio" class="fi" rows="3" placeholder="Alcance, duración estimada, condiciones, entregables…" style="resize:vertical;"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-grid-2" style="margin-bottom:12px;">
+                                        <div>
+                                            <label class="label-sm" for="inv-iva">IVA (%)</label>
+                                            <select id="inv-iva" class="premium-select">
+                                                <option value="13">13% — General</option>
+                                                <option value="8">8% — Reducida</option>
+                                                <option value="4">4% — Reducida</option>
+                                                <option value="2">2% — Reducida</option>
+                                                <option value="1">1% — Especial</option>
+                                                <option value="0">0% — Exento</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="label-sm" for="inv-tipo-impuesto">Tipo Impuesto</label>
+                                            <select id="inv-tipo-impuesto" class="premium-select">
+                                                <option value="01">01 — IVA</option>
+                                                <option value="99">99 — Otros</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-grid-3">
+                                        <div>
+                                            <label class="label-sm" for="inv-precio-linea">Costo (₡)</label>
+                                            <input type="number" id="inv-precio-linea" class="fi" placeholder="0.00" step="0.01">
+                                        </div>
+                                        <div>
+                                            <label class="label-sm" for="inv-ganancia">% Ganancia</label>
+                                            <input type="number" id="inv-ganancia" class="fi" placeholder="30" step="0.01">
+                                        </div>
+                                        <div>
+                                            <label class="label-sm" for="inv-precio">Venta (₡)</label>
+                                            <input type="number" id="inv-precio" class="fi" placeholder="Auto" step="0.01" style="background:#dbeafe; font-weight:800; color:#1d4ed8;">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-2" id="stock-row">
+                                    <div>
+                                        <label class="label-sm" for="inv-stock">Stock</label>
+                                        <input type="number" id="inv-stock" class="fi" value="0">
+                                    </div>
+                                    <div>
+                                        <label class="label-sm" for="inv-descuento-max">Desc. Máx %</label>
+                                        <input type="number" id="inv-descuento-max" class="fi" value="0">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn-registrar" id="btn-submit-inv">
+                                    <i class="fas fa-save" style="margin-right:10px;"></i> <span id="btn-submit-txt">REGISTRAR PRODUCTO</span>
+                                </button>
+                            </form>
+            <!-- Header del Catálogo (Inventario) -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; margin-top:30px;">
+                <div style="position:relative; flex:0 1 450px;">
+                    <div class="autocomplete-wrapper">
+                        <i class="fas fa-search" style="position:absolute; left:18px; top:50%; transform:translateY(-50%); color:#94a3b8; z-index:10;"></i>
+                        <input type="text" id="buscar-inventario" class="fi" placeholder="🔍 Buscar en inventario (nombre, SKU)..." autocomplete="off" style="padding-left:45px; width:100%; height:50px; font-weight:700; border-radius:25px; border:2px solid #e2e8f0; transition:all 0.3s;">
+                    </div>
+                </div>
+                <div id="total-items-badge" style="background:var(--primary-light); color:var(--primary); padding:10px 20px; border-radius:20px; font-weight:900; font-size:0.85rem; border:1px solid #dbeafe;">
+                   <i class="fas fa-box"></i> 0 Ítems en Inventario
+                </div>
+            </div>
+
+            <!-- Tabla de Inventario Style Flat & Dense -->
+            <div class="data-table-container">
+                <div style="max-height: 55vh; overflow-y: auto;">
+                    <table class="premium-data-table dense-table">
+                        <thead>
+                            <tr>
+                                <th>CAByS</th>
+                                <th>SKU / Código</th>
+                                <th>Producto o Servicio</th>
+                                <th>Precio</th>
+                                <th>IVA</th>
+                                <th style="text-align:center;">Stock</th>
+                                <th style="text-align:center;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-inventario">
+                            <!-- Inyectado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="../js/inventario.js"></script>
+</body>
+</html>

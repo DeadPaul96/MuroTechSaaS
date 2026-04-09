@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUROTECH SaaS - Acceso Profesional</title>
+    
+    <!-- Estilos Core MUROTECH -->
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    
+    <!-- Iconografía FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Scripts Base -->
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/login/main.js" defer></script>
+
+    <!-- OVERRIDES PARA IGUALAR AL REGISTRO -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/inicioSesion.css">
+</head>
+<body class="login-body">
+    <!-- Canvas para Partículas Animadas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Formas Geométricas Decorativas -->
+    <div class="geometric-shape shape-1"></div>
+    <div class="geometric-shape shape-2"></div>
+    <div class="geometric-shape shape-3"></div>
+
+    <!-- Contenedor Principal -->
+    <main class="auth-container">
+        <div class="auth-card">
+            <!-- Header con Logo -->
+            <header class="auth-header">
+                <div class="logo-container">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h1>MUROTECH SaaS</h1>
+                <p>Plataforma Profesional de Facturación</p>
+            </header>
+
+            <!-- Formulario de Login -->
+            <form class="auth-form" id="loginForm">
+                <div class="input-wrapper">
+                    <i class="fas fa-envelope input-icon-cap"></i>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        class="fi-capsule" 
+                        placeholder="Correo electrónico principal"
+                        required 
+                        autoComplete="email"
+                    >
+                </div>
+                
+                <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon-cap"></i>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="fi-capsule" 
+                        placeholder="Contraseña de acceso"
+                        required 
+                        autoComplete="current-password"
+                    >
+                    <button type="button" class="pass-toggle-cap" id="passwordToggle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+
+                <div class="auth-options" style="margin-top: 25px; margin-bottom: 15px;">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        Recuérdame
+                    </label>
+                    <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" class="btn-finalizar" id="loginBtn">
+                    Iniciar Sesión <i class="fas fa-sign-in-alt"></i>
+                </button>
+            </form>
+
+            <!-- Footer con Enlace a Registro -->
+            <footer class="auth-footer">
+                <p>
+                    ¿Nuevo en MUROTECH? 
+                    <a href="registro.html">Crear cuenta profesional</a>
+                </p>
+            </footer>
+        </div>
+    </main>
+
+    <!-- Script para Partículas Animadas -->
+    <script src="../js/inicioSesion.js"></script>
+</body>
+</html>
