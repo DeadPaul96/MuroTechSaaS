@@ -74,6 +74,6 @@ Simplemente abra `frontend/index.html` en su navegador o use un servidor local (
 
 ---
 
-**Desarrollado por**: [Tu Nombre/Empresa]  
+**Desarrollado por**: [Paul Zuñiga/ZenithTech CR]  
 **Versión**: 2.0.0 (Modernizada)  
 **Licencia**: Propietaria - MUROTECH SOLUTIONS S.A.
