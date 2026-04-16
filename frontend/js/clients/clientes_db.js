@@ -1,9 +1,5 @@
-// =============================================================
-// CONEXIÓN CON BASE DE DATOS - CLIENTES
-// =============================================================
-
-const CLIENTES_API_URL = 'http://localhost:5002/api/clientes';
-const TIPOS_ID_API_URL = 'http://localhost:5002/api/tipos-identificacion';
+const CLIENTES_API_URL = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.CLIENTES}`;
+const TIPOS_ID_API_URL = `${CONFIG.API_BASE_URL}/api/tipos-identificacion`;
 
 /**
  * Carga los tipos de identificación desde la base de datos
@@ -299,7 +295,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
  */
 async function verificarConexionClientesAPI() {
     try {
-        const response = await fetch('http://localhost:5002/api/health');
+        const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.HEALTH}`);
         const data = await response.json();
         
         if (data.status === 'ok' && data.database === 'connected') {
@@ -393,7 +389,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         console.log('✅ Módulo de clientes inicializado correctamente');
     } else {
-        console.error('❌ No se pudo conectar con la API de clientes');
-        console.warn('⚠️ Inicia el servidor: python Backend/clientes_api.py');
+        console.warn('❌ Modo Offline: No se pudo conectar con el servidor de clientes.');
     }
 });

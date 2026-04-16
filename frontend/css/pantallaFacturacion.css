@@ -38,6 +38,20 @@
             padding: 22px 26px;
             box-shadow: 0 3px 12px rgba(0,0,0,0.04);
             border: 1px solid rgba(0,0,0,0.06);
+            position: relative;
+        }
+        .section-blocked {
+            opacity: 0.45;
+            pointer-events: none;
+            filter: grayscale(0.8);
+            transition: all 0.4s ease;
+        }
+        .section-blocked::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            cursor: not-allowed;
+            z-index: 10;
         }
         .section-title {
             font-size: 0.95rem;
@@ -217,15 +231,25 @@
             border-bottom: 1px solid #f1f5f9;
         }
         .detail-table input[type="text"],
-        .detail-table input[type="number"] {
+        .detail-table input[type="number"],
+        .fi-grid {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 7px 9px;
             width: 100%;
             font-weight: 600;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        .fi-grid:focus {
+            border-color: var(--primary);
+            background: #ffffff;
+            outline: none;
+        }
+        select.fi-grid {
+            padding: 6px 4px;
         }
         .btn-del {
             background: none;

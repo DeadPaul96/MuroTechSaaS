@@ -36,6 +36,31 @@
                     </div>
                 </header>
 
+                <!-- ═══════════════════════════════════════════════════ -->
+                <!--  SECCIÓN DE BORRADORES (DRAFTS)                     -->
+                <!-- ═══════════════════════════════════════════════════ -->
+                <div id="section-drafts" style="display:none; background: #fffbeb; border: 1.5px dashed #f59e0b; border-radius: 18px; padding: 20px; margin-bottom: 25px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="background:#fef3c7; color:#d97706; width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin:0; font-size:0.95rem; font-weight:800; color:#92400e;">Continuar edición de borradores</h3>
+                                <p style="margin:2px 0 0; font-size:0.75rem; color:#b45309; font-weight:600;">Tienes una factura pendiente de completar.</p>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button type="button" id="btn-restore-draft" style="background:#f59e0b; color:white; border:none; padding:8px 16px; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.8rem;">
+                                Restaurar Borrador
+                            </button>
+                            <button type="button" id="btn-discard-draft" style="background:transparent; color:#b45309; border:1px solid #f59e0b; padding:8px 16px; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.8rem;">
+                                Descartar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <form id="factura-form" class="fac-form">
 
                     <!-- ═══════════════════════════════════════════════════ -->
@@ -273,46 +298,52 @@
                     <!-- ═══════════════════════════════════════════════════ -->
                     <!--  TARJETA 4 – DETALLE DE VENTA                       -->
                     <!-- ═══════════════════════════════════════════════════ -->
-                    <div class="section-box">
+                    <div class="section-box section-blocked" id="venta-section">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
                             <h3 class="section-title" style="margin:0;">
                                 <i class="fas fa-shopping-cart"></i> Detalle de Venta
                             </h3>
+                            
+                            <div id="receptor-alert" style="background:#fff1f2; color:#be123c; padding:8px 15px; border-radius:10px; font-size:0.75rem; font-weight:800; border:1px solid #fecdd3;">
+                                <i class="fas fa-exclamation-circle"></i> Debe seleccionar un Receptor primero
+                            </div>
 
-                            <div class="autocomplete-wrapper" style="width:320px;">
-                                <input type="text" id="buscar-cabys" class="fi" placeholder="🔍 Buscar código CAByS o nombre…" autocomplete="off">
+                            <div class="autocomplete-wrapper" style="width:380px;">
+                                <input type="text" id="buscar-cabys" class="fi" placeholder="🔍 Buscar por Nombre, Descripción, CABYS..." autocomplete="off">
                                 <div id="cabys-dropdown" class="autocomplete-dropdown"></div>
                             </div>
 
                         </div>
 
                         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:11px; overflow:hidden;">
-                            <table class="detail-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width:70px;">LÍNEA</th>
-                                        <th style="width:110px;">CÓDIGO CAByS</th>
-                                        <th>DESCRIPCIÓN</th>
-                                        <th style="width:80px;">CANT.</th>
-                                        <th style="width:125px;">P. UNITARIO</th>
-                                        <th style="width:100px;">DESCUENTO</th>
-                                        <th style="width:130px;">SUBTOTAL</th>
-                                        <th style="width:44px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="detalle-lineas">
-                                    <tr id="empty-row">
-                                        <td colspan="8" style="text-align:center; padding:28px; color:#94a3b8; font-weight:500;">
-                                            <i class="fas fa-box-open" style="font-size:1.4rem; margin-bottom:6px; display:block;"></i>
-                                            No hay líneas agregadas
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="table-container" style="overflow-x: auto;">
+                                <table class="detail-table" style="min-width: 1200px;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:50px;">LÍNEA</th>
+                                            <th style="width:110px;">CABYS</th>
+                                            <th style="width:110px;">CÓDIGO</th>
+                                            <th style="width:200px;">DESCRIPCIÓN</th>
+                                            <th style="width:180px;">DETALLES</th>
+                                            <th style="width:130px;">IMPUESTO</th>
+                                            <th style="width:70px;">% IVA</th>
+                                            <th style="width:70px;">CANT.</th>
+                                            <th style="width:80px;">% DESC.</th>
+                                            <th style="width:120px;">SUBTOTAL</th>
+                                            <th style="width:44px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detalle-lineas">
+                                        <tr id="empty-row">
+                                            <td colspan="11" style="text-align:center; padding:28px; color:#94a3b8; font-weight:500;">
+                                                <i class="fas fa-box-open" style="font-size:1.4rem; margin-bottom:6px; display:block;"></i>
+                                                No hay líneas agregadas (Seleccione del inventario)
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <button type="button" id="btn-agregar-linea" class="btn-add-line">
-                            <i class="fas fa-plus-circle"></i> Agregar ítem manualmente
-                        </button>
                     </div>
 
                     <!-- ═══════════════════════════════════════════════════ -->

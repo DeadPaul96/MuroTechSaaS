@@ -1,8 +1,4 @@
-// =============================================================
-// CONEXIÓN CON BASE DE DATOS - INVENTARIO
-// =============================================================
-
-const INVENTARIO_API_URL = 'http://localhost:5001/api/inventario';
+const INVENTARIO_API_URL = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.INVENTARIO}`;
 
 /**
  * Guarda un item en la base de datos
@@ -289,7 +285,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
  */
 async function verificarConexionBD() {
     try {
-        const response = await fetch('http://localhost:5001/api/health');
+        const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.HEALTH}`);
         const data = await response.json();
         
         if (data.status === 'ok' && data.database === 'connected') {
@@ -405,7 +401,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         console.log('✅ Módulo de inventario inicializado correctamente');
     } else {
-        console.error('❌ No se pudo conectar con la base de datos');
-        mostrarNotificacion('⚠️ No se pudo conectar con la base de datos. Inicia el servidor de inventario.', 'error');
+        console.warn('❌ Modo Offline: No se pudo conectar con el servidor.');
     }
 });

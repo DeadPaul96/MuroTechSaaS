@@ -1,5 +1,18 @@
 // Utilidades compartidas para todo el sistema
 
+document.addEventListener('DOMContentLoaded', () => {
+    // Inyectar blobs de fondo animados automáticamente si no existen
+    if (!document.querySelector('.bg-blobs')) {
+        const blobContainer = document.createElement('div');
+        blobContainer.className = 'bg-blobs';
+        blobContainer.innerHTML = `
+            <div class="blob"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+        `;
+        document.body.prepend(blobContainer);
+    }
+});
 // Función de navegación global
 // Función de navegación global con transición premium
 function irA(url) {

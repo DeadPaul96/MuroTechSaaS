@@ -10,16 +10,18 @@
   --accent-color: #f97316; /* Naranja vibrante */
   --accent-orange: #fb923c;
   
-    /* --- Paleta de Colores MUROTECH SaaS (Equilibrio Azul/Naranja) --- */
-    --primary: hsl(221, 83%, 53%);         /* Azul Cobalto Vibrante (Base) */
-    --primary-dark: hsl(222, 47%, 11%);
-    --primary-light: hsl(221, 83%, 95%);
+    /* --- Paleta de Colores MUROTECH Oficial (Basado en Branding) --- */
+    --primary: #0064B0;         /* Azul MUROTECH */
+    --primary-dark: #004d87;
+    --primary-light: #e0f2fe;
     
-    --accent: hsl(25, 95%, 53%);          /* Naranja MUROTECH (Protagonista) */
-    --accent-dark: hsl(25, 95%, 43%);
-    --accent-light: hsl(25, 95%, 90%);
+    --accent: #F14924;          /* Rojo-Naranja MUROTECH */
+    --accent-dark: #d63d1a;
+    --accent-light: #fff1f0;
     
-    /* Gradiente que mezcla ambos pero resalta el naranja */
+    --accent-alt: #F47320;      /* Naranja Secundario MUROTECH */
+    
+    /* Gradiente que mezcla ambos colores corporativos */
     --grad-premium: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
     
     --success: hsl(142, 70%, 45%);
@@ -47,12 +49,12 @@
     --shadow-md: 0 8px 16px -4px rgba(0,0,0,0.08), 0 4px 8px -2px rgba(0,0,0,0.04);
     --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
     --shadow-premium: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-    --shadow-orange: 0 10px 25px hsla(25, 95%, 53%, 0.4);
-    --shadow-blue: 0 10px 25px hsla(221, 83%, 53%, 0.4);
-    --glow-orange: 0 0 20px hsla(25, 95%, 53%, 0.3);
+    --shadow-orange: 0 10px 25px hsla(11, 88%, 54%, 0.4);
+    --shadow-blue: 0 10px 25px hsla(206, 100%, 35%, 0.4);
+    --glow-orange: 0 0 20px hsla(11, 88%, 54%, 0.3);
     
     /* --- Gradientes Específicos Login --- */
-    --grad-hero: radial-gradient(circle at 10% 20%, rgba(0, 52, 102, 1) 0%, rgba(0, 10, 30, 1) 90%);
+    --grad-hero: radial-gradient(circle at 10% 20%, #001a30 0%, #000a1e 90%);
     --grad-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     --grad-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
     --text-gradient: linear-gradient(to right, var(--primary), var(--accent));

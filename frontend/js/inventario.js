@@ -217,7 +217,8 @@
                 modelo: esServicio ? '' : (document.getElementById('inv-modelo').value || ''),
                 caracteristicas: esServicio ? '' : (document.getElementById('inv-caracteristicas').value || ''),
                 nombreServicio: esServicio ? (document.getElementById('inv-nombre-servicio').value || '') : '',
-                detalleServicio: esServicio ? (document.getElementById('inv-detalle-servicio').value || '') : ''
+                detalleServicio: esServicio ? (document.getElementById('inv-detalle-servicio').value || '') : '',
+                descuento_maximo: parseFloat(document.getElementById('inv-descuento-max').value) || 0
             };
             if (window.muroDB) window.muroDB.addProducto(producto);
             inventario = window.muroDB.getProductos();

@@ -1,8 +1,5 @@
-// =============================================================
-// BÚSQUEDA DE CABYS EN TIEMPO REAL
-// =============================================================
-
-const CABYS_API_URL = 'http://localhost:5001/api/cabys';
+// Usar configuración centralizada
+const CABYS_API_URL = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.CABYS}`;
 
 let timeoutBusquedaCABYS = null;
 let resultadosCABYS = [];
@@ -83,7 +80,7 @@ async function buscarCABYS(query) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
         
-        const response = await fetch(`http://localhost:5001/api/cabys/search?q=${encodeURIComponent(query)}&limit=15`, {
+        const response = await fetch(`${CABYS_API_URL}/search?q=${encodeURIComponent(query)}&limit=15`, {
             signal: controller.signal
         });
         
@@ -196,7 +193,7 @@ function mostrarErrorCABYS(mensaje) {
             <i class="fas fa-exclamation-triangle"></i>
             <p>Error al buscar CABYS</p>
             <small>${mensaje}</small>
-            <small>Verifica que el servidor CABYS esté corriendo en el puerto 5001</small>
+            <small>Verifica tu conexión a internet o el estado del servidor.</small>
         </div>
     `;
     contenedor.style.display = 'block';
@@ -315,9 +312,9 @@ function mostrarNotificacionCABYS(mensaje, tipo = 'info') {
  */
 async function verificarServidorCABYS() {
     try {
-        const response = await fetch('http://localhost:5001/api/health', {
+        const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.HEALTH}`, {
             method: 'GET',
-            signal: AbortSignal.timeout(5000) // Timeout de 5 segundos
+            signal: AbortSignal.timeout(5000) 
         });
         
         const data = await response.json();
@@ -332,8 +329,7 @@ async function verificarServidorCABYS() {
             return false;
         }
     } catch (error) {
-        console.error('❌ Servidor CABYS no disponible:', error.message);
-        console.log('💡 Asegúrate de iniciar el servidor: python "Nueva carpeta/APIS/cabys_api_tiempo_real.py"');
+        console.error('❌ Servidor no disponible:', error.message);
         return false;
     }
 }
