@@ -207,7 +207,7 @@
                 html: `
                     <div style="display:flex; flex-direction:column; gap:12px; margin-top: 15px; text-align:left;">
                         <div>
-                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Descripción</label>
+                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Descripción General (MH)</label>
                             <input id="swal-desc" class="fi" value="${item.descripcion}" style="box-sizing:border-box; width:100%;">
                         </div>
                         
@@ -222,13 +222,13 @@
                                 <input id="swal-modelo" class="fi" value="${item.modelo || ''}" style="box-sizing:border-box; width:100%;">
                             </div>
                         </div>
-                        <div>
-                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Características</label>
-                            <input id="swal-chars" class="fi" value="${item.caracteristicas || ''}" placeholder="Color, tamaño, etc." style="box-sizing:border-box; width:100%;">
-                        </div>
                         ` : `
                         <div>
-                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Detalle del Servicio</label>
+                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Nombre del Servicio</label>
+                            <input id="swal-nombre-svc" class="fi" value="${item.nombreServicio || ''}" style="box-sizing:border-box; width:100%;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Detalle / Observaciones del Servicio</label>
                             <input id="swal-detalle-svc" class="fi" value="${item.detalleServicio || ''}" style="box-sizing:border-box; width:100%;">
                         </div>
                         `}
@@ -239,21 +239,27 @@
                                 <input id="swal-precio" type="number" class="fi" value="${item.precioVenta}" style="box-sizing:border-box; width:100%;">
                             </div>
                             <div>
-                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Stock Actual</label>
-                                <input id="swal-stock" type="number" class="fi" value="${item.stock}" ${esServicio ? 'disabled' : ''} style="box-sizing:border-box; width:100%;">
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Descuento Máximo (%)</label>
+                                <input id="swal-desc-max" type="number" class="fi" value="${item.descuento_maximo || 0}" style="box-sizing:border-box; width:100%;">
                             </div>
                         </div>
 
-                        <div>
-                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">IVA (%)</label>
-                            <select id="swal-iva" class="premium-select" style="width:100%;">
-                                <option value="13" ${item.impuesto == '13' ? 'selected' : ''}>13% (General)</option>
-                                <option value="8" ${item.impuesto == '8' ? 'selected' : ''}>8% (Reducido)</option>
-                                <option value="4" ${item.impuesto == '4' ? 'selected' : ''}>4% (Reducido)</option>
-                                <option value="2" ${item.impuesto == '2' ? 'selected' : ''}>2% (Reducido)</option>
-                                <option value="1" ${item.impuesto == '1' ? 'selected' : ''}>1% (Canasta Básica)</option>
-                                <option value="0" ${item.impuesto == '0' ? 'selected' : ''}>0% (Exento)</option>
-                            </select>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Stock Actual</label>
+                                <input id="swal-stock" type="number" class="fi" value="${item.stock}" ${esServicio ? 'disabled' : ''} style="box-sizing:border-box; width:100%;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">IVA (%)</label>
+                                <select id="swal-iva" class="premium-select" style="width:100%;">
+                                    <option value="13" ${item.impuesto == '13' ? 'selected' : ''}>13% (General)</option>
+                                    <option value="8" ${item.impuesto == '8' ? 'selected' : ''}>8% (Reducido)</option>
+                                    <option value="4" ${item.impuesto == '4' ? 'selected' : ''}>4% (Reducido)</option>
+                                    <option value="2" ${item.impuesto == '2' ? 'selected' : ''}>2% (Reducido)</option>
+                                    <option value="1" ${item.impuesto == '1' ? 'selected' : ''}>1% (Canasta Básica)</option>
+                                    <option value="0" ${item.impuesto == '0' ? 'selected' : ''}>0% (Exento)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 `,
@@ -266,6 +272,7 @@
                     const updatedData = {
                         descripcion: document.getElementById('swal-desc').value,
                         precioVenta: parseFloat(document.getElementById('swal-precio').value),
+                        descuento_maximo: parseFloat(document.getElementById('swal-desc-max').value) || 0,
                         stock: esServicio ? 0 : parseInt(document.getElementById('swal-stock').value),
                         impuesto: document.getElementById('swal-iva').value
                     };
@@ -273,15 +280,15 @@
                     if (!esServicio) {
                         updatedData.marca = document.getElementById('swal-marca').value;
                         updatedData.modelo = document.getElementById('swal-modelo').value;
-                        updatedData.caracteristicas = document.getElementById('swal-chars').value;
                     } else {
+                        updatedData.nombreServicio = document.getElementById('swal-nombre-svc').value;
                         updatedData.detalleServicio = document.getElementById('swal-detalle-svc').value;
                     }
                     
                     if (window.muroDB) window.muroDB.updateProducto(id, updatedData);
                     inventario = window.muroDB.getProductos();
                     renderTabla();
-                    Swal.fire('Actualizado', 'Los datos del ítem han sido actualizados.', 'success');
+                    Swal.fire('Actualizado', 'Los datos han sido actualizados.', 'success');
                 }
             });
         };
