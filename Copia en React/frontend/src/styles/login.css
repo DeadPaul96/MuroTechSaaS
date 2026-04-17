@@ -1,0 +1,99 @@
+body.login-body { 
+    font-family: var(--font-main) !important; 
+    margin: 0;
+    padding: 0;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100vh;
+    overflow-y: hidden;
+    color: var(--text-main);
+    /* El fondo animado viene de base.css */
+}
+
+#particles-canvas {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0; pointer-events: none; opacity: 0.6;
+}
+
+/* El fondo animado (blobs) se maneja globalmente desde utils.js y base.css */
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 40px !important;
+    box-shadow: var(--shadow-premium) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    backdrop-filter: blur(10px) !important;
+    padding: 50px !important;
+    z-index: 10;
+}
+
+.logo-container {
+    width: auto !important; height: auto !important; 
+    margin: 0 auto 25px !important;
+    background: transparent !important;
+    border-radius: 0 !important; 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: center !important;
+    box-shadow: none !important;
+}
+
+.auth-header h1 { 
+    display: none !important; /* El logo ya tiene el texto MUROTECH */
+}
+
+.auth-header p { 
+    color: var(--text-muted) !important; 
+    font-weight: 700 !important; 
+    margin-top: 0 !important; 
+    margin-bottom: 40px !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+}
+
+.input-wrapper { position: relative; margin-bottom: 20px; }
+.input-icon-cap { position: absolute; left: 22px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.1rem; z-index: 5; }
+
+.fi-capsule {
+    width: 100%; background: var(--bg-main); border: 1.5px solid var(--murotech-gray-200);
+    padding: 18px 20px 18px 58px; border-radius: 35px;
+    font-size: 1rem; font-weight: 600; color: var(--text-main); transition: all 0.3s;
+    font-family: var(--font-main);
+}
+.fi-capsule:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: var(--shadow-blue); }
+.fi-capsule::placeholder { color: var(--text-muted); font-weight: 500; }
+
+.pass-toggle-cap { position: absolute; right: 22px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; z-index: 6; margin: 0; padding: 0; display: flex; }
+
+.btn-finalizar {
+    width: 100%; padding: 18px 45px; 
+    background: var(--grad-premium) !important;
+    border: none; color: white !important; border-radius: 35px !important; font-weight: 900 !important; cursor: pointer;
+    box-shadow: var(--shadow-blue) !important; transition: all 0.3s !important;
+    font-size: 1.1rem !important; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 25px;
+    text-transform: uppercase; letter-spacing: 1px;
+}
+.btn-finalizar:hover { transform: translateY(-3px) scale(1.02) !important; box-shadow: var(--shadow-lg) !important; }
+
+.auth-footer p { color: var(--text-muted) !important; font-weight: 600; font-size: 0.95rem; }
+.auth-footer a { color: var(--primary) !important; font-weight: 800 !important; text-decoration: none !important; border-bottom: 2px solid transparent !important; transition: all 0.2s !important; }
+.auth-footer a:hover { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+.remember-me { font-weight: 700 !important; color: var(--text-muted) !important; font-size: 0.9rem; }
+.forgot-password { font-weight: 800 !important; color: var(--danger) !important; font-size: 0.9rem; }
+
+        @media (max-width: 500px) {
+            .auth-card {
+                padding: 30px 20px !important;
+                border-radius: 25px !important;
+                margin: 0 15px;
+            }
+            .auth-header h1 {
+                font-size: 1.8rem !important;
+            }
+            .btn-finalizar {
+                padding: 15px 30px !important;
+            }
+        }

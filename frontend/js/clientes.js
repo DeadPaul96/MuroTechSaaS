@@ -31,16 +31,18 @@
                         <i class="fas fa-map-marker-alt" style="margin-right:4px; opacity:0.5;"></i> ${c.provincia || 'N/A'}, ${c.canton || 'N/A'}
                     </td>
                     <td style="padding:16px 20px; text-align:center; display:flex; justify-content:center; gap:8px;">
-                        <button class="btn-action edit" onclick="editarCliente(${idx})" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                        <button class="btn-action del" onclick="eliminarCliente(${idx})" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                        <button class="btn-action edit" onclick="editarCliente(${c.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action del" onclick="eliminarCliente(${c.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        window.editarCliente = function (idx) {
-            const cli = clientes[idx];
+        window.editarCliente = function (id) {
+            const cli = clientes.find(c => c.id === id);
+            if (!cli) return;
+
             Swal.fire({
                 title: 'Editar Contacto',
                 html: `
@@ -56,20 +58,29 @@
                 cancelButtonText: 'Cancelar'
             }).then(r => {
                 if (r.isConfirmed) {
-                    clientes[idx].nombre = document.getElementById('swal-nombre').value;
-                    clientes[idx].correo = document.getElementById('swal-correo').value;
-                    clientes[idx].telefono = document.getElementById('swal-telefono').value;
-                    clientes[idx].direccion = document.getElementById('swal-direccion').value;
+                    const updatedData = {
+                        nombre: document.getElementById('swal-nombre').value,
+                        correo: document.getElementById('swal-correo').value,
+                        telefono: document.getElementById('swal-telefono').value,
+                        direccion: document.getElementById('swal-direccion').value
+                    };
+                    
+                    window.muroDB.updateCliente(id, updatedData);
+                    clientes = window.muroDB.getClientes();
                     renderTabla(clientes);
                     actualizarBadge();
+                    Swal.fire('Guardado', 'Los datos del cliente han sido actualizados.', 'success');
                 }
             });
         };
 
-        window.eliminarCliente = function (idx) {
+        window.eliminarCliente = function (id) {
+            const cli = clientes.find(c => c.id === id);
+            if (!cli) return;
+
             Swal.fire({
                 title: '¿Eliminar cliente?',
-                text: clientes[idx].nombre,
+                text: cli.nombre,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
@@ -77,7 +88,8 @@
                 confirmButtonText: 'Sí, eliminar'
             }).then(r => {
                 if (r.isConfirmed) {
-                    clientes.splice(idx, 1);
+                    window.muroDB.deleteCliente(id);
+                    clientes = window.muroDB.getClientes();
                     renderTabla(clientes);
                     actualizarBadge();
                 }

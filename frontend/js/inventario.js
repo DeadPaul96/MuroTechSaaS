@@ -183,7 +183,10 @@
                     <td style="padding:15px 20px; text-align:center;">
                         ${esServicio ? '<span style="color:#94a3b8; font-style:italic;">N/A</span>' : `<span style="font-weight:900; color:${item.stock > 0 ? '#10b981' : '#ef4444'}">${item.stock}</span>`}
                     </td>
-                    <td style="padding:15px 20px; text-align:center;">
+                    <td style="padding:15px 20px; text-align:center; display:flex; justify-content:center; gap:8px;">
+                        <button class="btn-action edit" onclick="editarItem(${item.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer; transition:all 0.2s;">
+                            <i class="fas fa-edit"></i>
+                        </button>
                         <button class="btn-action del" onclick="eliminarItem(${item.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer; transition:all 0.2s;">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -194,10 +197,78 @@
             document.getElementById('total-items-badge').innerHTML = `<i class="fas fa-box"></i> ${inventario.length} Ítems en Inventario`;
         }
 
+        window.editarItem = function(id) {
+            const item = inventario.find(i => i.id === id);
+            if (!item) return;
+
+            Swal.fire({
+                title: 'Editar Ítem',
+                html: `
+                    <div style="display:flex; flex-direction:column; gap:12px; margin-top: 15px; text-align:left;">
+                        <div>
+                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Descripción</label>
+                            <input id="swal-desc" class="fi" value="${item.descripcion}" style="box-sizing:border-box; width:100%;">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Precio Venta</label>
+                                <input id="swal-precio" type="number" class="fi" value="${item.precioVenta}" style="box-sizing:border-box; width:100%;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Stock Actual</label>
+                                <input id="swal-stock" type="number" class="fi" value="${item.stock}" ${item.unidadMedida === 'Svc' ? 'disabled' : ''} style="box-sizing:border-box; width:100%;">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">IVA (%)</label>
+                            <select id="swal-iva" class="premium-select" style="width:100%;">
+                                <option value="13" ${item.impuesto == '13' ? 'selected' : ''}>13% (General)</option>
+                                <option value="8" ${item.impuesto == '8' ? 'selected' : ''}>8% (Reducido)</option>
+                                <option value="4" ${item.impuesto == '4' ? 'selected' : ''}>4% (Reducido)</option>
+                                <option value="2" ${item.impuesto == '2' ? 'selected' : ''}>2% (Reducido)</option>
+                                <option value="1" ${item.impuesto == '1' ? 'selected' : ''}>1% (Canasta Básica)</option>
+                                <option value="0" ${item.impuesto == '0' ? 'selected' : ''}>0% (Exento)</option>
+                            </select>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Guardar Cambios',
+                cancelButtonText: 'Cancelar',
+                width: '500px'
+            }).then(r => {
+                if (r.isConfirmed) {
+                    const updatedData = {
+                        descripcion: document.getElementById('swal-desc').value,
+                        precioVenta: parseFloat(document.getElementById('swal-precio').value),
+                        stock: item.unidadMedida === 'Svc' ? 0 : parseInt(document.getElementById('swal-stock').value),
+                        impuesto: document.getElementById('swal-iva').value
+                    };
+                    
+                    if (window.muroDB) window.muroDB.updateProducto(id, updatedData);
+                    inventario = window.muroDB.getProductos();
+                    renderTabla();
+                    Swal.fire('Actualizado', 'Los datos del ítem han sido actualizados.', 'success');
+                }
+            });
+        };
+
         window.eliminarItem = function(id) {
-            if (window.muroDB) window.muroDB.deleteProducto(id);
-            inventario = window.muroDB.getProductos();
-            renderTabla();
+            Swal.fire({
+                title: '¿Eliminar ítem?',
+                text: 'Esta acción no se puede deshacer.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonText: 'Cancelar',
+                confirmButtonText: 'Sí, eliminar'
+            }).then(r => {
+                if (r.isConfirmed) {
+                    if (window.muroDB) window.muroDB.deleteProducto(id);
+                    inventario = window.muroDB.getProductos();
+                    renderTabla();
+                }
+            });
         };
 
         document.getElementById('addItemForm').addEventListener('submit', function (e) {
