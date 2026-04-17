@@ -13,7 +13,7 @@
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#94a3b8;">No hay clientes registrados</td></tr>`;
                 return;
             }
-            lista.forEach((c, idx) => {
+            lista.forEach((c) => {
                 const tr = document.createElement('tr');
                 tr.style.borderBottom = '1px solid #f1f5f9';
                 tr.style.transition = 'background 0.2s';
@@ -21,18 +21,39 @@
                 tr.onmouseout = () => tr.style.background = '';
                 
                 tr.innerHTML = `
-                    <td style="padding:16px 20px; font-weight:800; font-size:0.82rem; color:#1e293b;">
-                        <span style="font-size:0.6rem; background:#f1f5f9; padding:2px 6px; border-radius:4px; margin-right:6px; vertical-align:middle;">${c.tipoId}</span>
-                        ${c.identificacion}
+                    <td style="padding:16px 20px;">
+                        <div style="font-weight:800; font-size:0.82rem; color:#1e293b;">
+                            <span style="font-size:0.6rem; background:#f1f5f9; padding:2px 6px; border-radius:4px; margin-right:6px; vertical-align:middle;">${c.tipoId}</span>
+                            ${c.identificacion}
+                        </div>
                     </td>
-                    <td style="padding:16px 20px; font-weight:700; font-size:0.9rem; color:var(--primary-dark);">${c.nombre}</td>
-                    <td style="padding:16px 20px; font-weight:600; color:#64748b;">${c.correo || '—'}</td>
-                    <td style="padding:16px 20px; font-size:0.8rem; color:#94a3b8;">
-                        <i class="fas fa-map-marker-alt" style="margin-right:4px; opacity:0.5;"></i> ${c.provincia || 'N/A'}, ${c.canton || 'N/A'}
+                    <td style="padding:16px 20px;">
+                        <div style="font-weight:700; font-size:0.9rem; color:var(--primary-dark);">${c.nombre}</div>
+                        <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                            <i class="fas fa-envelope" style="margin-right:4px; font-size:0.7rem;"></i> ${c.correo || '—'}
+                        </div>
                     </td>
-                    <td style="padding:16px 20px; text-align:center; display:flex; justify-content:center; gap:8px;">
-                        <button class="btn-action edit" onclick="editarCliente(${c.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                        <button class="btn-action del" onclick="eliminarCliente(${c.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                    <td style="padding:16px 20px;">
+                        <div style="font-size:0.8rem; font-weight:700; color:#1e293b;">
+                            <i class="fas fa-phone-alt" style="margin-right:6px; color:#3b82f6; font-size:0.7rem;"></i> ${c.telefono || '—'}
+                        </div>
+                        <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                            <i class="fab fa-whatsapp" style="margin-right:6px; color:#10b981; font-size:0.75rem;"></i> ${c.movil || '—'}
+                        </div>
+                    </td>
+                    <td style="padding:16px 20px;">
+                        <div style="font-size:0.78rem; font-weight:700; color:#475569;">
+                            <i class="fas fa-map-marker-alt" style="margin-right:4px; color:#ef4444; opacity:0.7;"></i> ${c.provincia || 'N/A'}, ${c.canton || 'N/A'}
+                        </div>
+                        <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px; padding-left:14px;">
+                            ${c.distrito || 'N/A'} — ${c.barrio || 'N/A'}
+                        </div>
+                    </td>
+                    <td style="padding:16px 20px; text-align:center;">
+                        <div style="display:flex; justify-content:center; gap:8px;">
+                            <button class="btn-action edit" onclick="editarCliente(${c.id})" title="Editar Cliente" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                            <button class="btn-action del" onclick="eliminarCliente(${c.id})" title="Eliminar Cliente" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);

@@ -167,27 +167,41 @@
                 tr.style.transition = 'all 0.2s';
                 tr.onmouseover = () => tr.style.background = '#f8fafc';
                 tr.onmouseout = () => tr.style.background = '';
-
                 tr.innerHTML = `
-                    <td style="padding:15px 20px; font-family:monospace; font-size:0.75rem; color:#64748b;">${item.cabys}</td>
-                    <td style="padding:15px 20px; font-weight:800; color:var(--primary); font-size:0.85rem;">${item.codigo}</td>
+                    <td style="padding:15px 20px;">
+                        <div style="font-family:monospace; font-size:0.7rem; color:#64748b;">${item.cabys}</div>
+                        <div style="font-weight:800; color:var(--primary); font-size:0.8rem; margin-top:2px;">${item.codigo}</div>
+                    </td>
                     <td style="padding:15px 20px;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             ${tipoBadge}
-                            <span style="font-weight:700; color:#1e293b;">${item.descripcion}</span>
+                            <span style="font-weight:800; color:#1e293b; font-size:0.9rem;">${item.descripcion}</span>
                         </div>
                         ${detalle}
                     </td>
-                    <td style="padding:15px 20px; font-weight:900; color:#1e293b; font-family:'Outfit';">₡${item.precioVenta ? item.precioVenta.toLocaleString() : '0'}</td>
-                    <td style="padding:15px 20px;"><span style="background:#f1f5f9; padding:2px 8px; border-radius:6px; font-weight:800; font-size:0.7rem; color:#64748b;">${item.impuesto}% IVA</span></td>
-                    <td style="padding:15px 20px; text-align:center;">
-                        ${esServicio ? '<span style="color:#94a3b8; font-style:italic;">N/A</span>' : `<span style="font-weight:900; color:${item.stock > 0 ? '#10b981' : '#ef4444'}">${item.stock}</span>`}
+                    <td style="padding:15px 20px;">
+                        <div style="font-size:0.75rem; color:#94a3b8; font-weight:600;">Costo: ₡${item.precio ? item.precio.toLocaleString() : '0'}</div>
+                        <div style="font-weight:900; color:#1e293b; font-size:0.95rem; margin-top:2px;">Venta: ₡${item.precioVenta ? item.precioVenta.toLocaleString() : '0'}</div>
                     </td>
-                    <td style="padding:15px 20px; text-align:center; display:flex; justify-content:center; gap:8px;">
-                        <button class="btn-action edit" onclick="editarItem(${item.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer; transition:all 0.2s;">
+                    <td style="padding:15px 20px;">
+                        <div style="display:inline-block; background:#f1f5f9; padding:2px 8px; border-radius:6px; font-weight:800; font-size:0.7rem; color:#64748b;">
+                            ${item.impuesto}% IVA
+                        </div>
+                        <div style="font-size:0.65rem; color:#10b981; font-weight:800; margin-top:4px; padding-left:4px;">
+                            UTIL: ${item.margen || 0}%
+                        </div>
+                    </td>
+                    <td style="padding:15px 20px; text-align:center;">
+                        <div style="font-weight:900; font-size:1.1rem; color:${item.stock > 0 ? '#10b981' : '#ef4444'}">
+                            ${esServicio ? '<span style="color:#94a3b8; font-size:0.75rem; font-style:italic; font-weight:500;">ILIM</span>' : item.stock}
+                        </div>
+                        <div style="font-size:0.6rem; font-weight:800; color:#94a3b8; text-transform:uppercase;">${esServicio ? 'Servicio' : 'Stock'}</div>
+                    </td>
+                    <td style="padding:15px 20px; text-align:center; display:flex; justify-content:center; gap:8px; align-items:center;">
+                        <button class="btn-action edit" onclick="editarItem(${item.id})" title="Editar Ítem" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer; transition:all 0.2s;">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-action del" onclick="eliminarItem(${item.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer; transition:all 0.2s;">
+                        <button class="btn-action del" onclick="eliminarItem(${item.id})" title="Eliminar Ítem" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer; transition:all 0.2s;">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </td>
