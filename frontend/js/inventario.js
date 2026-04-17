@@ -200,6 +200,7 @@
         window.editarItem = function(id) {
             const item = inventario.find(i => i.id === id);
             if (!item) return;
+            const esServicio = item.unidadMedida === 'Svc';
 
             Swal.fire({
                 title: 'Editar Ítem',
@@ -209,6 +210,29 @@
                             <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Descripción</label>
                             <input id="swal-desc" class="fi" value="${item.descripcion}" style="box-sizing:border-box; width:100%;">
                         </div>
+                        
+                        ${!esServicio ? `
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Marca</label>
+                                <input id="swal-marca" class="fi" value="${item.marca || ''}" style="box-sizing:border-box; width:100%;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Modelo</label>
+                                <input id="swal-modelo" class="fi" value="${item.modelo || ''}" style="box-sizing:border-box; width:100%;">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Características</label>
+                            <input id="swal-chars" class="fi" value="${item.caracteristicas || ''}" placeholder="Color, tamaño, etc." style="box-sizing:border-box; width:100%;">
+                        </div>
+                        ` : `
+                        <div>
+                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Detalle del Servicio</label>
+                            <input id="swal-detalle-svc" class="fi" value="${item.detalleServicio || ''}" style="box-sizing:border-box; width:100%;">
+                        </div>
+                        `}
+
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                             <div>
                                 <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Precio Venta</label>
@@ -216,9 +240,10 @@
                             </div>
                             <div>
                                 <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Stock Actual</label>
-                                <input id="swal-stock" type="number" class="fi" value="${item.stock}" ${item.unidadMedida === 'Svc' ? 'disabled' : ''} style="box-sizing:border-box; width:100%;">
+                                <input id="swal-stock" type="number" class="fi" value="${item.stock}" ${esServicio ? 'disabled' : ''} style="box-sizing:border-box; width:100%;">
                             </div>
                         </div>
+
                         <div>
                             <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">IVA (%)</label>
                             <select id="swal-iva" class="premium-select" style="width:100%;">
@@ -235,15 +260,23 @@
                 showCancelButton: true,
                 confirmButtonText: 'Guardar Cambios',
                 cancelButtonText: 'Cancelar',
-                width: '500px'
+                width: '600px'
             }).then(r => {
                 if (r.isConfirmed) {
                     const updatedData = {
                         descripcion: document.getElementById('swal-desc').value,
                         precioVenta: parseFloat(document.getElementById('swal-precio').value),
-                        stock: item.unidadMedida === 'Svc' ? 0 : parseInt(document.getElementById('swal-stock').value),
+                        stock: esServicio ? 0 : parseInt(document.getElementById('swal-stock').value),
                         impuesto: document.getElementById('swal-iva').value
                     };
+
+                    if (!esServicio) {
+                        updatedData.marca = document.getElementById('swal-marca').value;
+                        updatedData.modelo = document.getElementById('swal-modelo').value;
+                        updatedData.caracteristicas = document.getElementById('swal-chars').value;
+                    } else {
+                        updatedData.detalleServicio = document.getElementById('swal-detalle-svc').value;
+                    }
                     
                     if (window.muroDB) window.muroDB.updateProducto(id, updatedData);
                     inventario = window.muroDB.getProductos();

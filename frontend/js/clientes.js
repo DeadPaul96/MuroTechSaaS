@@ -44,24 +44,111 @@
             if (!cli) return;
 
             Swal.fire({
-                title: 'Editar Contacto',
+                title: 'Editar Datos del Cliente',
                 html: `
-                    <div style="display:flex; flex-direction:column; gap:10px; margin-top: 10px;">
-                        <input id="swal-nombre" class="fi" value="${cli.nombre}" placeholder="Nombre / Razón Social" style="box-sizing:border-box;">
-                        <input id="swal-correo" type="email" class="fi" value="${cli.correo || ''}" placeholder="Correo" style="box-sizing:border-box;">
-                        <input id="swal-telefono" class="fi" value="${cli.telefono || ''}" placeholder="Teléfono" style="box-sizing:border-box;">
-                        <input id="swal-direccion" class="fi" value="${cli.direccion || ''}" placeholder="Dirección Exacta" style="box-sizing:border-box;">
+                    <div style="display:flex; flex-direction:column; gap:12px; margin-top: 15px; text-align:left;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Nombre / Razón Social</label>
+                                <input id="swal-nombre" class="fi" value="${cli.nombre}" style="width:100%; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Correo Electrónico</label>
+                                <input id="swal-correo" type="email" class="fi" value="${cli.correo || ''}" style="width:100%; box-sizing:border-box;">
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Provincia</label>
+                                <select id="swal-provincia" class="premium-select" style="width:100%;"></select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Cantón</label>
+                                <select id="swal-canton" class="premium-select" style="width:100%;"></select>
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Distrito</label>
+                                <select id="swal-distrito" class="premium-select" style="width:100%;"></select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Barrio</label>
+                                <select id="swal-barrio" class="premium-select" style="width:100%;"></select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Dirección Exacta</label>
+                            <input id="swal-direccion" class="fi" value="${cli.direccion || ''}" style="width:100%; box-sizing:border-box;">
+                        </div>
                     </div>
                 `,
+                didOpen: () => {
+                    const sProv = document.getElementById('swal-provincia');
+                    const sCant = document.getElementById('swal-canton');
+                    const sDist = document.getElementById('swal-distrito');
+                    const sBarr = document.getElementById('swal-barrio');
+
+                    function populate(el, list, selected) {
+                        el.innerHTML = '<option value="">Seleccionar...</option>';
+                        list.sort().forEach(item => {
+                            const opt = document.createElement('option');
+                            opt.value = item;
+                            opt.textContent = titleCase(item);
+                            if (item === selected) opt.selected = true;
+                            el.appendChild(opt);
+                        });
+                    }
+
+                    // Init Provincias
+                    populate(sProv, Object.keys(ubicacionData), cli.provincia);
+
+                    function updateCantones() {
+                        const p = sProv.value;
+                        const list = p ? Object.keys(ubicacionData[p] || {}) : [];
+                        populate(sCant, list, cli.canton);
+                        updateDistritos();
+                    }
+
+                    function updateDistritos() {
+                        const p = sProv.value;
+                        const c = sCant.value;
+                        const list = (p && c) ? Object.keys(ubicacionData[p][c] || {}) : [];
+                        populate(sDist, list, cli.distrito);
+                        updateBarrios();
+                    }
+
+                    function updateBarrios() {
+                        const p = sProv.value;
+                        const c = sCant.value;
+                        const d = sDist.value;
+                        const list = (p && c && d) ? (ubicacionData[p][c][d] || []) : [];
+                        populate(sBarr, list, cli.barrio);
+                    }
+
+                    sProv.onchange = updateCantones;
+                    sCant.onchange = updateDistritos;
+                    sDist.onchange = updateBarrios;
+
+                    // Trigger initial cascade
+                    updateCantones();
+                },
                 showCancelButton: true,
                 confirmButtonText: 'Guardar Cambios',
-                cancelButtonText: 'Cancelar'
+                cancelButtonText: 'Cancelar',
+                width: '700px'
             }).then(r => {
                 if (r.isConfirmed) {
                     const updatedData = {
                         nombre: document.getElementById('swal-nombre').value,
                         correo: document.getElementById('swal-correo').value,
-                        telefono: document.getElementById('swal-telefono').value,
+                        provincia: document.getElementById('swal-provincia').value,
+                        canton: document.getElementById('swal-canton').value,
+                        distrito: document.getElementById('swal-distrito').value,
+                        barrio: document.getElementById('swal-barrio').value,
                         direccion: document.getElementById('swal-direccion').value
                     };
                     
@@ -69,7 +156,7 @@
                     clientes = window.muroDB.getClientes();
                     renderTabla(clientes);
                     actualizarBadge();
-                    Swal.fire('Guardado', 'Los datos del cliente han sido actualizados.', 'success');
+                    Swal.fire('Guardado', 'Datos del cliente actualizados.', 'success');
                 }
             });
         };
