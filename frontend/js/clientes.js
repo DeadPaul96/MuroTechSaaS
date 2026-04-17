@@ -60,6 +60,17 @@
 
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                             <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Teléfono Fijo</label>
+                                <input id="swal-telefono" class="fi" value="${cli.telefono || ''}" style="width:100%; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Móvil / WhatsApp</label>
+                                <input id="swal-movil" class="fi" value="${cli.movil || ''}" style="width:100%; box-sizing:border-box;">
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
                                 <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Provincia</label>
                                 <select id="swal-provincia" class="premium-select" style="width:100%;"></select>
                             </div>
@@ -145,6 +156,8 @@
                     const updatedData = {
                         nombre: document.getElementById('swal-nombre').value,
                         correo: document.getElementById('swal-correo').value,
+                        telefono: document.getElementById('swal-telefono').value,
+                        movil: document.getElementById('swal-movil').value,
                         provincia: document.getElementById('swal-provincia').value,
                         canton: document.getElementById('swal-canton').value,
                         distrito: document.getElementById('swal-distrito').value,
