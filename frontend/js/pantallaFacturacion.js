@@ -217,9 +217,11 @@
                     </div>
                 </td>
                 <td>
-                    <div class="fi-grid-stacked" style="padding: 4px 0;">
-                        <input type="text" class="fi-grid item-desc" value="${prod.nombre || prod.descripcion}" readonly style="font-weight:800; font-size:0.95rem; color:#0f172a; border-bottom:1px solid #f1f5f9; padding-bottom:4px;">
-                        <input type="text" class="fi-grid item-detail" value="${displayDetail}" placeholder="Marca, modelo..." style="font-size:0.78rem; color:#475569; font-weight:600; margin-top:2px;">
+                    <div class="fi-grid-stacked" style="padding: 2px 0;">
+                        <!-- Prioridad: Marca/Modelo/Detalle arriba y resaltado -->
+                        <input type="text" class="fi-grid item-detail" value="${displayDetail}" placeholder="Marca, modelo, características..." style="font-weight:900; font-size:1.05rem; color:#0f172a; border-bottom:1px solid #f1f5f9; padding-bottom:4px; border:none; background:transparent;">
+                        <!-- CABYS abajo como referencia secundaria -->
+                        <input type="text" class="fi-grid item-desc" value="${prod.nombre || prod.descripcion}" readonly style="font-size:0.75rem; color:#64748b; font-weight:600; margin-top:2px; border:none; background:transparent; overflow:hidden; text-overflow:ellipsis;">
                     </div>
                 </td>
                 <td>
@@ -230,9 +232,10 @@
                             <option value="99">Otro</option>
                         </select>
                         <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-                           <div style="display:flex; align-items:center; background:#ecfdf5; border:1px solid #10b981; padding:2px 8px; border-radius:8px;">
-                               <input type="number" class="fi-grid item-tax-pct" value="${prod.impuesto || 13}" min="0" max="100" step="0.1" oninput="recalcularTotales()" style="font-size:0.85rem; color:#10b981; font-weight:900; width:35px; background:transparent; border:none; padding:0;">
-                               <span style="font-size:0.75rem; color:#10b981; font-weight:900;">%</span>
+                           <!-- Impuesto no editable (salvo por exoneración) -->
+                           <div style="display:flex; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 8px; border-radius:8px; opacity:0.8;">
+                               <input type="number" class="fi-grid item-tax-pct" value="${prod.impuesto || 13}" readonly style="font-size:0.85rem; color:#64748b; font-weight:900; width:35px; background:transparent; border:none; padding:0; pointer-events:none;">
+                               <span style="font-size:0.75rem; color:#64748b; font-weight:900;">%</span>
                            </div>
                            <button type="button" class="btn-exo" onclick="configurarExoneracion('${tr.id}')" title="Configurar Exoneración" style="background:#fff7ed; border:1.5px solid #f59e0b; color:#f59e0b; cursor:pointer; font-size:0.8rem; padding:4px 8px; border-radius:8px; display:flex; align-items:center; gap:4px; font-weight:800;">
                                <i class="fas fa-shield-alt"></i> <span style="font-size:0.6rem;">EXO</span>
@@ -241,17 +244,18 @@
                     </div>
                 </td>
                 <td>
-                    <div style="display:flex; align-items:center; gap:8px; justify-content:center; padding: 10px 0;">
+                    <div style="display:flex; align-items:center; gap:8px; justify-content:center; padding: 5px 0;">
                         <div style="text-align:center;">
                             <span style="font-size:0.55rem; font-weight:800; color:#94a3b8; display:block; text-transform:uppercase;">CANT.</span>
-                            <input type="number" class="fi-grid item-qty" value="1" min="0.001" step="0.001" oninput="recalcularTotales()" style="width:55px; text-align:center; font-weight:900; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:8px; padding:6px; font-size:0.95rem; color:#0f172a;">
+                            <!-- Solo enteros > 0 -->
+                            <input type="number" class="fi-grid item-qty" value="1" min="1" step="1" oninput="this.value = Math.max(1, Math.floor(this.value)); recalcularTotales();" style="width:50px; text-align:center; font-weight:900; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:8px; padding:6px; font-size:1.1rem; color:#0f172a;">
                         </div>
                         <span style="color:#cbd5e1; margin-top:12px; font-weight:300;">|</span>
                         <div style="text-align:center;">
                              <span style="font-size:0.55rem; font-weight:800; color:#94a3b8; display:block; text-transform:uppercase;">DESC.</span>
                             <div style="display:flex; align-items:center; background:#fef2f2; border:1.5px solid #ef4444; padding:2px 6px; border-radius:8px; margin-top:2px;">
                                 <input type="number" class="fi-grid item-desc-pct" value="0" min="0" max="100" step="0.1" oninput="validateDiscount(this); recalcularTotales();" style="width:32px; text-align:right; font-size:0.85rem; color:#ef4444; font-weight:900; background:transparent; border:none; padding:0;">
-                                <span style="font-size:0.7rem; color:#ef4444; font-weight:900;">%</span>
+                                <span style="font-size:0.75rem; color:#ef4444; font-weight:900;">%</span>
                             </div>
                         </div>
                     </div>
