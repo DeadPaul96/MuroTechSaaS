@@ -17,19 +17,24 @@
         return words.every(word => target.includes(word));
     };
 
-    // --- INICIALIZACIÓN ---
-    document.addEventListener('DOMContentLoaded', () => {
+    // --- INICIALIZACIÓN SEGURA ---
+    function init() {
         syncRates();
         checkDraft();
         toggleVentaSection(false); // Bloqueado por defecto
         
-        // Prevenir envío con Enter (excepto en áreas de texto o botones)
         document.getElementById('factura-form')?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
             }
         });
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 
     function toggleVentaSection(active) {
         if (!ventaSection) return;
@@ -400,7 +405,6 @@
             } catch (e) { console.error("TC: API Hacienda no respondió."); }
         }
 
-        // 3. Procesar datos o usar Fallback
         if (data && data.dolar) {
             currentRates.usd = data.dolar.venta.valor;
             const elVenta = document.getElementById('fx-usd-venta');
@@ -421,23 +425,10 @@
                 statusBadge.style.color = '#10b981';
                 statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> SINCRONIZADO';
             }
-        } else {
-            // FALLBACK – Tasa simulada para no detener la operación
-            console.warn("TC: Usando tasas de respaldo (Offline Mode)");
-            currentRates.usd = 520.00;
-            currentRates.eur = 565.00;
-            
-            const elVenta = document.getElementById('fx-usd-venta');
-            const elEurVal = document.getElementById('fx-eur-valor');
-            if (elVenta) elVenta.textContent = '₡520.00*';
-            if (elEurVal) elEurVal.textContent = '₡565.00*';
-            
-            if (statusBadge) {
-                statusBadge.style.background = '#fffbeb';
-                statusBadge.style.color = '#d97706';
-                statusBadge.innerHTML = '<i class="fas fa-wifi-slash"></i> MODO OFFLINE';
-                statusBadge.title = "No se pudo conectar con Hacienda. Usando tasa estimada.";
-            }
+        } else if (statusBadge) {
+            statusBadge.style.background = '#fef2f2';
+            statusBadge.style.color = '#ef4444';
+            statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR API';
         }
     }
 
