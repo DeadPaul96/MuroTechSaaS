@@ -138,10 +138,11 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-grid-2" style="margin-bottom:12px;">
+                                    <!-- Panel de Impuestos (Bloqueado por Normativa 4.4) -->
+                                    <div class="form-grid-2" style="margin-bottom:12px; padding:15px; background:#f8fafc; border-radius:12px; border:1.5px solid #edf2f7;">
                                         <div>
-                                            <label class="label-sm" for="inv-iva">IVA (%)</label>
-                                            <select id="inv-iva" class="premium-select">
+                                            <label class="label-sm" for="inv-iva" style="color:#475569; font-weight:800;"><i class="fas fa-lock" style="font-size:0.7rem; color:#94a3b8; margin-right:4px;"></i>IVA (%) [Asignado por CAByS]</label>
+                                            <select id="inv-iva" class="premium-select" disabled style="background:#fff; color:#1e293b; border:1.5px solid #e2e8f0; cursor:not-allowed; -webkit-appearance:none; -moz-appearance:none; appearance:none;">
                                                 <option value="13">13% — General</option>
                                                 <option value="8">8% — Reducida</option>
                                                 <option value="4">4% — Reducida</option>
@@ -151,13 +152,17 @@
                                             </select>
                                         </div>
                                         <div>
-                                            <label class="label-sm" for="inv-tipo-impuesto">Tipo Impuesto</label>
-                                            <select id="inv-tipo-impuesto" class="premium-select">
+                                            <label class="label-sm" for="inv-tipo-impuesto" style="color:#475569; font-weight:800;"><i class="fas fa-lock" style="font-size:0.7rem; color:#94a3b8; margin-right:4px;"></i>Tipo Impuesto [Normativa 4.4]</label>
+                                            <select id="inv-tipo-impuesto" class="premium-select" disabled style="background:#fff; color:#1e293b; border:1.5px solid #e2e8f0; cursor:not-allowed; -webkit-appearance:none; -moz-appearance:none; appearance:none;">
                                                 <option value="01">01 — IVA</option>
+                                                <option value="02">02 — ISC (Consumo)</option>
+                                                <option value="03">03 — Combustibles</option>
                                                 <option value="99">99 — Otros</option>
                                             </select>
                                         </div>
                                     </div>
+
+                                    <!-- Precios y Operación -->
 
                                     <div class="form-grid-3">
                                         <div>

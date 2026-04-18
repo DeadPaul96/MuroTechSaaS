@@ -271,8 +271,8 @@
 
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                             <div>
-                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Tipo de Impuesto (Normativa 4.4)</label>
-                                <select id="swal-tipo-impuesto" class="premium-select" disabled style="width:100%; background:#f1f5f9; pointer-events:none; opacity:0.8;">
+                                <label style="font-size:0.7rem; font-weight:800; color:#475569; margin-left:12px; display:block; margin-bottom:4px;"><i class="fas fa-lock" style="color:#94a3b8; margin-right:4px;"></i>Tipo Impuesto (Normativa 4.4)</label>
+                                <select id="swal-tipo-impuesto" class="premium-select" disabled style="width:100%; background:#f8fafc; border:1.5px solid #e2e8f0; color:#475569; cursor:not-allowed; -webkit-appearance:none; appearance:none;">
                                     <option value="01" ${item.tipoImpuesto == '01' ? 'selected' : ''}>01 – IVA (Valor Agregado)</option>
                                     <option value="02" ${item.tipoImpuesto == '02' ? 'selected' : ''}>02 – ISC (Consumo)</option>
                                     <option value="03" ${item.tipoImpuesto == '03' ? 'selected' : ''}>03 – Imp. Único Combustibles</option>
@@ -281,8 +281,8 @@
                                 </select>
                             </div>
                             <div>
-                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Tarifa de Impuesto (%) [Asignado por CABYS]</label>
-                                <select id="swal-iva" class="premium-select" disabled style="width:100%; background:#f1f5f9; pointer-events:none; opacity:0.8;">
+                                <label style="font-size:0.7rem; font-weight:800; color:#475569; margin-left:12px; display:block; margin-bottom:4px;"><i class="fas fa-lock" style="color:#94a3b8; margin-right:4px;"></i>Tarifa (%) [Asignado por CABYS]</label>
+                                <select id="swal-iva" class="premium-select" disabled style="width:100%; background:#f8fafc; border:1.5px solid #e2e8f0; color:#475569; cursor:not-allowed; -webkit-appearance:none; appearance:none;">
                                     <option value="13" ${item.impuesto == '13' ? 'selected' : ''}>13% (General)</option>
                                     <option value="8" ${item.impuesto == '8' ? 'selected' : ''}>8% (Reducida)</option>
                                     <option value="4" ${item.impuesto == '4' ? 'selected' : ''}>4% (Reducida)</option>
