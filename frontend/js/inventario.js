@@ -48,7 +48,8 @@
                     nombreInput.value = m.d;
                     searchInput.value = m.d;
                     ivaSelect.value = String(m.i);
-                    document.getElementById('inv-tipo-impuesto').value = '01';
+                    const tipoImp = document.getElementById('inv-tipo-impuesto');
+                    if (tipoImp) tipoImp.value = '01';
 
                     // Unidad de medida inteligente
                     const desc = m.d.toLowerCase();
@@ -271,7 +272,7 @@
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                             <div>
                                 <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Tipo de Impuesto (Normativa 4.4)</label>
-                                <select id="swal-tipo-impuesto" class="premium-select" style="width:100%;">
+                                <select id="swal-tipo-impuesto" class="premium-select" disabled style="width:100%; background:#f1f5f9; pointer-events:none; opacity:0.8;">
                                     <option value="01" ${item.tipoImpuesto == '01' ? 'selected' : ''}>01 – IVA (Valor Agregado)</option>
                                     <option value="02" ${item.tipoImpuesto == '02' ? 'selected' : ''}>02 – ISC (Consumo)</option>
                                     <option value="03" ${item.tipoImpuesto == '03' ? 'selected' : ''}>03 – Imp. Único Combustibles</option>
@@ -280,13 +281,13 @@
                                 </select>
                             </div>
                             <div>
-                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Tarifa de Impuesto (%)</label>
-                                <select id="swal-iva" class="premium-select" style="width:100%;">
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Tarifa de Impuesto (%) [Asignado por CABYS]</label>
+                                <select id="swal-iva" class="premium-select" disabled style="width:100%; background:#f1f5f9; pointer-events:none; opacity:0.8;">
                                     <option value="13" ${item.impuesto == '13' ? 'selected' : ''}>13% (General)</option>
-                                    <option value="8" ${item.impuesto == '8' ? 'selected' : ''}>8% (Servicios/Seguros)</option>
-                                    <option value="4" ${item.impuesto == '4' ? 'selected' : ''}>4% (Canasta Básica Ampl.)</option>
-                                    <option value="2" ${item.impuesto == '2' ? 'selected' : ''}>2% (Canasta Básica Red.)</option>
-                                    <option value="1" ${item.impuesto == '1' ? 'selected' : ''}>1% (Canasta Básica Esp.)</option>
+                                    <option value="8" ${item.impuesto == '8' ? 'selected' : ''}>8% (Reducida)</option>
+                                    <option value="4" ${item.impuesto == '4' ? 'selected' : ''}>4% (Reducida)</option>
+                                    <option value="2" ${item.impuesto == '2' ? 'selected' : ''}>2% (Reducida)</option>
+                                    <option value="1" ${item.impuesto == '1' ? 'selected' : ''}>1% (Especial)</option>
                                     <option value="0" ${item.impuesto == '0' ? 'selected' : ''}>0% (Exento)</option>
                                 </select>
                             </div>
