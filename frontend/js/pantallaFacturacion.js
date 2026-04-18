@@ -19,8 +19,11 @@
 
     // Validar descuento máximo por producto
     window.validateDiscount = function(input) {
-        const row = input.closest('.item-row');
-        if(!row) return;
+        const row = input.closest('.fac-card-premium');
+        if(!row) {
+            console.error("No se encontró el contenedor .fac-card-premium");
+            return;
+        }
         const maxValInput = row.querySelector('.item-max-desc');
         const maxAllowed = maxValInput ? parseFloat(maxValInput.value) : 0;
         let val = parseFloat(input.value) || 0;
