@@ -209,7 +209,9 @@
         card.setAttribute('style', `
             background: white; border: 1.5px solid #edf2f7; border-radius: 18px; padding: 16px;
             display: flex; flex-direction: column; gap: 12px; position: relative;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02); width: 100            card.innerHTML = `
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); width: 100%`);
+            
+        card.innerHTML = `
             <!-- Fila Superior: Título y Acciones Dinámicas -->
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; align-items:center; gap:10px; flex:1;">
@@ -278,9 +280,6 @@
                 <div style="text-align:right;">
                     <div style="font-size:0.65rem; color:#94a3b8; font-weight:900; text-transform:uppercase; margin-bottom:2px;">Subtotal Ítem</div>
                     <div class="subtotal-cell" style="font-weight:900; color:#1e40af; font-size:1.6rem; letter-spacing:-0.02em;">${symbol}0.00</div>
-                </div>
-            </div>
-        `;div>
                 </div>
             </div>
         `;
