@@ -299,6 +299,7 @@
                     <!--  TARJETA 4 – DETALLE DE VENTA                       -->
                     <!-- ═══════════════════════════════════════════════════ -->
                     <div class="section-box section-blocked" id="venta-section">
+                        <!-- Buscador Moderno -->
                         <div style="background:#f1f5f9; padding:15px 25px; border-radius:12px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; border:1.5px dashed #cbd5e1;">
                             <div style="display:flex; align-items:center; gap:12px;">
                                 <div style="background:var(--grad-premium); width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-size:1.2rem; box-shadow:0 4px 12px rgba(37,99,235,0.2);">
@@ -310,30 +311,30 @@
                                 </div>
                             </div>
 
-                            <div class="autocomplete-wrapper" style="width:500px;">
-                                <div id="receptor-alert" style="background:#fff1f2; color:#be123c; padding:8px 15px; border-radius:10px; font-size:0.75rem; font-weight:800; border:1px solid #fecdd3; position:absolute; right:20px; top:-40px; width:max-content; display:none;">
+                            <div class="autocomplete-wrapper" style="width:500px; position:relative;">
+                                <div id="receptor-alert" style="background:#fff1f2; color:#be123c; padding:8px 15px; border-radius:10px; font-size:0.75rem; font-weight:800; border:1px solid #fecdd3; position:absolute; right:0; top:-50px; width:max-content; display:none; z-index:10;">
                                     <i class="fas fa-exclamation-circle"></i> Debe seleccionar un Receptor primero
                                 </div>
                                 <input type="text" id="buscar-cabys" class="fi" style="height:48px; font-size:1rem; border:2px solid #e2e8f0; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.03);" placeholder="🔍 Escriba Nombre, Marca, Modelo o Código CABYS..." autocomplete="off">
-                                <div id="cabys-dropdown" class="autocomplete-dropdown" style="top:calc(100% + 8px);"></div>
+                                <div id="cabys-dropdown" class="autocomplete-dropdown" style="top:calc(100% + 8px); width:100%;"></div>
                             </div>
                         </div>
 
-                                            <th style="width:130px;">IMPUESTO / %</th>
-                                            <th style="width:140px; text-align:center;">CANT | DESC%</th>
-                                            <th style="width:140px; text-align:right;">SUBTOTAL</th>
-                                            <th style="width:40px;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="detalle-lineas">
-                                        <tr id="empty-row">
-                                            <td colspan="7" style="text-align:center; padding:28px; color:#94a3b8; font-weight:500;">
-                                                <i class="fas fa-box-open" style="font-size:1.4rem; margin-bottom:6px; display:block;"></i>
-                                                No hay líneas agregadas (Seleccione del inventario o use el buscador)
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                        <!-- Contenedor de Detalles (Sin Scroll) -->
+                        <div class="detail-container" style="width: 100%; min-height:100px;">
+                            <!-- Header de Referencia -->
+                            <div style="display: flex; background: #f8fafc; padding: 10px 15px; border-radius: 12px; margin-bottom: 12px; font-weight: 800; font-size: 0.725rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                                <div style="flex: 1;">Descripción de Ítem y Metadatos</div>
+                                <div style="width: 150px; text-align: right;">Total Transacción</div>
+                            </div>
+                            
+                            <div id="detalle-lineas" style="display: flex; flex-direction: column; gap: 15px;">
+                                <!-- Items dinámicos tipo Tarjeta -->
+                                <div id="empty-row" style="text-align:center; padding:50px 20px; color:#94a3b8; background: #fff; border: 2px dashed #e2e8f0; border-radius: 16px;">
+                                    <i class="fas fa-box-open" style="display:block; font-size:2.5rem; margin-bottom:12px; opacity:0.2;"></i>
+                                    <div style="font-weight: 800; font-size: 1rem; color: #64748b;">No hay productos en la lista</div>
+                                    <p style="font-size: 0.75rem; margin-top: 4px;">Usa el buscador superior para agregar servicios o productos</p>
+                                </div>
                             </div>
                         </div>
                     </div>
