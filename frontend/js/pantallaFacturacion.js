@@ -379,21 +379,45 @@
 
     // --- DIVISAS ---
     async function syncRates() {
+        const urlDirecta = "https://api.hacienda.go.cr/indicadores/tc";
+        const urlProxy = "proxy_hacienda.php"; 
+        const statusBadge = document.getElementById('dash-tc-status');
+        let data = null;
+
         try {
-            const res = await fetch("https://api.hacienda.go.cr/indicadores/tc");
-            if (!res.ok) return;
-            const data = await res.json();
+            const resProxy = await fetch(urlProxy);
+            if (resProxy.ok) data = await resProxy.json();
+        } catch (e) { console.warn("Proxy exchange unavailable"); }
+
+        if (!data) {
+            try {
+                const resDirecta = await fetch(urlDirecta);
+                if (resDirecta.ok) data = await resDirecta.json();
+            } catch (e) { console.error("Direct API Hacienda failed"); }
+        }
+
+        if (data) {
             if (data.dolar) {
                 currentRates.usd = data.dolar.venta.valor;
-                document.getElementById('fx-usd-venta').textContent = '₡' + currentRates.usd;
+                document.getElementById('fx-usd-venta').textContent = '₡' + currentRates.usd.toFixed(2);
                 document.getElementById('fx-usd-fecha').textContent = data.dolar.venta.fecha.split('-').reverse().join('/');
             }
             if (data.euro) {
                 currentRates.eur = data.euro.colones;
-                document.getElementById('fx-eur-valor').textContent = '₡' + currentRates.eur;
+                document.getElementById('fx-eur-valor').textContent = '₡' + currentRates.eur.toFixed(2);
                 document.getElementById('fx-eur-fecha').textContent = data.euro.fecha.split('-').reverse().join('/');
             }
-        } catch (e) { console.warn("Sync TC failed"); }
+
+            if (statusBadge) {
+                statusBadge.style.background = '#ecfdf5';
+                statusBadge.style.color = '#10b981';
+                statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> SINCRONIZADO';
+            }
+        } else if (statusBadge) {
+            statusBadge.style.background = '#fef2f2';
+            statusBadge.style.color = '#ef4444';
+            statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR API';
+        }
     }
 
     // --- EXONERACIONES ---
