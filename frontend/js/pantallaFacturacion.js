@@ -216,62 +216,65 @@
                         <input type="hidden" class="cabys-code" value="${prod.cabys || ''}">
                     </div>
                 </td>
+                <!-- Col 1: Contador sutil -->
+                <td style="vertical-align: middle; text-align:center;">
+                    <span style="font-size:0.7rem; color:#94a3b8; font-weight:900;">#${lineCount}</span>
+                </td>
+
+                <!-- Col 2: Info de Producto (Densidad Máxima) -->
                 <td>
-                    <div class="fi-grid-stacked" style="padding: 2px 0;">
-                        <!-- Marca y Modelo: Destacado Premium -->
-                        <div style="font-weight:900; font-size:1.1rem; color:#0f172a; margin-bottom:2px; letter-spacing:-0.01em;">${displayDetail}</div>
-                        <!-- CABYS: Estilo tipo 'label' sutil -->
-                        <div style="font-size:0.75rem; color:#94a3b8; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:280px;">
-                            <i class="fas fa-barcode" style="font-size:0.65rem; margin-right:4px;"></i>${prod.nombre || prod.descripcion}
+                    <div style="padding: 4px 0;">
+                        <!-- Marca/Modelo Destacados -->
+                        <div style="font-weight:900; font-size:1rem; color:#0f172a; margin-bottom:2px; letter-spacing:-0.01em;">${displayDetail}</div>
+                        <!-- Códigos en una sola línea compacta -->
+                        <div style="font-size:0.68rem; font-weight:700; color:#64748b; margin-bottom:4px; display:flex; gap:10px;">
+                            <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">SKU: ${prod.codigoInterno || 'N/A'}</span>
+                            <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">CABYS: ${prod.cabys || '—'}</span>
+                        </div>
+                        <!-- Descripción técnica (Trunkated) -->
+                        <div style="font-size:0.7rem; color:#94a3b8; font-weight:500; font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">
+                            ${prod.nombre || prod.descripcion}
                         </div>
                     </div>
                     <input type="hidden" class="item-detail" value="${displayDetail}">
                     <input type="hidden" class="item-desc" value="${prod.nombre || prod.descripcion}">
                 </td>
-                <td style="vertical-align: middle;">
-                    <div class="fi-grid-stacked" style="align-items: flex-start; gap:6px;">
-                        <!-- Tipo Impuesto no editable -->
-                        <div style="font-size:0.7rem; font-weight:900; color:#64748b; background:#f1f5f9; padding:2px 8px; border-radius:6px; text-transform:uppercase;">IVA</div>
-                        <select class="fi-grid item-tax-type" disabled style="display:none;"><option value="01" selected>IVA</option></select>
-                        
-                        <div style="display:flex; align-items:center; gap:8px;">
-                           <div style="display:flex; align-items:center; background:#f0fdf4; border:1px solid #dcfce7; padding:4px 10px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
-                               <input type="number" class="fi-grid item-tax-pct" value="${prod.impuesto || 13}" readonly style="font-size:0.95rem; color:#16a34a; font-weight:900; width:30px; background:transparent; border:none; padding:0; outline:none; pointer-events:none;">
-                               <span style="font-size:0.75rem; color:#16a34a; font-weight:900; margin-left:1px;">%</span>
-                           </div>
-                           <button type="button" class="btn-exo" onclick="configurarExoneracion('${tr.id}')" style="background:#fffcf0; border:1.5px solid #fbbf24; color:#d97706; cursor:pointer; font-size:0.75rem; padding:4px 10px; border-radius:10px; display:flex; align-items:center; gap:6px; font-weight:900; transition:all 0.2s;">
-                               <i class="fas fa-shield-alt" style="font-size:0.85rem;"></i> EXO
-                           </button>
-                        </div>
-                    </div>
-                </td>
-                <td style="vertical-align: middle;">
-                    <div style="display:flex; align-items:center; gap:12px; justify-content:center;">
-                        <div style="text-align:center;">
-                            <span style="font-size:0.6rem; font-weight:900; color:#94a3b8; display:block; margin-bottom:4px; text-transform:uppercase;">Cantidad</span>
-                            <div style="background:#f8fafc; border:2px solid #e2e8f0; border-radius:12px; padding:2px 4px;">
-                                <input type="number" class="fi-grid item-qty" value="1" min="1" step="1" oninput="this.value = Math.max(1, Math.floor(this.value)); recalcularTotales();" style="width:45px; text-align:center; font-weight:900; background:transparent; border:none; font-size:1.15rem; color:#0f172a; outline:none;">
-                            </div>
-                        </div>
-                        
-                        <div style="height:35px; width:1px; background:#e2e8f0; margin-top:14px;"></div>
 
-                        <div style="text-align:center;">
-                             <span style="font-size:0.6rem; font-weight:900; color:#94a3b8; display:block; margin-bottom:4px; text-transform:uppercase;">Desc.</span>
-                            <div style="display:flex; align-items:center; background:#fff1f2; border:2px solid #fecdd3; padding:4px 8px; border-radius:12px;">
-                                <input type="number" class="fi-grid item-desc-pct" value="0" min="0" max="100" step="1" oninput="this.value = Math.max(0, Math.floor(this.value)); validateDiscount(this); recalcularTotales();" style="width:30px; text-align:right; font-size:1rem; color:#e11d48; font-weight:900; background:transparent; border:none; padding:0; outline:none;">
-                                <span style="font-size:0.85rem; color:#e11d48; font-weight:900; margin-left:2px;">%</span>
-                            </div>
+                <!-- Col 3: Controles de Cantidad y Descuento (Merged) -->
+                <td style="vertical-align: middle;">
+                    <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+                        <div style="display:flex; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:2px 6px; width:fit-content;">
+                            <span style="font-size:0.55rem; font-weight:900; color:#94a3b8; margin-right:6px;">CANT</span>
+                            <input type="number" class="fi-grid item-qty" value="1" min="1" step="1" oninput="this.value = Math.max(1, Math.floor(this.value)); recalcularTotales();" style="width:30px; text-align:center; font-weight:900; background:transparent; border:none; font-size:0.95rem; color:#0f172a; outline:none;">
+                        </div>
+                        <div style="display:flex; align-items:center; background:#fff1f2; border:1px solid #fecdd3; border-radius:10px; padding:2px 6px; width:fit-content;">
+                            <span style="font-size:0.55rem; font-weight:900; color:#e11d48; margin-right:6px;">DESC</span>
+                            <input type="number" class="fi-grid item-desc-pct" value="0" min="0" max="100" step="1" oninput="this.value = Math.max(0, Math.floor(this.value)); validateDiscount(this); recalcularTotales();" style="width:25px; text-align:right; font-size:0.85rem; color:#e11d48; font-weight:900; background:transparent; border:none; padding:0; outline:none;">
+                            <span style="font-size:0.65rem; color:#e11d48; font-weight:900;">%</span>
                         </div>
                     </div>
                 </td>
-                <td style="vertical-align: middle; text-align:right;">
-                    <div style="font-size:0.7rem; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:2px;">Subtotal</div>
-                    <div style="font-weight:900; color:#1e40af; font-size:1.2rem; letter-spacing:-0.02em;" class="subtotal-cell">${symbol}0.00</div>
+
+                <!-- Col 4: Impuesto y Exoneración (Merged) -->
+                <td style="vertical-align: middle;">
+                    <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+                        <div style="display:flex; align-items:center; background:#ecfdf5; border:1px solid #bbf7d0; padding:2px 8px; border-radius:10px;">
+                            <span style="font-size:0.6rem; font-weight:900; color:#16a34a; margin-right:4px;">IVA</span>
+                            <input type="number" class="fi-grid item-tax-pct" value="${prod.impuesto || 13}" readonly style="font-size:0.85rem; color:#16a34a; font-weight:900; width:22px; background:transparent; border:none; padding:0; outline:none; pointer-events:none;">
+                            <span style="font-size:0.6rem; color:#16a34a; font-weight:900;">%</span>
+                        </div>
+                        <button type="button" class="btn-exo" onclick="configurarExoneracion('${tr.id}')" style="background:#fff7ed; border:1.5px solid #fbbf24; color:#d97706; cursor:pointer; font-size:0.65rem; padding:2px 8px; border-radius:8px; display:flex; align-items:center; gap:3px; font-weight:900; text-transform:uppercase;">
+                            <i class="fas fa-shield-alt"></i> EXO
+                        </button>
+                    </div>
+                    <select class="fi-grid item-tax-type" disabled style="display:none;"><option value="01" selected>IVA</option></select>
                 </td>
-                <td style="vertical-align: middle; text-align:center;">
-                    <button type="button" class="btn-del" onclick="eliminarLinea('${tr.id}')" style="background:#fef2f2; border:none; color:#ef4444; width:36px; height:36px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:all 0.2s;">
-                        <i class="fas fa-trash-alt" style="font-size:1rem;"></i>
+
+                <!-- Col 5: Total y Acción de Borrado (Merged en el final) -->
+                <td style="vertical-align: middle; text-align:right; padding-right:15px; position:relative;">
+                    <div style="font-weight:900; color:#1e40af; font-size:1.15rem; letter-spacing:-0.01em; display:inline-block; vertical-align:middle; margin-right:12px;" class="subtotal-cell">${symbol}0.00</div>
+                    <button type="button" class="btn-del" onclick="eliminarLinea('${tr.id}')" style="background:transparent; border:none; color:#cbd5e1; cursor:pointer; padding:4px; transition:color 0.2s; vertical-align:middle;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'">
+                        <i class="fas fa-times-circle" style="font-size:1.1rem;"></i>
                     </button>
                 </td>
             `;
