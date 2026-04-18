@@ -19,21 +19,21 @@
 
     // Validar descuento máximo por producto
     window.validateDiscount = function(input) {
-        const row = input.closest('.fac-card-premium');
+        const row = input.closest('.item-card');
         if(!row) {
-            console.error("No se encontró el contenedor .fac-card-premium");
+            console.error("No se encontró el contenedor .item-card");
             return;
         }
-        const maxValInput = row.querySelector('.item-max-desc');
-        const maxAllowed = maxValInput ? parseFloat(maxValInput.value) : 0;
+        // Intentar obtener de dataset o de input oculto
+        const maxVal = parseFloat(row.dataset.descMax) || 0;
         let val = parseFloat(input.value) || 0;
         
-        if (val > maxAllowed) {
-            input.value = maxAllowed;
+        if (val > maxVal) {
+            input.value = maxVal;
             Swal.fire({
                 icon: 'warning',
                 title: 'Límite de Descuento',
-                text: `El descuento máximo para este ítem es del ${maxAllowed}%.`,
+                text: `El descuento máximo permitido para este ítem es ${maxVal}%.`,
                 timer: 2000,
                 showConfirmButton: false,
                 toast: true,
@@ -227,9 +227,9 @@
 
         const card = document.createElement('div');
         card.id = 'linea-' + Date.now();
-        card.className = 'item-card';
+        card.className = 'item-card fac-line-item';
         card.dataset.precioOriginal = precioRef;
-        card.dataset.descMax = prod.descuentoMaximo || 100;
+        card.dataset.descMax = prod.descuento_maximo || 0;
 
         card.setAttribute('style', `
             background: white; border: 1.5px solid #edf2f7; border-radius: 18px; padding: 16px;
