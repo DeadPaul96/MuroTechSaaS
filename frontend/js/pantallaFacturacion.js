@@ -17,6 +17,28 @@
         return words.every(word => target.includes(word));
     };
 
+    // Validar descuento máximo por producto
+    window.validateDiscount = function(input) {
+        const row = input.closest('.item-row');
+        if(!row) return;
+        const maxValInput = row.querySelector('.item-max-desc');
+        const maxAllowed = maxValInput ? parseFloat(maxValInput.value) : 0;
+        let val = parseFloat(input.value) || 0;
+        
+        if (val > maxAllowed) {
+            input.value = maxAllowed;
+            Swal.fire({
+                icon: 'warning',
+                title: 'Límite de Descuento',
+                text: `El descuento máximo para este ítem es del ${maxAllowed}%.`,
+                timer: 2000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        }
+    };
+
     // --- INICIALIZACIÓN SEGURA ---
     function init() {
         syncRates();
@@ -258,10 +280,11 @@
                     <div style="text-align:center;">
                         <label style="display:block; font-size:0.6rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Desc. %</label>
                         <div style="display:flex; align-items:center; background:#fff1f2; border:2px solid #fecdd3; padding:4px 12px; border-radius:10px; gap:4px;">
-                            <input type="number" class="item-desc-pct no-spin" value="0" min="0" max="100" oninput="this.value=Math.max(0,Math.floor(this.value)); validateDiscount(this); recalcularTotales();" style="width:50px; border:none; background:transparent; font-weight:900; color:#e11d48; text-align:center; font-size:1.25rem; outline:none;">
+                            <input type="number" class="item-desc-pct no-spin" value="0" min="0" max="${prod.descuento_maximo || 0}" oninput="this.value=Math.max(0,Math.floor(this.value)); validateDiscount(this); recalcularTotales();" style="width:50px; border:none; background:transparent; font-weight:900; color:#e11d48; text-align:center; font-size:1.25rem; outline:none;">
                             <span style="font-size:0.9rem; color:#e11d48; font-weight:900;">%</span>
                         </div>
                     </div>
+                    <input type="hidden" class="item-max-desc" value="${prod.descuento_maximo || 0}">
 
                     <!-- IVA Badge -->
                     <div style="display:flex; align-items:center; background:#ecfdf5; border:2px solid #10b981; padding:8px 16px; border-radius:10px; margin-top:14px; gap:8px;">
