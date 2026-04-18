@@ -437,21 +437,32 @@
         // --- DIVISAS ---
         async function syncRates() {
             try {
-                const now = new Date();
-                const dateStr = now.toLocaleDateString('es-CR', {day:'2-digit', month:'2-digit', year:'2-digit'});
-                
                 const res = await fetch("https://api.hacienda.go.cr/indicadores/tc");
+                const now = new Date();
+                const defaultDate = now.toLocaleDateString('es-CR', {day:'2-digit', month:'2-digit', year:'numeric'});
+
                 if (res.ok) {
                     const data = await res.json();
-                    currentRates.usd = data.dolar?.venta?.valor || 530;
-                    document.getElementById('fx-usd-venta').textContent = '₡' + currentRates.usd.toFixed(2);
-                    document.getElementById('fx-usd-fecha').textContent = dateStr;
+                    
+                    // Dólar
+                    if (data.dolar) {
+                        currentRates.usd = data.dolar.venta.valor;
+                        document.getElementById('fx-usd-venta').textContent = '₡' + currentRates.usd.toFixed(2);
+                        document.getElementById('fx-usd-fecha').textContent = data.dolar.venta.fecha.split('-').reverse().join('/');
+                    }
+
+                    // Euro (Usamos la data real del API, igual que el panel de control)
+                    if (data.euro) {
+                        currentRates.eur = data.euro.colones;
+                        document.getElementById('fx-eur-valor').textContent = '₡' + currentRates.eur.toFixed(2);
+                        document.getElementById('fx-eur-fecha').textContent = data.euro.fecha.split('-').reverse().join('/');
+                    } else {
+                        // Fallback cross-rate si no hay objeto euro
+                        currentRates.eur = Math.round((currentRates.usd * 1.10 * 100)) / 100;
+                        document.getElementById('fx-eur-valor').textContent = '₡' + currentRates.eur.toFixed(2);
+                        document.getElementById('fx-eur-fecha').textContent = defaultDate;
+                    }
                 }
-                
-                // EUR a CRC (Simulación basada en cross rate de BCCR ~ (USD * 1.10) por tipo de venta)
-                currentRates.eur = Math.round((currentRates.usd * 1.10) * 100) / 100; 
-                document.getElementById('fx-eur-valor').textContent = '₡' + currentRates.eur.toFixed(2);
-                document.getElementById('fx-eur-fecha').textContent = dateStr;
 
                 document.getElementById('dash-tc-status').innerHTML = '<i class="fas fa-check-circle"></i> SINCRONIZADO';
             } catch (e) { 

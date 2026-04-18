@@ -48,40 +48,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Lógica del Tipo de Cambio Sincronizada (USD/EUR) ---
+    // --- Lógica del Tipo de Cambio (Original de Hacienda) ---
     async function actualizarTipoCambio() {
         const urlDirecta = "https://api.hacienda.go.cr/indicadores/tc";
+        const urlProxy = "proxy_hacienda.php"; 
         const labelStatus = document.getElementById('dash-tc-label');
         let data = null;
         
         try {
-            const resDirecta = await fetch(urlDirecta);
-            if (resDirecta.ok) data = await resDirecta.json();
-        } catch (e) { 
-            console.error("Error API Hacienda"); 
+            const resProxy = await fetch(urlProxy);
+            if (resProxy.ok) data = await resProxy.json();
+        } catch (e) { console.warn("Proxy no disponible"); }
+
+        if (!data) {
+            try {
+                const resDirecta = await fetch(urlDirecta);
+                if (resDirecta.ok) data = await resDirecta.json();
+            } catch (e) { console.error("Error API Hacienda"); }
         }
 
-        if (data && data.dolar) {
-            const venta = data.dolar.venta.valor;
-            const compra = data.dolar.compra.valor;
+        if (data) {
+            if (data.dolar) {
+                const compra = data.dolar.compra.valor;
+                const venta = data.dolar.venta.valor;
+                if (document.getElementById('dash-usd-compra')) document.getElementById('dash-usd-compra').textContent = `₡${compra.toFixed(2)}`;
+                if (document.getElementById('dash-usd-venta')) document.getElementById('dash-usd-venta').textContent = `₡${venta.toFixed(2)}`;
+                
+                const fCompra = data.dolar.compra.fecha.split('-').reverse().join('/');
+                const fVenta = data.dolar.venta.fecha.split('-').reverse().join('/');
+                if (document.getElementById('fecha-usd-compra')) document.getElementById('fecha-usd-compra').textContent = fCompra;
+                if (document.getElementById('fecha-usd-venta')) document.getElementById('fecha-usd-venta').textContent = fVenta;
+            } 
             
-            // Actualizar USD
-            if (document.getElementById('dash-usd-compra')) document.getElementById('dash-usd-compra').textContent = `₡${compra.toFixed(2)}`;
-            if (document.getElementById('dash-usd-venta')) document.getElementById('dash-usd-venta').textContent = `₡${venta.toFixed(2)}`;
-            
-            const fUSD = data.dolar.venta.fecha.split('-').reverse().join('/');
-            if (document.getElementById('fecha-usd-compra')) document.getElementById('fecha-usd-compra').textContent = fUSD;
-            if (document.getElementById('fecha-usd-venta')) document.getElementById('fecha-usd-venta').textContent = fUSD;
-
-            // Sincronización de EURO (Consistente con Pantalla de Facturación)
-            const euroSimulado = Math.round((venta * 1.10) * 100) / 100;
-            const euroDolarSimulado = 1.1000;
-
-            if (document.getElementById('dash-euro-colones')) document.getElementById('dash-euro-colones').textContent = `₡${euroSimulado.toFixed(2)}`;
-            if (document.getElementById('dash-euro-dolares')) document.getElementById('dash-euro-dolares').textContent = `$${euroDolarSimulado.toFixed(4)}`;
-            
-            if (document.getElementById('fecha-euro')) document.getElementById('fecha-euro').textContent = fUSD;
-            if (document.getElementById('fecha-euro-usd')) document.getElementById('fecha-euro-usd').textContent = fUSD;
+            if (data.euro) {
+                if (document.getElementById('dash-euro-colones')) document.getElementById('dash-euro-colones').textContent = `₡${data.euro.colones.toFixed(2)}`;
+                if (document.getElementById('dash-euro-dolares')) document.getElementById('dash-euro-dolares').textContent = `$${data.euro.dolares.toFixed(4)}`;
+                
+                const fEuro = data.euro.fecha.split('-').reverse().join('/');
+                if (document.getElementById('fecha-euro')) document.getElementById('fecha-euro').textContent = fEuro;
+                if (document.getElementById('fecha-euro-usd')) document.getElementById('fecha-euro-usd').textContent = fEuro;
+            }
 
             if (labelStatus && labelStatus.querySelector('span')) {
                 labelStatus.style.background = '#ecfdf5';
