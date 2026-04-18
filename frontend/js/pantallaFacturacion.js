@@ -218,50 +218,62 @@
                 </td>
                 <td>
                     <div class="fi-grid-stacked" style="padding: 2px 0;">
-                        <!-- Prioridad: Marca/Modelo/Detalle arriba y resaltado -->
-                        <input type="text" class="fi-grid item-detail" value="${displayDetail}" placeholder="Marca, modelo, características..." style="font-weight:900; font-size:1.05rem; color:#0f172a; border-bottom:1px solid #f1f5f9; padding-bottom:4px; border:none; background:transparent;">
-                        <!-- CABYS abajo como referencia secundaria -->
-                        <input type="text" class="fi-grid item-desc" value="${prod.nombre || prod.descripcion}" readonly style="font-size:0.75rem; color:#64748b; font-weight:600; margin-top:2px; border:none; background:transparent; overflow:hidden; text-overflow:ellipsis;">
+                        <!-- Marca y Modelo: Destacado Premium -->
+                        <div style="font-weight:900; font-size:1.1rem; color:#0f172a; margin-bottom:2px; letter-spacing:-0.01em;">${displayDetail}</div>
+                        <!-- CABYS: Estilo tipo 'label' sutil -->
+                        <div style="font-size:0.75rem; color:#94a3b8; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:280px;">
+                            <i class="fas fa-barcode" style="font-size:0.65rem; margin-right:4px;"></i>${prod.nombre || prod.descripcion}
+                        </div>
                     </div>
+                    <input type="hidden" class="item-detail" value="${displayDetail}">
+                    <input type="hidden" class="item-desc" value="${prod.nombre || prod.descripcion}">
                 </td>
-                <td>
-                    <div class="fi-grid-stacked">
-                        <select class="fi-grid item-tax-type" onchange="recalculatTotales()" style="font-size:0.8rem; border:none; padding:0; background:transparent; font-weight:800; color:#1e293b;">
-                            <option value="01">IVA</option>
-                            <option value="02">ISC</option>
-                            <option value="99">Otro</option>
-                        </select>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-                           <!-- Impuesto no editable (salvo por exoneración) -->
-                           <div style="display:flex; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 8px; border-radius:8px; opacity:0.8;">
-                               <input type="number" class="fi-grid item-tax-pct" value="${prod.impuesto || 13}" readonly style="font-size:0.85rem; color:#64748b; font-weight:900; width:35px; background:transparent; border:none; padding:0; pointer-events:none;">
-                               <span style="font-size:0.75rem; color:#64748b; font-weight:900;">%</span>
+                <td style="vertical-align: middle;">
+                    <div class="fi-grid-stacked" style="align-items: flex-start; gap:6px;">
+                        <!-- Tipo Impuesto no editable -->
+                        <div style="font-size:0.7rem; font-weight:900; color:#64748b; background:#f1f5f9; padding:2px 8px; border-radius:6px; text-transform:uppercase;">IVA</div>
+                        <select class="fi-grid item-tax-type" disabled style="display:none;"><option value="01" selected>IVA</option></select>
+                        
+                        <div style="display:flex; align-items:center; gap:8px;">
+                           <div style="display:flex; align-items:center; background:#f0fdf4; border:1px solid #dcfce7; padding:4px 10px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                               <input type="number" class="fi-grid item-tax-pct" value="${prod.impuesto || 13}" readonly style="font-size:0.95rem; color:#16a34a; font-weight:900; width:30px; background:transparent; border:none; padding:0; outline:none; pointer-events:none;">
+                               <span style="font-size:0.75rem; color:#16a34a; font-weight:900; margin-left:1px;">%</span>
                            </div>
-                           <button type="button" class="btn-exo" onclick="configurarExoneracion('${tr.id}')" title="Configurar Exoneración" style="background:#fff7ed; border:1.5px solid #f59e0b; color:#f59e0b; cursor:pointer; font-size:0.8rem; padding:4px 8px; border-radius:8px; display:flex; align-items:center; gap:4px; font-weight:800;">
-                               <i class="fas fa-shield-alt"></i> <span style="font-size:0.6rem;">EXO</span>
+                           <button type="button" class="btn-exo" onclick="configurarExoneracion('${tr.id}')" style="background:#fffcf0; border:1.5px solid #fbbf24; color:#d97706; cursor:pointer; font-size:0.75rem; padding:4px 10px; border-radius:10px; display:flex; align-items:center; gap:6px; font-weight:900; transition:all 0.2s;">
+                               <i class="fas fa-shield-alt" style="font-size:0.85rem;"></i> EXO
                            </button>
                         </div>
                     </div>
                 </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px; justify-content:center; padding: 5px 0;">
+                <td style="vertical-align: middle;">
+                    <div style="display:flex; align-items:center; gap:12px; justify-content:center;">
                         <div style="text-align:center;">
-                            <span style="font-size:0.55rem; font-weight:800; color:#94a3b8; display:block; text-transform:uppercase;">CANT.</span>
-                            <!-- Solo enteros > 0 -->
-                            <input type="number" class="fi-grid item-qty" value="1" min="1" step="1" oninput="this.value = Math.max(1, Math.floor(this.value)); recalcularTotales();" style="width:50px; text-align:center; font-weight:900; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:8px; padding:6px; font-size:1.1rem; color:#0f172a;">
+                            <span style="font-size:0.6rem; font-weight:900; color:#94a3b8; display:block; margin-bottom:4px; text-transform:uppercase;">Cantidad</span>
+                            <div style="background:#f8fafc; border:2px solid #e2e8f0; border-radius:12px; padding:2px 4px;">
+                                <input type="number" class="fi-grid item-qty" value="1" min="1" step="1" oninput="this.value = Math.max(1, Math.floor(this.value)); recalcularTotales();" style="width:45px; text-align:center; font-weight:900; background:transparent; border:none; font-size:1.15rem; color:#0f172a; outline:none;">
+                            </div>
                         </div>
-                        <span style="color:#cbd5e1; margin-top:12px; font-weight:300;">|</span>
+                        
+                        <div style="height:35px; width:1px; background:#e2e8f0; margin-top:14px;"></div>
+
                         <div style="text-align:center;">
-                             <span style="font-size:0.55rem; font-weight:800; color:#94a3b8; display:block; text-transform:uppercase;">DESC.</span>
-                            <div style="display:flex; align-items:center; background:#fef2f2; border:1.5px solid #ef4444; padding:2px 6px; border-radius:8px; margin-top:2px;">
-                                <input type="number" class="fi-grid item-desc-pct" value="0" min="0" max="100" step="0.1" oninput="validateDiscount(this); recalcularTotales();" style="width:32px; text-align:right; font-size:0.85rem; color:#ef4444; font-weight:900; background:transparent; border:none; padding:0;">
-                                <span style="font-size:0.75rem; color:#ef4444; font-weight:900;">%</span>
+                             <span style="font-size:0.6rem; font-weight:900; color:#94a3b8; display:block; margin-bottom:4px; text-transform:uppercase;">Desc.</span>
+                            <div style="display:flex; align-items:center; background:#fff1f2; border:2px solid #fecdd3; padding:4px 8px; border-radius:12px;">
+                                <input type="number" class="fi-grid item-desc-pct" value="0" min="0" max="100" step="1" oninput="this.value = Math.max(0, Math.floor(this.value)); validateDiscount(this); recalcularTotales();" style="width:30px; text-align:right; font-size:1rem; color:#e11d48; font-weight:900; background:transparent; border:none; padding:0; outline:none;">
+                                <span style="font-size:0.85rem; color:#e11d48; font-weight:900; margin-left:2px;">%</span>
                             </div>
                         </div>
                     </div>
                 </td>
-                <td style="font-weight:900; color:#1e40af; text-align:right; padding-right:15px;" class="subtotal-cell">${symbol}0.00</td>
-                <td><button type="button" class="btn-del" onclick="eliminarLinea('${tr.id}')" style="background:transparent; border:none; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button></td>
+                <td style="vertical-align: middle; text-align:right;">
+                    <div style="font-size:0.7rem; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:2px;">Subtotal</div>
+                    <div style="font-weight:900; color:#1e40af; font-size:1.2rem; letter-spacing:-0.02em;" class="subtotal-cell">${symbol}0.00</div>
+                </td>
+                <td style="vertical-align: middle; text-align:center;">
+                    <button type="button" class="btn-del" onclick="eliminarLinea('${tr.id}')" style="background:#fef2f2; border:none; color:#ef4444; width:36px; height:36px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:all 0.2s;">
+                        <i class="fas fa-trash-alt" style="font-size:1rem;"></i>
+                    </button>
+                </td>
             `;
             detailLinesTbody.appendChild(tr);
             recalcularTotales();
@@ -272,7 +284,12 @@
             const max = parseFloat(tr.dataset.descMax) || 0;
             const val = parseFloat(input.value) || 0;
             if (val > max && !window.admin_auth) {
-                Swal.fire('Descuento Excedido', `El descuento máximo permitido para este producto es del ${max}%.`, 'warning');
+                Swal.fire({
+                    title: 'Descuento Limitado',
+                    text: `El descuento máximo para este producto es del ${max}%.`,
+                    icon: 'warning',
+                    confirmButtonColor: '#2563eb'
+                });
                 input.value = max;
             }
         };
