@@ -209,45 +209,70 @@
 
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="background:#2563eb; color:white; font-size:0.7rem; font-weight:900; padding:3px 8px; border-radius:8px;">#${lineIndex}</span>
-                    <div style="font-weight:900; font-size:1.1rem; color:#1e293b;">${displayDetail}</div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="background:#2563eb; color:white; font-size:0.85rem; font-weight:900; padding:4px 12px; border-radius:10px; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">#${lineIndex}</span>
+                    <div style="font-weight:900; font-size:1.35rem; color:#0f172a; letter-spacing:-0.03em;">${displayDetail}</div>
                 </div>
-                <button type="button" onclick="eliminarLinea('${card.id}')" style="background:#fef2f2; border:none; color:#ef4444; width:34px; height:34px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-trash-alt"></i>
+                <button type="button" onclick="eliminarLinea('${card.id}')" style="background:#fff1f2; border:1px solid #fecdd3; color:#ef4444; width:40px; height:40px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: all 0.2s;" onmouseover="this.style.background='#fecdd3'" onmouseout="this.style.background='#fff1f2'">
+                    <i class="fas fa-trash-alt" style="font-size:1.2rem;"></i>
                 </button>
             </div>
-            <div style="display:flex; flex-direction:column; gap:4px;">
-                <div style="display:flex; gap:10px;">
-                    <span style="font-size:0.65rem; font-weight:800; color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:4px;">SKU: ${prod.codigoInterno || prod.codigo || '—'}</span>
-                    <span style="font-size:0.65rem; font-weight:800; color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:4px;">CABYS: ${prod.cabys || '—'}</span>
+
+            <div style="display:flex; flex-direction:column; gap:10px; background:#f8fafc; padding:12px 18px; border-radius:14px; border:1px solid #f1f5f9;">
+                <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                    <div style="font-size:0.85rem; font-weight:800; color:#475569; background:white; padding:4px 12px; border-radius:8px; border:1.5px solid #e2e8f0; display:flex; align-items:center; gap:6px;">
+                        <span style="color:#94a3b8; font-size:0.7rem; text-transform:uppercase;">SKU</span> ${prod.codigoInterno || prod.codigo || '—'}
+                    </div>
+                    <div style="font-size:0.85rem; font-weight:800; color:#475569; background:white; padding:4px 12px; border-radius:8px; border:1.5px solid #e2e8f0; display:flex; align-items:center; gap:6px;">
+                        <span style="color:#94a3b8; font-size:0.7rem; text-transform:uppercase;">CABYS</span> ${prod.cabys || '—'}
+                    </div>
                 </div>
-                <div style="font-size:0.75rem; color:#94a3b8; font-weight:600;">${prod.nombre || prod.descripcion}</div>
+                <div style="font-size:1rem; color:#334155; font-weight:600; line-height:1.5; font-style: italic;">
+                    ${prod.nombre || prod.descripcion}
+                </div>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid #f1f5f9; padding-top:10px;">
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <div>
-                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase;">Cant.</label>
-                        <input type="number" class="item-qty" value="1" min="1" step="1" oninput="this.value=Math.max(1,Math.floor(this.value)); recalcularTotales();" style="width:35px; border:1px solid #e2e8f0; border-radius:6px; padding:3px; font-weight:900; text-align:center;">
+
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:2px solid #f1f5f9; padding-top:15px; margin-top:5px;">
+                <div style="display:flex; gap:25px; align-items:center; flex-wrap:wrap;">
+                    <!-- Cantidad con controles grandes -->
+                    <div style="text-align:center;">
+                        <label style="display:block; font-size:0.7rem; font-weight:900; color:#64748b; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.05em;">Cantidad</label>
+                        <div style="background:white; border:2.5px solid #e2e8f0; border-radius:14px; padding:6px 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <input type="number" class="item-qty" value="1" min="1" step="1" oninput="this.value=Math.max(1,Math.floor(this.value)); recalcularTotales();" style="width:55px; border:none; background:transparent; font-weight:900; text-align:center; font-size:1.5rem; color:#0f172a; outline:none;">
+                        </div>
                     </div>
-                    <div>
-                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase;">Desc %</label>
-                        <input type="number" class="item-desc-pct" value="0" min="0" max="100" oninput="this.value=Math.max(0,Math.floor(this.value)); validateDiscount(this); recalcularTotales();" style="width:35px; border:1px solid #fecdd3; border-radius:6px; padding:3px; font-weight:900; background:#fff1f2; color:#e11d48; text-align:center;">
+                    
+                    <!-- Descuento robusto -->
+                    <div style="text-align:center;">
+                        <label style="display:block; font-size:0.7rem; font-weight:900; color:#64748b; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.05em;">Descuento %</label>
+                        <div style="display:flex; align-items:center; background:#fff1f2; border:2.5px solid #fecdd3; padding:6px 15px; border-radius:14px; box-shadow: 0 2px 4px rgba(225,29,72,0.05);">
+                            <input type="number" class="item-desc-pct" value="0" min="0" max="100" oninput="this.value=Math.max(0,Math.floor(this.value)); validateDiscount(this); recalcularTotales();" style="width:45px; border:none; background:transparent; font-weight:900; color:#e11d48; text-align:right; font-size:1.5rem; outline:none;">
+                            <span style="font-size:1.1rem; color:#e11d48; font-weight:900; margin-left:2px;">%</span>
+                        </div>
                     </div>
-                    <div>
-                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase;">IVA %</label>
-                        <input type="number" class="item-tax-pct" value="${prod.impuesto || 13}" readonly style="width:30px; border:none; background:transparent; font-weight:900; color:#10b981;">
+
+                    <!-- Impuesto y Exoneración Impactantes -->
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="display:flex; align-items:center; background:#ecfdf5; border:2.5px solid #10b981; padding:10px 18px; border-radius:14px; box-shadow: 0 2px 4px rgba(16,185,129,0.05);">
+                            <span style="font-size:0.85rem; font-weight:900; color:#059669; margin-right:8px; text-transform:uppercase;">IVA</span>
+                            <input type="number" class="item-tax-pct" value="${prod.impuesto || 13}" readonly style="width:35px; border:none; background:transparent; font-weight:900; color:#059669; font-size:1.3rem; outline:none;">
+                            <span style="font-size:1rem; color:#059669; font-weight:900;">%</span>
+                        </div>
+                        <button type="button" onclick="configurarExoneracion('${card.id}')" style="background:#fffcf0; border:2.5px solid #fbbf24; color:#d97706; padding:12px 20px; border-radius:14px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s;" onmouseover="this.style.background='#fbbf24'; this.style.color='white'" onmouseout="this.style.background='#fffcf0'; this.style.color='#d97706'">
+                            <i class="fas fa-shield-alt" style="font-size:1.1rem;"></i> CONFIG. EXO
+                        </button>
                     </div>
-                    <button type="button" onclick="configurarExoneracion('${card.id}')" style="background:#fffcf0; border:1px solid #fbbf24; color:#d97706; padding:3px 10px; border-radius:8px; font-size:0.65rem; font-weight:900; cursor:pointer;">EXO</button>
+
                     <input type="hidden" class="item-tax-type" value="01">
                     <input type="hidden" class="item-detail" value="${displayDetail}">
                     <input type="hidden" class="item-desc" value="${prod.nombre || prod.descripcion}">
                     <input type="hidden" class="item-cabys" value="${prod.cabys || ''}">
                     <input type="hidden" class="item-sku" value="${prod.codigoInterno || prod.codigo || ''}">
                 </div>
+
                 <div style="text-align:right;">
-                    <div style="font-size:0.6rem; color:#94a3b8; font-weight:800; text-transform:uppercase;">Subtotal</div>
-                    <div class="subtotal-cell" style="font-weight:900; color:#1e40af; font-size:1.3rem;">${symbol}0.00</div>
+                    <div style="font-size:0.75rem; color:#94a3b8; font-weight:900; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Subtotal del Ítem</div>
+                    <div class="subtotal-cell" style="font-weight:900; color:#1e40af; font-size:2rem; letter-spacing:-0.03em;">${symbol}0.00</div>
                 </div>
             </div>
         `;
