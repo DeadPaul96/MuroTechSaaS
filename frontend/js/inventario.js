@@ -173,39 +173,36 @@
                     <td style="padding:12px 15px;">
                         <div style="display:flex; align-items:baseline; gap:8px;">
                             ${tipoBadge}
-                            <div style="font-weight:900; color:#0f172a; font-size:1rem; letter-spacing:-0.01em;">${tituloPrincipal}</div>
+                            <div style="font-weight:900; color:#0f172a; font-size:1.05rem; letter-spacing:-0.01em;">${tituloPrincipal}</div>
                         </div>
                         ${subtituloMH}
                     </td>
                     <td style="padding:12px 15px;">
                         <div style="font-size:0.7rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.02em;">Costo: ₡${item.precio ? item.precio.toLocaleString() : '0'}</div>
-                        <div style="font-weight:900; color:#0f172a; font-size:1.1rem; margin-top:1px;">₡${item.precioVenta ? item.precioVenta.toLocaleString() : '0'}</div>
+                        <div style="font-weight:900; color:#0f172a; font-size:1.15rem; margin-top:1px;">₡${item.precioVenta ? item.precioVenta.toLocaleString() : '0'}</div>
                     </td>
                     <td style="padding:12px 15px;">
-                        <div style="display:inline-flex; align-items:center; background:#ecfdf5; color:#065f46; padding:2px 8px; border-radius:6px; font-weight:900; font-size:0.75rem; border:1px solid #a7f3d0;">
+                        <div style="background:#ecfdf5; color:#065f46; padding:3px 10px; border-radius:8px; font-weight:900; font-size:0.8rem; border:1px solid #a7f3d0; display:inline-block;">
                             ${item.impuesto}% IVA
                         </div>
-                        <div style="font-size:0.7rem; color:#6366f1; font-weight:900; margin-top:4px;">
+                        <div style="font-size:0.7rem; color:#6366f1; font-weight:900; margin-top:6px; letter-spacing:0.02em;">
                             <i class="fas fa-chart-line"></i> MARGEN: ${item.margen || 0}%
                         </div>
                     </td>
-                    <td style="padding:12px 15px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div style="text-align:left;">
-                                <div style="font-weight:900; font-size:1.2rem; line-height:1; color:${item.stock > 0 ? '#10b981' : (esServicio ? '#6366f1' : '#ef4444')}">
-                                    ${esServicio ? 'INF.' : item.stock}
-                                </div>
-                                <div style="font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px;">Existencia</div>
-                            </div>
-                            <!-- Acciones Integradas -->
-                            <div style="display:flex; gap:6px;">
-                                <button class="btn-action edit" onclick="editarItem(${item.id})" style="width:30px; height:30px; border-radius:8px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
-                                    <i class="fas fa-edit" style="font-size:0.9rem;"></i>
-                                </button>
-                                <button class="btn-action del" onclick="eliminarItem(${item.id})" style="width:30px; height:30px; border-radius:8px; border:none; background:#fff1f2; color:#ef4444; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
-                                    <i class="fas fa-trash-alt" style="font-size:0.9rem;"></i>
-                                </button>
-                            </div>
+                    <td style="padding:12px 15px; text-align:center;">
+                        <div style="font-weight:900; font-size:1.3rem; line-height:1; color:${item.stock > 0 ? '#10b981' : (esServicio ? '#6366f1' : '#ef4444')}">
+                            ${esServicio ? 'INF.' : item.stock}
+                        </div>
+                        <div style="font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; margin-top:4px;">Existencia</div>
+                    </td>
+                    <td style="padding:12px 15px; text-align:center;">
+                        <div style="display:flex; gap:8px; justify-content:center;">
+                            <button class="btn-action edit" onclick="editarItem(${item.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
+                                <i class="fas fa-edit" style="font-size:1rem;"></i>
+                            </button>
+                            <button class="btn-action del" onclick="eliminarItem(${item.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#fff1f2; color:#ef4444; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
+                                <i class="fas fa-trash-alt" style="font-size:1rem;"></i>
+                            </button>
                         </div>
                     </td>
                 `;
