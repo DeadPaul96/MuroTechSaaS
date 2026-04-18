@@ -379,33 +379,41 @@
 
     // --- DIVISAS ---
     async function syncRates() {
+        console.log("MUROTECH: Iniciando sincronización de tasas...");
         const urlDirecta = "https://api.hacienda.go.cr/indicadores/tc";
         const urlProxy = "proxy_hacienda.php"; 
         const statusBadge = document.getElementById('dash-tc-status');
+        
         let data = null;
 
+        // 1. Intentar Proxy
         try {
             const resProxy = await fetch(urlProxy);
             if (resProxy.ok) data = await resProxy.json();
-        } catch (e) { console.warn("Proxy exchange unavailable"); }
+        } catch (e) { console.warn("TC: Proxy no respondió."); }
 
+        // 2. Intentar Directa si Proxy falló
         if (!data) {
             try {
                 const resDirecta = await fetch(urlDirecta);
                 if (resDirecta.ok) data = await resDirecta.json();
-            } catch (e) { console.error("Direct API Hacienda failed"); }
+            } catch (e) { console.error("TC: API Hacienda no respondió."); }
         }
 
-        if (data) {
-            if (data.dolar) {
-                currentRates.usd = data.dolar.venta.valor;
-                document.getElementById('fx-usd-venta').textContent = '₡' + currentRates.usd.toFixed(2);
-                document.getElementById('fx-usd-fecha').textContent = data.dolar.venta.fecha.split('-').reverse().join('/');
-            }
+        // 3. Procesar datos o usar Fallback
+        if (data && data.dolar) {
+            currentRates.usd = data.dolar.venta.valor;
+            const elVenta = document.getElementById('fx-usd-venta');
+            const elFecha = document.getElementById('fx-usd-fecha');
+            if (elVenta) elVenta.textContent = '₡' + currentRates.usd.toFixed(2);
+            if (elFecha) elFecha.textContent = data.dolar.venta.fecha.split('-').reverse().join('/');
+            
             if (data.euro) {
                 currentRates.eur = data.euro.colones;
-                document.getElementById('fx-eur-valor').textContent = '₡' + currentRates.eur.toFixed(2);
-                document.getElementById('fx-eur-fecha').textContent = data.euro.fecha.split('-').reverse().join('/');
+                const elEurVal = document.getElementById('fx-eur-valor');
+                const elEurFec = document.getElementById('fx-eur-fecha');
+                if (elEurVal) elEurVal.textContent = '₡' + currentRates.eur.toFixed(2);
+                if (elEurFec) elEurFec.textContent = data.euro.fecha.split('-').reverse().join('/');
             }
 
             if (statusBadge) {
@@ -413,10 +421,23 @@
                 statusBadge.style.color = '#10b981';
                 statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> SINCRONIZADO';
             }
-        } else if (statusBadge) {
-            statusBadge.style.background = '#fef2f2';
-            statusBadge.style.color = '#ef4444';
-            statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR API';
+        } else {
+            // FALLBACK – Tasa simulada para no detener la operación
+            console.warn("TC: Usando tasas de respaldo (Offline Mode)");
+            currentRates.usd = 520.00;
+            currentRates.eur = 565.00;
+            
+            const elVenta = document.getElementById('fx-usd-venta');
+            const elEurVal = document.getElementById('fx-eur-valor');
+            if (elVenta) elVenta.textContent = '₡520.00*';
+            if (elEurVal) elEurVal.textContent = '₡565.00*';
+            
+            if (statusBadge) {
+                statusBadge.style.background = '#fffbeb';
+                statusBadge.style.color = '#d97706';
+                statusBadge.innerHTML = '<i class="fas fa-wifi-slash"></i> MODO OFFLINE';
+                statusBadge.title = "No se pudo conectar con Hacienda. Usando tasa estimada.";
+            }
         }
     }
 
