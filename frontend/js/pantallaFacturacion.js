@@ -257,16 +257,16 @@
                     <!-- Descuento -->
                     <div style="text-align:center;">
                         <label style="display:block; font-size:0.6rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Desc. %</label>
-                        <div style="display:flex; align-items:center; background:#fff1f2; border:2px solid #fecdd3; padding:4px 10px; border-radius:10px;">
-                            <input type="number" class="item-desc-pct" value="0" min="0" max="100" oninput="this.value=Math.max(0,Math.floor(this.value)); validateDiscount(this); recalcularTotales();" style="width:35px; border:none; background:transparent; font-weight:900; color:#e11d48; text-align:right; font-size:1.25rem; outline:none;">
+                        <div style="display:flex; align-items:center; background:#fff1f2; border:2px solid #fecdd3; padding:4px 12px; border-radius:10px; gap:4px;">
+                            <input type="number" class="item-desc-pct no-spin" value="0" min="0" max="100" oninput="this.value=Math.max(0,Math.floor(this.value)); validateDiscount(this); recalcularTotales();" style="width:50px; border:none; background:transparent; font-weight:900; color:#e11d48; text-align:center; font-size:1.25rem; outline:none;">
                             <span style="font-size:0.9rem; color:#e11d48; font-weight:900;">%</span>
                         </div>
                     </div>
 
                     <!-- IVA Badge -->
-                    <div style="display:flex; align-items:center; background:#ecfdf5; border:2px solid #10b981; padding:8px 14px; border-radius:10px; margin-top:14px;">
-                        <span style="font-size:0.75rem; font-weight:900; color:#059669; margin-right:6px; text-transform:uppercase;">IVA</span>
-                        <input type="number" class="item-tax-pct" value="${prod.impuesto || 13}" readonly style="width:30px; border:none; background:transparent; font-weight:900; color:#059669; font-size:1.1rem; outline:none;">
+                    <div style="display:flex; align-items:center; background:#ecfdf5; border:2px solid #10b981; padding:8px 16px; border-radius:10px; margin-top:14px; gap:8px;">
+                        <span style="font-size:0.75rem; font-weight:900; color:#059669; text-transform:uppercase;">IVA</span>
+                        <input type="number" class="item-tax-pct no-spin" value="${prod.impuesto || 13}" readonly style="width:40px; border:none; background:transparent; font-weight:900; color:#059669; font-size:1.25rem; outline:none; text-align:center;">
                         <span style="font-size:0.85rem; color:#059669; font-weight:900;">%</span>
                     </div>
 
