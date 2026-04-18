@@ -299,20 +299,24 @@
                     <!--  TARJETA 4 – DETALLE DE VENTA                       -->
                     <!-- ═══════════════════════════════════════════════════ -->
                     <div class="section-box section-blocked" id="venta-section">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
-                            <h3 class="section-title" style="margin:0;">
-                                <i class="fas fa-shopping-cart"></i> Detalle de Venta
-                            </h3>
-                            
-                            <div id="receptor-alert" style="background:#fff1f2; color:#be123c; padding:8px 15px; border-radius:10px; font-size:0.75rem; font-weight:800; border:1px solid #fecdd3;">
-                                <i class="fas fa-exclamation-circle"></i> Debe seleccionar un Receptor primero
+                        <div style="background:#f1f5f9; padding:15px 25px; border-radius:12px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; border:1.5px dashed #cbd5e1;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="background:var(--grad-premium); width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-size:1.2rem; box-shadow:0 4px 12px rgba(37,99,235,0.2);">
+                                    <i class="fas fa-search-plus"></i>
+                                </div>
+                                <div>
+                                    <h4 style="margin:0; font-weight:900; color:#1e293b; font-size:0.9rem;">AGREGAR PRODUCTOS O SERVICIOS</h4>
+                                    <p style="margin:0; font-size:0.75rem; color:#64748b; font-weight:600;">Busque y seleccione un ítem para añadirlo al detalle</p>
+                                </div>
                             </div>
 
-                            <div class="autocomplete-wrapper" style="width:380px;">
-                                <input type="text" id="buscar-cabys" class="fi" placeholder="🔍 Buscar por Nombre, Descripción, CABYS..." autocomplete="off">
-                                <div id="cabys-dropdown" class="autocomplete-dropdown"></div>
+                            <div class="autocomplete-wrapper" style="width:500px;">
+                                <div id="receptor-alert" style="background:#fff1f2; color:#be123c; padding:8px 15px; border-radius:10px; font-size:0.75rem; font-weight:800; border:1px solid #fecdd3; position:absolute; right:20px; top:-40px; width:max-content; display:none;">
+                                    <i class="fas fa-exclamation-circle"></i> Debe seleccionar un Receptor primero
+                                </div>
+                                <input type="text" id="buscar-cabys" class="fi" style="height:48px; font-size:1rem; border:2px solid #e2e8f0; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.03);" placeholder="🔍 Escriba Nombre, Marca, Modelo o Código CABYS..." autocomplete="off">
+                                <div id="cabys-dropdown" class="autocomplete-dropdown" style="top:calc(100% + 8px);"></div>
                             </div>
-
                         </div>
 
                         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:11px; overflow:hidden;">
@@ -385,39 +389,7 @@
                             </div>
                         </div>
 
-                        <!-- Impuestos MH v4.4 -->
-                        <div class="tax-section">
-                            <h3 class="section-title" style="margin-bottom:14px;">
-                                <i class="fas fa-percent"></i> Impuesto
-                            </h3>
-
-                            <!-- Selector de impuesto a aplicar en la factura -->
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
-                                <div>
-                                    <label class="label-sm" for="tipo-impuesto">Tipo de Impuesto a Aplicar</label>
-                                    <select id="tipo-impuesto" class="premium-select">
-                                        <option value="01_13">IVA – 13% (Tarifa General)</option>
-                                        <option value="01_08">IVA – 8% (Salud, seguros)</option>
-                                        <option value="01_04">IVA – 4% (Canasta básica ampliada)</option>
-                                        <option value="01_02">IVA – 2% (Canasta básica reducida)</option>
-                                        <option value="01_01">IVA – 1% (Canasta básica especial)</option>
-                                        <option value="01_00">IVA – 0% (Exento)</option>
-                                        <option value="02">ISC – Según partida arancelaria</option>
-                                        <option value="03">Impuesto Único Combustibles</option>
-                                        <option value="04">Imp. Ley 6946 (alcohol)</option>
-                                        <option value="05">Imp. bebidas no alcohólicas</option>
-                                        <option value="06">Imp. productos del tabaco</option>
-                                        <option value="07">IVA cálculo especial</option>
-                                        <option value="08">IVA Bienes Usados – 13%</option>
-                                        <option value="99">Otros</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="label-sm" for="porcentaje-impuesto">Tarifa (%)</label>
-                                    <input type="number" id="porcentaje-impuesto" class="fi" value="13" min="0" max="100" step="0.01">
-                                </div>
-                            </div>
-                        </div>
+                         <!-- Sección de Impuestos Globales Eliminada por solicitud del usuario (Se maneja por línea) -->
                     </div>
 
                     <!-- ═══════════════════════════════════════════════════ -->
