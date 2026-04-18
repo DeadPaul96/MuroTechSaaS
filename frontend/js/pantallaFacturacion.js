@@ -154,20 +154,28 @@
                     dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">Sin resultados</div>';
                 } else {
                     matches.forEach(prod => {
-                        const mainTitle = prod.nombreServicio || prod.nombre || prod.descripcion;
-                        const subTitle = [
-                            prod.marca ? `Marca: ${prod.marca}` : '',
-                            prod.modelo ? `Mod: ${prod.modelo}` : '',
-                            prod.caracteristicas ? `Char: ${prod.caracteristicas}` : ''
-                        ].filter(Boolean).join(' | ');
+                        // Invertimos la prioridad: Marca/Modelo/Características como título principal
+                        const identityInfo = [
+                            prod.marca ? `${prod.marca}` : '',
+                            prod.modelo ? `${prod.modelo}` : '',
+                            prod.caracteristicas ? ` — ${prod.caracteristicas}` : ''
+                        ].filter(Boolean).join(' ');
+
+                        // Título predominante: Nombre del Servicio o Identidad del Producto (Marca/Modelo)
+                        const mainDisplay = identityInfo.trim() || prod.nombreServicio || prod.nombre || prod.descripcion;
+                        
+                        // Subtítulo: La descripción técnica de CABYS (más pequeña)
+                        const secondaryDisplay = (identityInfo.trim() && (prod.nombreServicio || prod.nombre || prod.descripcion)) 
+                            ? (prod.nombreServicio || prod.nombre || prod.descripcion) 
+                            : "";
 
                         const item = document.createElement('div');
                         item.className = 'autocomplete-item';
                         item.innerHTML = `
                             <div style="flex:1;">
-                                <div style="font-weight:900; color:#0f172a; font-size:1rem;">${mainTitle}</div>
-                                <div style="font-size:0.75rem; color:#475569; font-weight:600; margin-top:2px;">${subTitle}</div>
-                                <div style="font-size:0.65rem; color:#94a3b8; margin-top:2px;">Normativa CABYS: ${prod.cabys || '—'}</div>
+                                <div style="font-weight:900; color:#0f172a; font-size:1.05rem; line-height:1.2;">${mainDisplay}</div>
+                                ${secondaryDisplay ? `<div style="font-size:0.75rem; color:#64748b; font-weight:600; margin-top:4px;">${secondaryDisplay}</div>` : ""}
+                                <div style="font-size:0.65rem; color:#94a3b8; font-weight:500; margin-top:2px;">Normativa CABYS: ${prod.cabys || '—'}</div>
                             </div>
                             <div style="font-weight:900; color:#1e40af; font-size:1.1rem; padding-left:15px;">${monedaSymbols[document.getElementById('moneda').value]}${(prod.precioVenta || prod.precio || 0).toFixed(2)}</div>
                         `;
