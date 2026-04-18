@@ -22,9 +22,9 @@
                 
                 tr.innerHTML = `
                     <td style="padding:16px 20px;">
-                        <div style="font-weight:800; font-size:0.82rem; color:#1e293b;">
-                            <span style="font-size:0.6rem; background:#f1f5f9; padding:2px 6px; border-radius:4px; margin-right:6px; vertical-align:middle;">${c.tipoId}</span>
-                            ${c.identificacion}
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:0.6rem; font-weight:900; background:#f1f5f9; color:#64748b; padding:3px 8px; border-radius:6px; letter-spacing:0.5px;">${c.tipoId}</span>
+                            <span style="font-weight:900; font-size:0.9rem; color:#1e293b; letter-spacing:0.5px;">${c.identificacion}</span>
                         </div>
                     </td>
                     <td style="padding:16px 20px;">

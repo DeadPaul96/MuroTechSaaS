@@ -206,3 +206,40 @@
     margin-left: 15px;
     white-space: nowrap;
 }
+
+/* Nuevos Estilos para Detalle de Facturación Profesional */
+.fi-grid-stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fi-grid-stacked input {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.fi-grid-stacked .subtext {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.detail-table td {
+    padding: 12px 10px;
+    vertical-align: middle;
+}
+
+.fi-grid-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.fi-grid-divider {
+    color: #cbd5e1;
+    font-size: 0.8rem;
+}

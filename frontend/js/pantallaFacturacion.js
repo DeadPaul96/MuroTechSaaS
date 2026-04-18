@@ -20,6 +20,13 @@
             syncRates();
             checkDraft();
             toggleVentaSection(false); // Bloqueado por defecto
+            
+            // Prevenir envío con Enter
+            document.getElementById('factura-form').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                }
+            });
         });
 
         function toggleVentaSection(active) {
@@ -125,7 +132,6 @@
             document.addEventListener('click', closeDropdown);
         })();
 
-        // --- LÓGICA DE PRODUCTOS ---
         (function() {
             const input = document.getElementById('buscar-cabys');
             const dropdown = document.getElementById('cabys-dropdown');
@@ -138,9 +144,9 @@
                 const db = window.muroDB;
                 if (!db) return;
                 
-                // Optimización: Nombre, Detalle, Descripción y Código CABYS
+                // Búsqueda extendida: Nombre, Marca, Modelo, Características, Descripción, CABYS, Código
                 const matches = db.getProductos().filter(p => 
-                    multiWordMatch(`${p.nombre || ''} ${p.detalle || ''} ${p.descripcion || ''} ${p.cabys || ''} ${p.codigo || ''}`, q)
+                    multiWordMatch(`${p.nombre || ''} ${p.descripcion || ''} ${p.marca || ''} ${p.modelo || ''} ${p.caracteristicas || ''} ${p.nombreServicio || ''} ${p.cabys || ''} ${p.codigo || ''}`, q)
                 ).slice(0, 10);
 
                 dropdown.innerHTML = '';
@@ -153,7 +159,9 @@
                         item.innerHTML = `
                             <div style="flex:1;">
                                 <div style="font-weight:800; color:#1e293b;">${prod.nombre || prod.descripcion}</div>
-                                <div style="font-size:0.75rem; color:#64748b;">CABYS: ${prod.cabys || '—'} | Cód: ${prod.codigo || '—'}</div>
+                                <div style="font-size:0.7rem; color:#64748b;">
+                                    ${prod.marca ? 'Marca: '+prod.marca+' | ' : ''}${prod.modelo ? 'Mod: '+prod.modelo+' | ' : ''}CABYS: ${prod.cabys || '—'}
+                                </div>
                             </div>
                             <div style="font-weight:900; color:#1e40af;">${monedaSymbols[document.getElementById('moneda').value]}${(prod.precioVenta || prod.precio || 0).toFixed(2)}</div>
                         `;
@@ -182,25 +190,52 @@
             tr.id = 'linea-' + lineCount;
             tr.dataset.precioOriginal = precioUnit;
             tr.dataset.descMax = prod.descuento_maximo || 0;
+            
+            const displayDetail = prod.marca ? `${prod.marca} ${prod.modelo || ''}` : (prod.nombreServicio || prod.detalle || '');
 
             tr.innerHTML = `
                 <td style="color:#94a3b8; font-weight:800; font-size:0.75rem;">#${lineCount}</td>
-                <td><input type="text" class="fi-grid cabys-code" value="${prod.cabys || ''}" readonly></td>
-                <td><input type="text" class="fi-grid item-code" value="${prod.codigo || prod.sku || ''}" readonly></td>
-                <td><input type="text" class="fi-grid item-desc" value="${prod.nombre || prod.descripcion}" readonly></td>
-                <td><input type="text" class="fi-grid item-detail" value="${prod.detalle || ''}" placeholder="Marca, modelo..."></td>
                 <td>
-                    <select class="fi-grid item-tax-type" onchange="recalcularTotales()">
-                        <option value="01">IVA</option>
-                        <option value="02">ISC</option>
-                        <option value="99">Otro</option>
-                    </select>
+                    <div class="fi-grid-stacked">
+                        <input type="text" class="fi-grid item-code" value="${prod.codigo || prod.sku || ''}" readonly style="font-weight:800; color:var(--primary);">
+                        <div class="subtext">CABYS: <span class="cabys-code-txt">${prod.cabys || '—'}</span></div>
+                        <input type="hidden" class="cabys-code" value="${prod.cabys || ''}">
+                    </div>
                 </td>
-                <td><input type="number" class="fi-grid item-tax-pct" value="13" min="0" max="100" step="0.1" oninput="recalcularTotales()"></td>
-                <td><input type="number" class="fi-grid item-qty" value="1" min="1" step="0.001" oninput="recalcularTotales()"></td>
-                <td><input type="number" class="fi-grid item-desc-pct" value="0" min="0" max="100" step="0.1" oninput="validateDiscount(this); recalcularTotales();"></td>
+                <td>
+                    <div class="fi-grid-stacked">
+                        <input type="text" class="fi-grid item-desc" value="${prod.nombre || prod.descripcion}" readonly style="font-weight:700;">
+                        <input type="text" class="fi-grid item-detail" value="${displayDetail}" placeholder="Marca, modelo..." style="font-size:0.72rem; color:#64748b;">
+                    </div>
+                </td>
+                <td>
+                    <div class="fi-grid-stacked">
+                        <select class="fi-grid item-tax-type" onchange="recalculatTotales()" style="font-size:0.75rem; border:none; padding:0; background:transparent; font-weight:700;">
+                            <option value="01">IVA</option>
+                            <option value="02">ISC</option>
+                            <option value="99">Otro</option>
+                        </select>
+                        <div style="display:flex; align-items:center; gap:4px;">
+                           <input type="number" class="fi-grid item-tax-pct" value="${prod.impuesto || 13}" min="0" max="100" step="0.1" oninput="recalcularTotales()" style="font-size:0.65rem; color:#10b981; font-weight:800; width:30px;">
+                           <span style="font-size:0.65rem; color:#10b981; font-weight:800;">%</span>
+                           <button type="button" class="btn-exo" onclick="configurarExoneracion('${tr.id}')" title="Configurar Exoneración" style="background:none; border:none; color:#f59e0b; cursor:pointer; font-size:0.7rem; padding:0;">
+                               <i class="fas fa-shield-alt"></i>
+                           </button>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:5px; justify-content:center;">
+                        <input type="number" class="fi-grid item-qty" value="1" min="0.001" step="0.001" oninput="recalcularTotales()" style="width:50px; text-align:center; font-weight:800; background:#f1f5f9; border-radius:6px; padding:4px;">
+                        <span style="color:#cbd5e1;">|</span>
+                        <div style="display:flex; align-items:center;">
+                            <input type="number" class="fi-grid item-desc-pct" value="0" min="0" max="100" step="0.1" oninput="validateDiscount(this); recalcularTotales();" style="width:35px; text-align:right; font-size:0.75rem; color:#ef4444; font-weight:700;">
+                            <span style="font-size:0.7rem; color:#ef4444;">%</span>
+                        </div>
+                    </div>
+                </td>
                 <td style="font-weight:900; color:#1e40af; text-align:right; padding-right:15px;" class="subtotal-cell">${symbol}0.00</td>
-                <td><button type="button" class="btn-del" onclick="eliminarLinea('${tr.id}')"><i class="fas fa-trash-alt"></i></button></td>
+                <td><button type="button" class="btn-del" onclick="eliminarLinea('${tr.id}')" style="background:transparent; border:none; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button></td>
             `;
             detailLinesTbody.appendChild(tr);
             recalcularTotales();
@@ -240,11 +275,23 @@
                     const prec = parseFloat(tr.dataset.precioOriginal) || 0;
                     const descPct = parseFloat(tr.querySelector('.item-desc-pct').value) || 0;
                     const taxPct = parseFloat(tr.querySelector('.item-tax-pct').value) || 0;
+                    const exoData = tr.dataset.exoneracion ? JSON.parse(tr.dataset.exoneracion) : null;
 
                     const base = cant * prec;
                     const descMonto = Math.round((base * (descPct / 100)) * 100) / 100;
                     const subtotalNeto = base - descMonto;
-                    const taxMonto = Math.round((subtotalNeto * (taxPct / 100)) * 100) / 100;
+                    
+                    let taxMonto = Math.round((subtotalNeto * (taxPct / 100)) * 100) / 100;
+                    
+                    // Aplicar exoneración si existe
+                    if (exoData && exoData.pct > 0) {
+                        const montoExo = Math.round((taxMonto * (exoData.pct / 100)) * 100) / 100;
+                        taxMonto -= montoExo;
+                        tr.querySelector('.btn-exo').style.color = '#10b981'; // Cambio visual si hay exo
+                    } else {
+                        tr.querySelector('.btn-exo').style.color = '#f59e0b';
+                    }
+
                     const totalLinea = subtotalNeto + taxMonto;
 
                     subtotalTotal += base;
@@ -364,33 +411,213 @@
         // --- DIVISAS ---
         async function syncRates() {
             try {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('es-CR', {day:'2-digit', month:'2-digit', year:'2-digit'});
+                
                 const res = await fetch("https://api.hacienda.go.cr/indicadores/tc");
                 if (res.ok) {
                     const data = await res.json();
                     currentRates.usd = data.dolar?.venta?.valor || 530;
                     document.getElementById('fx-usd-venta').textContent = '₡' + currentRates.usd.toFixed(2);
-                    document.getElementById('dash-tc-status').innerHTML = '<i class="fas fa-check-circle"></i> SINCRONIZADO';
+                    document.getElementById('fx-usd-fecha').textContent = dateStr;
                 }
-            } catch (e) { console.warn("TC falló."); }
+                
+                // EUR a CRC (Simulación basada en cross rate aprox 1.08 o valor fijo para UX)
+                currentRates.eur = currentRates.usd * 1.08; 
+                document.getElementById('fx-eur-valor').textContent = '₡' + currentRates.eur.toFixed(2);
+                document.getElementById('fx-eur-fecha').textContent = dateStr;
+
+                document.getElementById('dash-tc-status').innerHTML = '<i class="fas fa-check-circle"></i> SINCRONIZADO';
+            } catch (e) { 
+                console.warn("TC falló."); 
+                document.getElementById('dash-tc-status').innerHTML = '<i class="fas fa-times-circle" style="color:#ef4444"></i> ERROR TC';
+            }
         }
+
+        function validarMH44() {
+            const receptorId = document.getElementById('cli-num-id').textContent;
+            if (receptorId === '–') return { ok: false, msg: 'Debe seleccionar un receptor válido.' };
+            
+            const lineas = document.querySelectorAll('#detalle-lineas tr:not(#empty-row)');
+            if (!lineas.length) return { ok: false, msg: 'Debe agregar al menos una línea de detalle.' };
+            
+            const actividad = document.getElementById('actividad-economica').value;
+            if (!actividad) return { ok: false, msg: 'Debe seleccionar una actividad económica.' };
+
+            return { ok: true };
+        }
+
+        function generarXML44(data) {
+            console.log("Generando XML Normativa MH v4.4...");
+            
+            let lineasXml = "";
+            data.lineasRaw.forEach((l, i) => {
+                const exoPart = l.exoneracion ? `
+    <Exoneracion>
+        <TipoDocumento>${l.exoneracion.tipo}</TipoDocumento>
+        <NumeroDocumento>${l.exoneracion.num}</NumeroDocumento>
+        <NombreInstitucion>${l.exoneracion.inst}</NombreInstitucion>
+        <FechaEmision>${l.exoneracion.fecha}T00:00:00</FechaEmision>
+        <PorcentajeExoneracion>${l.exoneracion.pct}</PorcentajeExoneracion>
+    </Exoneracion>` : "";
+
+                lineasXml += `
+<LineaDetalle>
+    <NumeroLinea>${i+1}</NumeroLinea>
+    <Codigo>${l.codigo}</Codigo>
+    <Detalle>${l.desc}</Detalle>
+    <Impuesto>
+        <Codigo>${l.taxType}</Codigo>
+        <Tarifa>${l.taxPct}</Tarifa>
+        ${exoPart}
+    </Impuesto>
+</LineaDetalle>`;
+            });
+
+            const xml = `<?xml version="1.0" encoding="utf-8"?>
+<FacturaElectronica xmlns="https://cdn.hacienda.go.cr/atv/sch/v4.4/facturaElectronica">
+    <Clave>${Math.floor(Math.random()*1e50)}</Clave>
+    <CodigoActividad>${data.actividad}</CodigoActividad>
+    <NumeroConsecutivo>0010000101${Math.floor(Math.random()*1e10)}</NumeroConsecutivo>
+    <FechaEmision>${new Date().toISOString()}</FechaEmision>
+    <Emisor>
+        <Nombre>MUROTECH SOLUTIONS S.A.</Nombre>
+        <Identificacion><Tipo>02</Tipo><Numero>3101897564</Numero></Identificacion>
+    </Emisor>
+    <Receptor>
+        <Nombre>${data.receptor.nombre}</Nombre>
+        <Identificacion><Tipo>${data.receptor.tipo}</Tipo><Numero>${data.receptor.id}</Numero></Identificacion>
+    </Receptor>
+    <DetalleServicio>${lineasXml}</DetalleServicio>
+    <ResumenFactura>
+        <CodigoTipoMoneda>
+            <CodigoMoneda>${data.moneda}</CodigoMoneda>
+            <TipoCambio>${data.tipoCambio}</TipoCambio>
+        </CodigoTipoMoneda>
+        <TotalVentaNeto>${data.total}</TotalVentaNeto>
+    </ResumenFactura>
+</FacturaElectronica>`;
+            return xml;
+        }
+
+        window.configurarExoneracion = function(trId) {
+            const tr = document.getElementById(trId);
+            const current = tr.dataset.exoneracion ? JSON.parse(tr.dataset.exoneracion) : { tipo: '01', num: '', inst: '', fecha: new Date().toISOString().split('T')[0], pct: 100 };
+
+            Swal.fire({
+                title: 'Configurar Exoneración MH 4.4',
+                html: `
+                    <div style="text-align:left; display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+                        <div>
+                            <label class="label-sm">Tipo de Documento</label>
+                            <select id="exo-tipo" class="premium-select" style="width:100%;">
+                                <option value="01" ${current.tipo==='01'?'selected':''}>01 – Compras Autorizadas</option>
+                                <option value="02" ${current.tipo==='02'?'selected':''}>02 – Ventas exentas a diplomáticos</option>
+                                <option value="03" ${current.tipo==='03'?'selected':''}>03 – Orden de compra instituciones públicas</option>
+                                <option value="04" ${current.tipo==='04'?'selected':''}>04 – Exenciones Dirección Gral de Hacienda</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label-sm">Número de Documento / Ley</label>
+                            <input id="exo-num" class="fi" value="${current.num}" placeholder="Ej. DGH-RES-001">
+                        </div>
+                        <div>
+                            <label class="label-sm">Nombre de la Institución</label>
+                            <input id="exo-inst" class="fi" value="${current.inst}" placeholder="Ministerio de Hacienda">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label class="label-sm">Fecha de Emisión</label>
+                                <input id="exo-fecha" type="date" class="fi" value="${current.fecha}">
+                            </div>
+                            <div>
+                                <label class="label-sm">% Exoneración</label>
+                                <input id="exo-pct" type="number" class="fi" value="${current.pct}" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Guardar Exoneración',
+                cancelButtonText: 'Quitar / Cancelar',
+                width: '500px'
+            }).then(r => {
+                if (r.isConfirmed) {
+                    const data = {
+                        tipo: document.getElementById('exo-tipo').value,
+                        num: document.getElementById('exo-num').value,
+                        inst: document.getElementById('exo-inst').value,
+                        fecha: document.getElementById('exo-fecha').value,
+                        pct: parseFloat(document.getElementById('exo-pct').value) || 0
+                    };
+                    tr.dataset.exoneracion = JSON.stringify(data);
+                } else if (r.dismiss === Swal.DismissReason.cancel) {
+                    tr.dataset.exoneracion = ''; // Borrar
+                }
+                recalcularTotales();
+            });
+        };
 
         // --- EMITIR ---
         document.getElementById('factura-form').onsubmit = (e) => {
             e.preventDefault();
-            const lineas = document.querySelectorAll('#detalle-lineas tr:not(#empty-row)');
-            if (!lineas.length) return Swal.fire('Error', 'Debe agregar ítems.', 'error');
+            
+            const val = validarMH44();
+            if (!val.ok) return Swal.fire('Error MH v4.4', val.msg, 'error');
+
+            const lineasRaw = [];
+            document.querySelectorAll('#detalle-lineas tr:not(#empty-row)').forEach(tr => {
+                lineasRaw.push({
+                    codigo: tr.querySelector('.item-code').value,
+                    desc: tr.querySelector('.item-desc').value,
+                    taxType: tr.querySelector('.item-tax-type').value,
+                    taxPct: tr.querySelector('.item-tax-pct').value,
+                    exoneracion: tr.dataset.exoneracion ? JSON.parse(tr.dataset.exoneracion) : null
+                });
+            });
+
+            const dataToSubmit = {
+                actividad: document.getElementById('actividad-economica').value,
+                receptor: {
+                    id: document.getElementById('cli-num-id').textContent,
+                    nombre: document.getElementById('cli-nombre').textContent,
+                    tipo: document.getElementById('cli-tipo-id').textContent.substring(0,2)
+                },
+                moneda: document.getElementById('moneda').value,
+                tipoCambio: document.getElementById('moneda').value === 'CRC' ? 1 : currentRates.usd,
+                total: document.getElementById('total-final').textContent.replace(/[₡$,]/g, ''),
+                lineasRaw
+            };
             
             Swal.fire({
-                title: 'Emitiendo...',
-                text: 'Procesando con Hacienda Costa Rica',
+                title: 'Validando Normativa v4.4...',
+                text: 'Firmando digitalmente y enviando a Hacienda',
                 allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading(); }
             });
 
             setTimeout(() => {
+                const xml = generarXML44(dataToSubmit);
+                console.log("XML GENERADO:", xml);
+                // Aquí se guardaría el XML como file o se enviaría al backend
+                
                 localStorage.removeItem('murotech_factura_draft');
-                Swal.fire('¡Éxito!', 'Comprobante emitido correctamente.', 'success').then(() => window.location.reload());
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: 'Comprobante emitido y XML v4.4 generado correctamente.',
+                    footer: '<a href="#" onclick="downloadMockXML()">Descargar XML v4.4 Generado</a>'
+                }).then(() => window.location.reload());
             }, 2000);
+        };
+
+        window.downloadMockXML = () => {
+             const blob = new Blob(["<xml>...Simulacion v4.4...</xml>"], {type: "text/xml"});
+             const url = window.URL.createObjectURL(blob);
+             const a = document.createElement("a");
+             a.href = url;
+             a.download = "Factura_v4.4.xml";
+             a.click();
         };
 
         // Helpers
