@@ -1,4 +1,20 @@
 (function () {
+        window.isDirty = false;
+        window.addEventListener('beforeunload', function (e) {
+            if (window.isDirty) {
+                e.preventDefault();
+                e.returnValue = 'Tienes cambios sin guardar en el formulario. ¿Seguro que quieres salir?';
+            }
+        });
+
+        function setDirty() { window.isDirty = true; }
+        function clearDirty() { window.isDirty = false; }
+
+        // Escuchar cambios en todos los inputs del formulario
+        document.querySelectorAll('#addClientForm input, #addClientForm select, #addClientForm textarea').forEach(el => {
+            el.addEventListener('input', setDirty);
+            el.addEventListener('change', setDirty);
+        });
         /* ── Clientes en memoria (desde MockDB) ──────────────────── */
         let clientes = window.muroDB ? window.muroDB.getClientes() : [];
 
@@ -31,6 +47,9 @@
                         <div style="font-weight:700; font-size:0.9rem; color:var(--primary-dark);">${c.nombre}</div>
                         <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
                             <i class="fas fa-envelope" style="margin-right:4px; font-size:0.7rem;"></i> ${c.correo || '—'}
+                        </div>
+                        <div style="font-size:0.7rem; color:#059669; font-weight:800; margin-top:4px; background:#ecfdf5; padding:2px 8px; border-radius:6px; display:inline-block; border:1px solid #d1fae5;">
+                            <i class="fas fa-briefcase" style="margin-right:4px;"></i> ${c.actividad || 'Actividad no definida'}
                         </div>
                     </td>
                     <td style="padding:16px 20px;">
@@ -255,9 +274,15 @@
                 else if (identificacion.length === 11 || identificacion.length === 12) tipoSel.value = '03'; // DIMEX
 
                 // 3. Actividad Económica → campo del formulario
-                const actividades = (d.actividades || []).map(a => a.descripcion);
+                const actividades = (d.actividades || []).map(a => `[${a.codigo}] ${a.descripcion}`);
                 const actividadTexto = actividades.join(' · ') || '—';
-                document.getElementById('cli-actividad').value = actividades[0] || '';
+                
+                // Guardamos TODAS las actividades en el input para que se persistan
+                const cliAct = document.getElementById('cli-actividad');
+                cliAct.value = actividadTexto;
+                cliAct.style.height = 'auto';
+                cliAct.style.height = (cliAct.scrollHeight) + 'px';
+                
                 document.getElementById('mh-actividad-result').textContent = actividadTexto;
 
                 // 4. Régimen Tributario → campo del formulario
@@ -349,16 +374,27 @@
                 return;
             }
 
+            const actividad = document.getElementById('cli-actividad').value.trim();
+            
             // Guardar en el mockDB centralizado
             window.muroDB.addCliente({ 
                 tipoId, identificacion, nombre, correo, 
-                telefono, movil, provincia, canton, distrito, barrio, direccion, regimen: 'general' 
+                telefono, movil, provincia, canton, distrito, barrio, direccion, 
+                actividad, regimen: document.getElementById('cli-regimen').value || 'general' 
             });
+            
+            this.reset();
+            clearDirty();
+            
+            // Limpieza manual de campos especiales y paneles
+            document.getElementById('mh-result-panel').style.display = 'none';
+            document.getElementById('mh-error-panel').style.display = 'none';
+            const cliAct = document.getElementById('cli-actividad');
+            if (cliAct) cliAct.style.height = '45px'; // Reset height
             
             clientes = window.muroDB.getClientes();
             renderTabla(clientes);
             actualizarBadge();
-            this.reset();
             Swal.fire({ icon: 'success', title: 'Cliente registrado correctamente, normativa aprobada.', timer: 2000, showConfirmButton: false });
         });
 

@@ -2,6 +2,7 @@ import os
 from flask import Flask, request, jsonify
 import pyodbc
 from flask_cors import CORS 
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 CORS(app) 
@@ -207,7 +208,7 @@ def registrar_contribuyente():
                        correo_electronico, nombre_contacto, primer_apellido, segundo_apellido,
                        correo_contacto, telefono,
                        ultimo_numero_facturacion, proveedor_tecnologico,
-                       password, nombre_archivo_p12)
+                       generate_password_hash(password), nombre_archivo_p12)
         
         conn.commit()
         
@@ -242,6 +243,54 @@ def registrar_contribuyente():
             "message": "Error interno del servidor al procesar la BD.", 
             "detail": str(e)
         }), 500
+
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    correo = data.get('email')
+    password = data.get('password')
+
+    if not correo or not password:
+        return jsonify({"message": "Faltan credenciales."}), 400
+
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({"message": "Error al conectar con la base de datos."}), 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT Password, NombreEmpresa, NumeroCedula FROM Contribuyentes WHERE CorreoElectronico = ?", correo)
+        row = cursor.fetchone()
+        conn.close()
+
+        if row and check_password_hash(row[0], password):
+            return jsonify({
+                "message": "Login exitoso",
+                "user": {
+                    "empresa": row[1],
+                    "cedula": row[2]
+                }
+            }), 200
+        else:
+            return jsonify({"message": "Correo o contraseña incorrectos."}), 401
+
+    except Exception as e:
+        if conn: conn.close()
+        return jsonify({"message": "Error interno del servidor.", "detail": str(e)}), 500
+
+@app.route('/api/time', methods=['GET'])
+def get_external_time():
+    """Proxy para obtener la hora oficial de Costa Rica sin problemas de CORS."""
+    import requests
+    try:
+        # Intentamos obtener la hora de una fuente confiable
+        res = requests.get('https://worldtimeapi.org/api/timezone/America/Costa_Rica', timeout=3)
+        if res.ok:
+            return jsonify(res.json())
+        return jsonify({"message": "Error al obtener hora externa"}), 502
+    except Exception as e:
+        return jsonify({"message": "Fallo de conexión con servidor de tiempo", "error": str(e)}), 503
 
 
 if __name__ == '__main__':

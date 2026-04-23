@@ -14,9 +14,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 // Función de navegación global
-// Función de navegación global con transición premium
 function irA(url) {
-    // Aplicar clase de salida al contenedor principal (más robusto)
+    if (window.isDirty) {
+        const isBilling = typeof window.saveDraftManual === 'function';
+        
+        Swal.fire({
+            title: '¿Deseas salir del sitio?',
+            text: isBilling 
+                ? 'Tienes cambios sin guardar. Te recomendamos guardar un borrador antes de salir para no perder tu progreso.' 
+                : 'Es posible que los cambios que implementaste no se puedan guardar.',
+            icon: 'warning',
+            showCancelButton: true,
+            showDenyButton: isBilling,
+            confirmButtonColor: '#1e40af',
+            denyButtonColor: '#10b981',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, salir sin guardar',
+            denyButtonText: '<i class="fas fa-save"></i> Guardar y Salir',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+            background: '#ffffff',
+            customClass: {
+                popup: 'premium-swal-popup'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.isDirty = false;
+                ejecutarNavegacion(url);
+            } else if (result.isDenied && isBilling) {
+                // Guardar borrador y luego navegar
+                window.saveDraftManual();
+                window.isDirty = false;
+                setTimeout(() => ejecutarNavegacion(url), 500);
+            }
+        });
+    } else {
+        ejecutarNavegacion(url);
+    }
+}
+
+function ejecutarNavegacion(url) {
     const main = document.querySelector('.module-content, .dashboard-full-width, main, .register-card');
     if (main) {
         main.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
@@ -24,7 +61,6 @@ function irA(url) {
         main.style.transform = 'translateY(15px) scale(0.98)';
         main.style.filter = 'blur(10px)';
         
-        // El sidebar se mantiene estático y firme
         setTimeout(() => {
             window.location.href = url;
         }, 300);
@@ -144,12 +180,22 @@ function formatDateTime(date) {
 
 // Mostrar mensaje de éxito
 function showSuccess(message) {
-    alert('✓ ' + message);
+    Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: message,
+        confirmButtonColor: '#1e40af'
+    });
 }
 
 // Mostrar mensaje de error
 function showError(message) {
-    alert('✗ ' + message);
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: message,
+        confirmButtonColor: '#ef4444'
+    });
 }
 
 // Mostrar loading
@@ -225,16 +271,32 @@ function formatPhone(phone) {
 
 // Cerrar sesión
 function cerrarSesion() {
-    if (confirm('¿Está seguro que desea cerrar sesión?')) {
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = 'inicioSesion.html';
-    }
+    Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: "¿Está seguro que desea salir del sistema?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#1e40af',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = 'inicioSesion.html';
+        }
+    });
 }
 
-// Mostrar notificaciones (placeholder)
+// Mostrar notificaciones
 function mostrarNotificaciones() {
-    alert('No hay notificaciones nuevas');
+    Swal.fire({
+        title: 'Notificaciones',
+        text: 'No hay notificaciones nuevas en este momento.',
+        icon: 'info',
+        confirmButtonColor: '#1e40af'
+    });
 }
 
 // Función para búsqueda por múltiples palabras (any word match)

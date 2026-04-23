@@ -10,9 +10,6 @@ function showLoginError(msg) {
     el.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + msg;
 }
 
-function irA(url) {
-    window.location.href = url;
-}
 
 /**
  * Inicializa los controladores de eventos para la pantalla de login.
@@ -39,7 +36,12 @@ function initLoginHandlers() {
     if (forgotLink) {
         forgotLink.addEventListener('click', (e) => {
             e.preventDefault();
-            alert('Funcionalidad de recuperación de contraseña en desarrollo.');
+            Swal.fire({
+                title: 'Recuperación de Contraseña',
+                text: 'Funcionalidad de recuperación en desarrollo. Por favor, contacte a soporte@murotech.cr.',
+                icon: 'info',
+                confirmButtonColor: '#1e40af'
+            });
         });
     }
 }

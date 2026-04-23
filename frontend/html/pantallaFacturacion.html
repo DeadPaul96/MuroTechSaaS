@@ -27,12 +27,37 @@
     <div id="billing-screen">
         <aside class="sidebar"></aside>
 
-        <main class="module-content fac-main">
+        <main class="fac-main">
             <div class="fac-card">
-                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
                     <div>
-                        <h1 style="color:#0f172a; font-size:2.8rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Facturación Electrónica</h1>
-                        <p style="color:#64748b; font-weight:600; font-size:1.1rem; margin-top:4px;">Emisión de comprobantes bajo normativa MH v4.4 — Costa Rica</p>
+                        <h1 style="color:#0f172a; font-size:2.4rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Facturación Electrónica</h1>
+                        <p style="color:#64748b; font-weight:600; font-size:1rem; margin-top:2px;">Emisión de comprobantes — MH v4.4</p>
+                    </div>
+
+                    <!-- Nueva Barra de Estado Fiscal Compacta -->
+                    <div style="display:flex; align-items:center; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:100px; padding:8px 24px; gap:24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);">
+                        <!-- Reloj -->
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="width:10px; height:10px; border-radius:50%; background:#f59e0b; box-shadow:0 0 10px rgba(245, 158, 11, 0.4);" id="clock-dot"></div>
+                            <div style="display:flex; flex-direction:column;">
+                                <span id="realtime-date" style="font-size:1.05rem; font-weight:900; color:#0f172a; font-family:var(--font-mono);">--/--/---- 00:00</span>
+                                <span id="realtime-status" style="font-size:0.6rem; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.5px;">Sincronizando...</span>
+                            </div>
+                        </div>
+                        
+                        <div style="width:1.5px; height:28px; background:#f1f5f9;"></div>
+
+                        <!-- Consecutivo -->
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="background:#eff6ff; color:#2563eb; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.85rem;">
+                                <i class="fas fa-hashtag"></i>
+                            </div>
+                            <div style="display:flex; flex-direction:column;">
+                                <span id="mh-consecutivo" style="font-size:1.05rem; font-weight:900; color:#2563eb; font-family:var(--font-mono); letter-spacing:1px;">00000000000000000000</span>
+                                <span style="font-size:0.6rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Consecutivo Oficial MH v4.4</span>
+                            </div>
+                        </div>
                     </div>
                 </header>
 
@@ -86,6 +111,31 @@
                             <div class="emisor-chip"><i class="fas fa-envelope"></i> facturacion@murotech.cr</div>
                             <div class="emisor-chip"><i class="fas fa-briefcase"></i> 620100 – Prog. Informática</div>
                             <div class="emisor-chip" style="background:rgba(255,255,255,0.25);"><i class="fas fa-shield-alt"></i> Régimen Simplificado Digital</div>
+                        </div>
+                    </div>
+                    
+                    <!-- PANEL DE BORRADOR DETECTADO -->
+                    <div id="section-drafts" style="display:none; margin-bottom:20px;">
+                        <div style="background:linear-gradient(135deg,#fefce8,#fef9c3); border:2px solid #fde047; border-radius:18px; padding:18px 25px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 8px 25px rgba(253,224,71,0.2);">
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <div style="background:#facc15; width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#854d0e; font-size:1.2rem;">
+                                    <i class="fas fa-history"></i>
+                                </div>
+                                <div>
+                                    <h4 style="margin:0; color:#854d0e; font-size:1.05rem; font-weight:900;">Borrador Pendiente Detectado</h4>
+                                    <p style="margin:2px 0 0; color:#a16207; font-size:0.85rem; font-weight:600;">Tienes una factura sin terminar. ¿Deseas recuperar los datos?</p>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button type="button" onclick="localStorage.removeItem('muro_draft_factura'); document.getElementById('section-drafts').style.display='none';" 
+                                        style="background:transparent; border:1.5px solid #ca8a04; color:#a16207; padding:8px 18px; border-radius:10px; font-weight:800; font-size:0.75rem; cursor:pointer; transition:all 0.2s;">
+                                    DESCARTAR
+                                </button>
+                                <button type="button" onclick="recuperarBorrador()" 
+                                        style="background:#854d0e; border:none; color:white; padding:10px 22px; border-radius:10px; font-weight:900; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 12px rgba(133,77,14,0.3);">
+                                    RECUPERAR AHORA
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -170,128 +220,79 @@
                     <!-- ═══════════════════════════════════════════════════ -->
                     <!--  TARJETA 3 – DATOS DEL CLIENTE (BUSCADOR)          -->
                     <!-- ═══════════════════════════════════════════════════ -->
-                    <div class="section-box">
-                        <h3 class="section-title">
-                            <i class="fas fa-user-circle"></i> Datos del Cliente / Receptor
-                        </h3>
-
-                        <!-- Buscador -->
-                        <div class="cliente-search-bar">
-                            <select id="tipo-id-cliente" class="premium-select" style="max-width:230px;">
-                                <option value="01">01 – Cédula Física</option>
-                                <option value="02">02 – Cédula Jurídica</option>
-                                <option value="03">03 – DIMEX</option>
-                                <option value="04">04 – NITE</option>
-                            </select>
-                            <div class="autocomplete-wrapper" style="flex: 1;">
-                                <input type="text" id="buscar-cliente-id" class="fi" placeholder="🔍 Buscar cliente por nombre, ID o correo..." autocomplete="off">
-                                <div id="cliente-dropdown" class="autocomplete-dropdown"></div>
+                    <div class="section-box" style="padding: 16px 20px;">
+                        <!-- BUSCADOR COMPACTO -->
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
+                            <div style="background: var(--grad-premium); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; font-size: 0.8rem;">
+                                <i class="fas fa-search"></i>
                             </div>
-                            <button type="button" id="btn-buscar-cliente" class="btn-buscar">
-                                <i class="fas fa-search"></i> Buscar
-                            </button>
-                            <button type="button" id="btn-limpiar-cliente" class="btn-buscar" style="background:#64748b;">
-                                <i class="fas fa-times"></i> Limpiar
-                            </button>
+                            <div style="flex: 1; display: flex; gap: 8px;">
+                                <select id="tipo-id-cliente" class="premium-select" style="width: 150px; height: 38px; margin: 0; font-size: 0.8rem;">
+                                    <option value="01">01 – Física</option>
+                                    <option value="02">02 – Jurídica</option>
+                                    <option value="03">03 – DIMEX</option>
+                                    <option value="04">04 – NITE</option>
+                                </select>
+                                <div class="autocomplete-wrapper" style="flex: 1; position: relative;">
+                                    <input type="text" id="buscar-cliente-id" class="fi" style="height: 38px; font-size: 0.9rem; border-radius: 8px;" placeholder="Buscar por nombre, ID o correo..." autocomplete="off">
+                                    <div id="cliente-dropdown" class="autocomplete-dropdown"></div>
+                                </div>
+                                <button type="button" id="btn-buscar-cliente" class="btn-primary" style="height: 38px; width: 44px; border-radius: 8px; padding: 0;">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button type="button" id="btn-limpiar-cliente" class="btn-secondary" style="height: 38px; width: 44px; border-radius: 8px; padding: 0; background: #f1f5f9; color: #64748b;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Info del cliente (Rediseño Premium Agrupado) -->
-                        <div id="cliente-info-panel" class="cliente-info-premium">
+                        <!-- FICHA DE CLIENTE (ULTRA-DENSE) -->
+                        <div id="cliente-info-panel" class="cliente-info-premium" style="display:none; flex-direction: column; gap: 14px; background: #ffffff; border: 1.5px solid #eef2f6; border-radius: 12px; padding: 16px;">
                             
-                            <!-- TARJETA 1 – IDENTIDAD -->
-                            <div class="cliente-card-segment">
-                                <div class="segment-header">
-                                    <i class="fas fa-id-card"></i>
-                                    <h4>Identificación y Nombre</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                        <h3 id="cli-nombre" style="margin: 0; font-size: 1.25rem; font-weight: 950; color: var(--primary-dark); letter-spacing: -0.5px;">–</h3>
+                                        <span id="cli-num-id-badge" style="background: #f1f5f9; color: #475569; padding: 3px 10px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; border: 1px solid #e2e8f0;">ID: <span id="cli-num-id"></span></span>
+                                        <span class="stat-badge status-aceptado" style="font-size: 0.55rem; padding: 2px 8px;">SINCRO OK</span>
+                                    </div>
+                                    <div style="margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Nombre Comercial:</span>
+                                        <span id="cli-nombre-com" style="font-size: 0.8rem; font-weight: 700; color: #64748b;">–</span>
+                                    </div>
                                 </div>
-                                <div class="info-item" style="margin-bottom:14px;">
-                                    <span class="info-label">Nombre o Razón Social</span>
-                                    <span id="cli-nombre" class="info-val highlight">–</span>
-                                </div>
-                                <div class="info-grid-inner">
-                                    <div class="info-item">
-                                        <span class="info-label">Tipo ID</span>
-                                        <span id="cli-tipo-id" class="info-val">–</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Número ID</span>
-                                        <span id="cli-num-id" class="info-val">–</span>
-                                    </div>
-                                    <div class="info-item" style="grid-column: span 2;">
-                                        <span class="info-label">Nombre Comercial</span>
-                                        <span id="cli-nombre-com" class="info-val" style="color:#64748b;">–</span>
-                                    </div>
+                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                    <span id="cli-regimen" style="font-size: 0.65rem; font-weight: 900; color: #16a34a; background: #f0fdf4; padding: 2px 10px; border-radius: 6px; border: 1px solid #dcfce7; text-transform: uppercase;">GENERAL</span>
+                                    <span id="cli-tipo-id" style="font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">–</span>
                                 </div>
                             </div>
 
-                            <!-- TARJETA 2 – UBICACIÓN -->
-                            <div class="cliente-card-segment">
-                                <div class="segment-header">
-                                    <i class="fas fa-map-marked-alt"></i>
-                                    <h4>Ubicación Geográfica</h4>
+                            <!-- CUADRÍCULA DE CONTACTO Y FISCAL -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; padding: 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9;">
+                                <div>
+                                    <label style="display: block; font-size: 0.58rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 3px;">Email de Recepción</label>
+                                    <span id="cli-email" style="font-size: 0.8rem; font-weight: 800; color: var(--primary); display: block; overflow: hidden; text-overflow: ellipsis;">–</span>
                                 </div>
-                                <div class="info-grid-inner">
-                                    <div class="info-item">
-                                        <span class="info-label">Provincia</span>
-                                        <span id="cli-provincia" class="info-val">–</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Cantón</span>
-                                        <span id="cli-canton" class="info-val">–</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Distrito</span>
-                                        <span id="cli-distrito" class="info-val">–</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Sector</span>
-                                        <span class="info-val">Costa Rica</span>
-                                    </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.58rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 3px;">Contacto Telefónico</label>
+                                    <span id="cli-telefono" style="font-size: 0.8rem; font-weight: 800; color: #1e293b;">–</span>
                                 </div>
-                                <div class="info-item" style="margin-top:12px; border-top: 1px dashed #e2e8f0; padding-top:10px;">
-                                    <span class="info-label">Dirección / Otras Señas</span>
-                                    <span id="cli-otras-senas" class="info-val" style="font-size:0.78rem; font-weight:600; color:#475569;">–</span>
+                                <div>
+                                    <label style="display: block; font-size: 0.58rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 3px;">Ubicación Principal</label>
+                                    <span style="font-size: 0.75rem; font-weight: 700; color: #475569; display: block; line-height: 1.1;">
+                                        <span id="cli-provincia"></span>, <span id="cli-canton"></span>, <span id="cli-distrito"></span>
+                                    </span>
+                                    <div id="cli-otras-senas" style="font-size: 0.62rem; color: #94a3b8; font-style: italic; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">–</div>
                                 </div>
                             </div>
 
-                            <!-- TARJETA 3 – CONTACTO DIRECTO -->
-                            <div class="cliente-card-segment">
-                                <div class="segment-header">
-                                    <i class="fas fa-headset"></i>
-                                    <h4>Información de Contacto</h4>
-                                </div>
-                                <div class="info-grid-inner">
-                                    <div class="info-item">
-                                        <span class="info-label">Teléfono</span>
-                                        <span class="info-val"><i class="fas fa-phone-alt" style="margin-right:5px; opacity:0.6;"></i> <span id="cli-telefono">–</span></span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Newsletter</span>
-                                        <span class="info-val"><span class="stat-badge status-aceptado" style="font-size:0.6rem;">Suscrito</span></span>
-                                    </div>
-                                    <div class="info-item" style="grid-column: span 2;">
-                                        <span class="info-label">Correo Electrónico Principal</span>
-                                        <span id="cli-email" class="info-val" style="color:var(--primary);"><i class="fas fa-envelope" style="margin-right:5px; opacity:0.7;"></i> –</span>
-                                    </div>
+                            <!-- ACTIVIDAD ECONÓMICA -->
+                            <div style="display: flex; align-items: center; gap: 12px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                                <label style="font-size: 0.58rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Actividad Hacienda:</label>
+                                <div id="cli-actividad-container" style="flex: 1; min-width: 0;">
+                                    <span id="cli-actividad" style="font-size: 0.78rem; font-weight: 700; color: #1e293b;">–</span>
                                 </div>
                             </div>
-
-                            <!-- TARJETA 4 – SITUACIÓN TRIBUTARIA -->
-                            <div class="cliente-card-segment">
-                                <div class="segment-header">
-                                    <i class="fas fa-gavel"></i>
-                                    <h4>Datos Fiscales & Tributarios</h4>
-                                </div>
-                                <div class="info-item" style="margin-bottom:12px;">
-                                    <span class="info-label">Actividad Económica Registrada</span>
-                                    <span id="cli-actividad" class="info-val" style="font-size:0.75rem;">–</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Régimen de Tributación</span>
-                                    <span class="info-val"><i class="fas fa-shield-alt" style="margin-right:6px; color:#16a34a;"></i> <span id="cli-regimen">–</span></span>
-                                </div>
-                            </div>
-
                         </div>
                     </div>
 
@@ -388,9 +389,9 @@
                     <!-- ═══════════════════════════════════════════════════ -->
                     <!--  RESUMEN DE TOTALES                                  -->
                     <!-- ═══════════════════════════════════════════════════ -->
-                    <div class="section-box" style="padding:20px 26px;">
-                        <div style="display:grid; grid-template-columns:1fr 300px; gap:28px; align-items:center;">
-                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; font-size:0.88rem;">
+                    <div class="section-box" style="padding:24px 30px;">
+                        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:30px;">
+                            <div style="display:flex; gap:30px; flex-wrap:wrap; flex:1; min-width:300px;">
                                 <div>
                                     <p class="label-sm" style="margin:0 0 4px;">Subtotal</p>
                                     <p id="total-subtotal" style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:0;">₡0.00</p>
@@ -411,12 +412,14 @@
                         </div>
                     </div>
 
-                    <!-- ═══════════════════════════════════════════════════ -->
-                    <!--  BOTÓN EMITIR                                        -->
-                    <!-- ═══════════════════════════════════════════════════ -->
-                    <button type="submit" id="btn-emitir-factura" class="btn-emitir">
-                        <i class="fas fa-paper-plane" style="margin-right:14px;"></i> EMITIR COMPROBANTE ELECTRÓNICO
-                    </button>
+                    <div style="display:grid; grid-template-columns: 1fr 2fr; gap:15px; margin-top:20px;">
+                        <button type="button" onclick="saveDraftManual()" class="btn-secondary" style="height:60px; border-radius:16px; font-weight:900; background:#f8fafc; color:#1e40af; border:2px solid #e2e8f0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:all 0.2s;">
+                            <i class="fas fa-save"></i> GUARDAR BORRADOR
+                        </button>
+                        <button type="submit" id="btn-emitir-factura" class="btn-emitir" style="margin:0;">
+                            <i class="fas fa-paper-plane" style="margin-right:14px;"></i> EMITIR COMPROBANTE ELECTRÓNICO
+                        </button>
+                    </div>
 
                 </form>
             </div>
@@ -425,6 +428,12 @@
 
     <!-- ─── SCRIPTS ──────────────────────────────────────────────────────── -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Bibliotecas para PDF y XML -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Fuente con soporte Unicode (Generada vía Python) -->
+    <script src="../js/shared/font-arial.js"></script>
 
     <!-- Lógica de búsqueda de cliente (Conectado a mockDB) -->
     <script src="../js/pantallaFacturacion.js"></script>

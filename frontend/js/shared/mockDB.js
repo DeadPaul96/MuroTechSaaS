@@ -13,7 +13,8 @@
             { id: 2, tipoId: '02', identificacion: '3101123456', nombre: 'Tech Solutions S.A.', correo: 'info@techsolutions.cr', telefono: '2540-0000', movil: '', direccion: 'Industrial Park', provincia: 'Alajuela', canton: 'Alajuela', distrito: 'San José', barrio: 'El Coyol', regimen: 'general' },
             { id: 3, tipoId: '01', identificacion: '205550222', nombre: 'María García López', correo: 'maria.garcia@email.com', telefono: '', movil: '6000-1234', direccion: 'Condominio Las Flores, Casa 4', provincia: 'Heredia', canton: 'Heredia', distrito: 'San Francisco', barrio: 'Arias', regimen: 'simplificado' },
             { id: 4, tipoId: '02', identificacion: '3102444555', nombre: 'Importadora del Atlántico S.A', correo: 'ventas@importatlantico.com', telefono: '2777-1111', movil: '', direccion: 'Bodegas 15A', provincia: 'Limón', canton: 'Limón', distrito: 'Limón', barrio: 'Cieneguita', regimen: 'general' },
-            { id: 5, tipoId: '01', identificacion: '207580198', nombre: 'Murotech Beta Tester', correo: 'tester@murotech.com', telefono: '2222-3333', movil: '8000-0000', direccion: 'Pruebas de Sistema', provincia: 'Cartago', canton: 'Cartago', distrito: 'Oriental', barrio: 'Centro', regimen: 'simplificado' }
+            { id: 5, tipoId: '01', identificacion: '207580198', nombre: 'Murotech Beta Tester', correo: 'tester@murotech.com', telefono: '2222-3333', movil: '8000-0000', direccion: 'Pruebas de Sistema', provincia: 'Cartago', canton: 'Cartago', distrito: 'Oriental', barrio: 'Centro', regimen: 'simplificado' },
+            { id: 6, tipoId: '02', identificacion: '3101999888', nombre: 'UDEM - Universidad de Escazú', correo: 'admision@udem.ac.cr', telefono: '2289-0000', movil: '', direccion: 'Campus Central Escazú', provincia: 'San José', canton: 'Escazú', distrito: 'Escazú', barrio: 'San Antonio', regimen: 'general' }
         ],
         inventario: [
             // --- 10 PRODUCTOS (HARDWARE Y EQUIPOS) ---

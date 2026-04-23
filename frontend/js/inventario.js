@@ -1,4 +1,20 @@
 (function () {
+        window.isDirty = false;
+        window.addEventListener('beforeunload', function (e) {
+            if (window.isDirty) {
+                e.preventDefault();
+                e.returnValue = 'Tienes cambios sin guardar en el registro de inventario. ¿Seguro que quieres salir?';
+            }
+        });
+
+        function setDirty() { window.isDirty = true; }
+        function clearDirty() { window.isDirty = false; }
+
+        // Escuchar cambios en el formulario
+        document.querySelectorAll('#addItemForm input, #addItemForm select, #addItemForm textarea').forEach(el => {
+            el.addEventListener('input', setDirty);
+            el.addEventListener('change', setDirty);
+        });
         const cabysData = window.CABYS_DATA || [];
         const searchInput = document.getElementById('inv-buscar-cabys');
         const resultsDiv  = document.getElementById('cabys-results');
@@ -370,6 +386,9 @@
                 descripcion: nombreInput.value,
                 unidadMedida: unidadMedidaSel.value,
                 impuesto: ivaSelect.value,
+                tipoImpuesto: document.getElementById('inv-tipo-impuesto').value,
+                precio: parseFloat(document.getElementById('inv-precio-linea').value) || 0,
+                margen: parseFloat(document.getElementById('inv-ganancia').value) || 0,
                 precioVenta: parseFloat(document.getElementById('inv-precio').value),
                 stock: esServicio ? 0 : parseInt(document.getElementById('inv-stock').value),
                 // Campos según tipo
@@ -384,8 +403,14 @@
             inventario = window.muroDB.getProductos();
             renderTabla();
             this.reset();
+            clearDirty();
             toggleCtxPanels();
-            Swal.fire('Éxito', esServicio ? 'Servicio registrado' : 'Producto registrado', 'success');
+            Swal.fire({
+                icon: 'success',
+                title: 'Registro Exitoso',
+                text: esServicio ? 'Servicio registrado correctamente' : 'Producto registrado correctamente',
+                confirmButtonColor: '#1e40af'
+            });
         });
 
         /* ======= FILTRADO DE TABLA DE INVENTARIO ======= */
@@ -423,15 +448,23 @@
                         descripcion: row[2] || 'Producto Generico',
                         unidadMedida: row[3] || 'Unid',
                         impuesto: parseFloat(row[4]) || 13,
-                        precioVenta: parseFloat(row[5]) || 0,
-                        stock: parseInt(row[6]) || 0
+                        precio: parseFloat(row[5]) || 0,
+                        precioVenta: parseFloat(row[6]) || 0,
+                        stock: parseInt(row[7]) || 0,
+                        margen: row[5] && row[6] ? (((parseFloat(row[6])/parseFloat(row[5])) - 1) * 100).toFixed(2) : 0,
+                        tipoImpuesto: '01'
                     };
                     if (window.muroDB) window.muroDB.addProducto(p);
                     count++;
                 }
                 inventario = window.muroDB.getProductos();
                 renderTabla();
-                Swal.fire('Catálogo Actualizado', `Se importaron ${count} ítems correctamente.`, 'success');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Catálogo Actualizado',
+                    text: `Se importaron ${count} ítems correctamente.`,
+                    confirmButtonColor: '#1e40af'
+                });
                 document.getElementById('file-upload-inv').value = '';
             };
             reader.readAsArrayBuffer(file);
