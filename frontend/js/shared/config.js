@@ -16,7 +16,7 @@ const CONFIG = {
         } else {
             // URL de producción (Render)
             // IMPORTANTE: Cambiar esta URL cuando tengas el link de Render definitivo
-            return 'https://murotechsaas.onrender.com';
+            return 'https://murotechsaas-95ru.onrender.com';
         }
     },
 
