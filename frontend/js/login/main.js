@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Lógica de Submit del Formulario
     const loginForm = document.getElementById('loginForm');
+    const btn = document.getElementById('loginBtn');
+    
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -70,37 +72,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Credenciales demo para presentación al cliente
-            const DEMO_USERS = [
-                { email: 'admin@murotech.cr',   password: 'Admin123', nombre: 'Administrador' },
-                { email: 'demo@murotech.cr',     password: 'Demo123',  nombre: 'Usuario Demo'  },
-                { email: 'factura@murotech.cr',  password: 'Factura1', nombre: 'Facturador'    }
-            ];
+            // Efecto de carga
+            if (btn) {
+                btn.classList.add('loading');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Autenticando...';
+            }
 
-            const btn = document.getElementById('loginBtn');
-            btn.classList.add('loading');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
-
-            setTimeout(() => {
-                const user = DEMO_USERS.find(u => u.email === email && u.password === password);
-
-                if (!user) {
+            // Llamada real al API de Login usando CONFIG
+            fetch(`${CONFIG.API_BASE_URL}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.token) {
+                    // Guardar sesión real
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('accesos', JSON.stringify(data.accesos));
+                    
+                    // Alerta de éxito
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Bienvenido!',
+                        text: `Hola de nuevo, ${data.user.nombre}`,
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = 'panelControl.html';
+                    });
+                } else {
+                    if (btn) {
+                        btn.classList.remove('loading');
+                        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Iniciar Sesión';
+                    }
+                    showLoginError(data.message || 'Error al iniciar sesión');
+                }
+            })
+            .catch(err => {
+                if (btn) {
                     btn.classList.remove('loading');
                     btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Iniciar Sesión';
-                    showLoginError('Credenciales incorrectas. Usa: admin@murotech.cr / Admin123');
-                    return;
                 }
-
-                localStorage.setItem('murotech_session', JSON.stringify({
-                    user: user.email,
-                    nombre: user.nombre,
-                    active: true,
-                    remember: rememberMe,
-                    timestamp: new Date().getTime()
-                }));
-
-                irA('panelControl.html');
-            }, 1200);
+                showLoginError('Error de conexión con el servidor.');
+                console.error(err);
+            });
         });
     }
 });

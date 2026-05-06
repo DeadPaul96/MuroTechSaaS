@@ -7,46 +7,73 @@ function cerrarSesion() {
     }
 }
 
-// Animaciones adicionales para el dashboard y carga de MockDB
+// Animaciones adicionales para el dashboard y carga de datos reales
 document.addEventListener('DOMContentLoaded', function() {
-    // Cargar datos del MockDB
-    if (window.muroDB) {
-        const metricas = muroDB.getMetricasDashboard();
-        document.getElementById('dash-facturas').textContent = metricas.facturasEmitidas;
-        document.getElementById('dash-ingresos').textContent = metricas.ingresosTotales;
-        document.getElementById('dash-clientes').textContent = metricas.clientesActivos;
-        document.getElementById('dash-conversion').textContent = metricas.tasaConversion;
-
-        const tbody = document.getElementById('activity-list');
-        tbody.innerHTML = '';
-        const facturas = muroDB.getFacturas().slice(0, 5); // Últimas 5
-        
-        facturas.forEach((fac, index) => {
-            const tr = document.createElement('tr');
-            tr.style.setProperty('--row-index', index);
-            
-            let badgeClass = 'status-pendiente';
-            if(fac.estado === 'Pagada') badgeClass = 'status-aceptado';
-            if(fac.estado === 'Vencida' || fac.estado === 'Anulada') badgeClass = 'status-rechazado';
-            
-            const dateObj = new Date(fac.fecha);
-            const fecha = dateObj.toLocaleDateString('es-CR', {day:'2-digit', month:'short', year:'numeric'});
-            
-            tr.innerHTML = `
-                <td class="activity-client">${fac.clienteNombre}</td>
-                <td>${fac.id}</td>
-                <td class="activity-amount">₡${fac.monto.toLocaleString('es-CR')}</td>
-                <td><span class="stat-badge ${badgeClass}">${fac.estado}</span></td>
-                <td>${fecha}</td>
-                <td>
-                    <button class="btn-action" title="Ver Detalle">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = 'inicioSesion.html';
+        return;
     }
+
+    // Cargar datos reales del API
+    async function cargarDashboard() {
+        try {
+            const res = await fetch(`${CONFIG.API_BASE_URL}/api/dashboard`, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                // Actualizar contadores
+                if (document.getElementById('dash-facturas')) document.getElementById('dash-facturas').textContent = data.facturasEmitidas || 0;
+                if (document.getElementById('dash-ingresos')) document.getElementById('dash-ingresos').textContent = '₡' + (data.ingresosTotales || 0).toLocaleString();
+                if (document.getElementById('dash-clientes')) document.getElementById('dash-clientes').textContent = data.clientesActivos || 0;
+                if (document.getElementById('dash-conversion')) document.getElementById('dash-conversion').textContent = (data.tasaConversion || 0) + '%';
+
+                // Actualizar actividad reciente
+                const tbody = document.getElementById('activity-list');
+                if (tbody && data.actividadReciente) {
+                    tbody.innerHTML = '';
+                    data.actividadReciente.forEach((fac, index) => {
+                        const tr = document.createElement('tr');
+                        tr.style.setProperty('--row-index', index);
+                        
+                        let badgeClass = 'status-pendiente';
+                        const estado = fac.estado ? fac.estado.toLowerCase() : '';
+                        if(estado.includes('pagada') || estado.includes('aceptada')) badgeClass = 'status-aceptado';
+                        if(estado.includes('vencida') || estado.includes('anulada') || estado.includes('rechazada')) badgeClass = 'status-rechazado';
+                        
+                        const dateObj = new Date(fac.fecha);
+                        const fecha = dateObj.toLocaleDateString('es-CR', {day:'2-digit', month:'short', year:'numeric'});
+                        
+                        tr.innerHTML = `
+                            <td class="activity-client">${fac.clienteNombre || 'Consumidor Final'}</td>
+                            <td>${fac.id}</td>
+                            <td class="activity-amount">₡${(fac.monto || 0).toLocaleString('es-CR')}</td>
+                            <td><span class="stat-badge ${badgeClass}">${fac.estado || 'Procesando'}</span></td>
+                            <td>${fecha}</td>
+                            <td>
+                                <button class="btn-action" title="Ver Detalle" onclick="verDetalleFactura(${fac.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } else if (res.status === 401) {
+                localStorage.clear();
+                window.location.href = 'inicioSesion.html';
+            }
+        } catch (err) {
+            console.error("Error al cargar dashboard:", err);
+        }
+    }
+
+    cargarDashboard();
 
     // --- Lógica del Tipo de Cambio (Original de Hacienda) ---
     async function actualizarTipoCambio() {

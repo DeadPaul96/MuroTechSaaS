@@ -7,8 +7,12 @@
     <link rel="stylesheet" href="../css/shared/tokens.css">
     <link rel="stylesheet" href="../css/shared/base.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="../js/shared/config.js"></script>
     <script src="../js/shared/utils.js"></script>
     <script src="../js/shared/sidebar.js"></script>
+    <script>
+        if (!localStorage.getItem('token')) window.location.href = 'inicioSesion.html';
+    </script>
     <link rel="stylesheet" href="../css/configuracion.css">
 </head>
 <body class="reg-body">
@@ -86,7 +90,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="form-grid-2">
+                        <div class="form-grid-2" style="margin-bottom:14px;">
                             <div>
                                 <label class="label-sm">Contraseña Temporal</label>
                                 <input type="password" class="fi" placeholder="Mínimo 8 caracteres" id="usr-pass">
@@ -94,6 +98,34 @@
                             <div>
                                 <label class="label-sm">Confirmar Contraseña</label>
                                 <input type="password" class="fi" placeholder="Repetir contraseña" id="usr-pass2">
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN DE PERMISOS (NUEVO) -->
+                        <div style="margin-bottom:20px; padding:15px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
+                            <label class="label-sm" style="margin-bottom:10px; display:block; color:var(--primary);"><i class="fas fa-lock"></i> PANTALLAS Y MÓDULOS AUTORIZADOS</label>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:10px;">
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; cursor:pointer;">
+                                    <input type="checkbox" class="usr-perm" value="dashboard" checked> Dashboard
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; cursor:pointer;">
+                                    <input type="checkbox" class="usr-perm" value="facturacion" checked> Facturación
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; cursor:pointer;">
+                                    <input type="checkbox" class="usr-perm" value="inventario" checked> Inventario
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; cursor:pointer;">
+                                    <input type="checkbox" class="usr-perm" value="clientes" checked> Clientes
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; cursor:pointer;">
+                                    <input type="checkbox" class="usr-perm" value="reportes"> Reportes (BI)
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; cursor:pointer;">
+                                    <input type="checkbox" class="usr-perm" value="auditoria"> Auditoría
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; cursor:pointer;">
+                                    <input type="checkbox" class="usr-perm" value="configuracion"> Configuración
+                                </label>
                             </div>
                         </div>
                         <button class="btn-save" id="btn-crear-usuario">

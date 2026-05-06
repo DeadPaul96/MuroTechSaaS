@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUROTECH - Facturación Electrónica SaaS v4.4</title>
+    <link rel="stylesheet" href="frontend/css/shared/tokens.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #1e40af;
+            --secondary: #6366f1;
+            --accent: #10b981;
+            --dark: #0f172a;
+            --light: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--dark);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+            background: radial-gradient(circle at 50% 50%, #1e3a8a 0%, #0f172a 100%);
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            opacity: 0.1;
+            animation: rotate 60s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 900px;
+        }
+
+        .badge-new {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -3px;
+            margin: 0;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.4rem;
+            color: #94a3b8;
+            margin-top: 25px;
+            font-weight: 500;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-group {
+            margin-top: 45px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .btn-main {
+            padding: 18px 45px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            box-shadow: 0 10px 25px -5px rgba(30, 64, 175, 0.5);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(30, 64, 175, 0.6);
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            color: white;
+            border: 1.5px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 20px;
+            background: #0f172a;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 70px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 45px;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--primary);
+            transform: translateY(-10px);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin: 0 0 15px;
+            font-weight: 800;
+        }
+
+        .feature-card p {
+            color: #94a3b8;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* Stats */
+        .stats-bar {
+            background: var(--primary);
+            padding: 60px 20px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 900;
+            display: block;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+    </style>
+</head>
+<body>
+
+    <section class="hero">
+        <div class="hero-content">
+            <span class="badge-new">Actualizado a Normativa 4.4 Hacienda</span>
+            <h1 class="hero-title">Evoluciona tu<br>Facturación.</h1>
+            <p class="hero-subtitle">MUROTECH es la plataforma SaaS líder en Costa Rica para la emisión de comprobantes electrónicos con inteligencia de datos y firma digital integrada.</p>
+            
+            <div class="cta-group">
+                <a href="frontend/html/registro.html" class="btn-main btn-primary">
+                    <i class="fas fa-rocket"></i> Comenzar Ahora
+                </a>
+                <a href="frontend/html/inicioSesion.html" class="btn-main btn-secondary">
+                    <i class="fas fa-user-lock"></i> Acceso Clientes
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <div class="stats-bar">
+        <div class="stat-item">
+            <span class="stat-value">100%</span>
+            <span class="stat-label">Fiscalmente Válido</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value">+500</span>
+            <span class="stat-label">Empresas Activas</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value">24/7</span>
+            <span class="stat-label">Soporte Técnico</span>
+        </div>
+    </div>
+
+    <section class="features">
+        <div class="section-header">
+            <h2 style="font-size: 3rem; font-weight: 900; margin: 0;">Potencia tu Negocio</h2>
+            <p style="color: #94a3b8; font-size: 1.2rem; margin-top: 15px;">Herramientas diseñadas para la era digital.</p>
+        </div>
+
+        <div class="grid">
+            <div class="feature-card">
+                <div class="icon-box"><i class="fas fa-signature"></i></div>
+                <h3>Firma Digital Auto</h3>
+                <p>Integramos tu llave criptográfica (.p12) para que firmes legalmente cada factura en milisegundos sin procesos manuales.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-box" style="background: var(--accent);"><i class="fas fa-chart-pie"></i></div>
+                <h3>Analítica Avanzada</h3>
+                <p>Visualiza tus ingresos, impuestos y top de productos desde un dashboard intuitivo con gráficos en tiempo real.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-box" style="background: var(--secondary);"><i class="fas fa-boxes"></i></div>
+                <h3>Gestión CAByS</h3>
+                <p>Buscador inteligente con más de 20,000 ítems del catálogo nacional para que nunca cometas errores fiscales.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer style="padding: 50px 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
+        <p style="color: #64748b; font-weight: 600;">&copy; 2026 MUROTECH SOLUTIONS S.A. Todos los derechos reservados.</p>
+    </footer>
+
+</body>
+</html>

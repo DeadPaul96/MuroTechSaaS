@@ -93,7 +93,127 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
-        // Toggle de contraseñas
+        // GESTIÓN DE LLAVE CRIPTOGRÁFICA
+        const fileInput = document.getElementById('api_p12_file');
+        const btnSelect = document.getElementById('btn-select-p12');
+        const pinInput  = document.getElementById('api_pin');
+        const metaInput = document.getElementById('api_p12_metadata');
+        const fileName  = document.getElementById('p12-filename');
+
+        btnSelect.onclick = () => fileInput.click();
+
+        fileInput.onchange = () => {
+            if (fileInput.files[0]) {
+                fileName.textContent = `Archivo: ${fileInput.files[0].name}`;
+                validarYExtraer();
+            }
+        };
+
+        pinInput.oninput = () => {
+            if (pinInput.value.length === 4) {
+                validarYExtraer();
+            }
+        };
+
+        async function validarYExtraer() {
+            if (!fileInput.files[0] || pinInput.value.length < 4) return;
+
+            const formData = new FormData();
+            formData.append('api_p12_file', fileInput.files[0]);
+            formData.append('api_pin', pinInput.value);
+
+            try {
+                const res = await fetch('/api/hacienda/validar-llave', {
+                    method: 'POST',
+                    body: formData
+                });
+                const d = await res.json();
+                if (d.valid) {
+                    metaInput.value = d.digits;
+                    Swal.fire({
+                        title: 'Llave Validada',
+                        text: `Certificado de: ${d.subject}`,
+                        icon: 'success',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                } else {
+                    metaInput.value = '';
+                }
+            } catch (err) {
+                console.error('Error validando llave:', err);
+            }
+        }
+
+        // ENVÍO FINAL DEL REGISTRO
+        const form = document.getElementById('registroEmpresaForm');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+
+            // Validaciones básicas
+            const pass = document.getElementById('u-pass').value;
+            const confirm = document.getElementById('u-pass-confirm').value;
+            if (pass !== confirm) return Swal.fire('Error', 'Las contraseñas no coinciden.', 'error');
+
+            const formData = new FormData();
+            
+            // Sección 1: Contribuyente
+            formData.append('tipo_id', tipoIdSel.value);
+            formData.append('identificacion', cedulaInput.value);
+            formData.append('nombre', document.getElementById('cli-nombre').value);
+            formData.append('actividad', document.getElementById('cli-actividad').value);
+            formData.append('regimen', document.getElementById('cli-regimen').value);
+            formData.append('telefono', document.getElementById('u-telefono').value);
+            formData.append('email', document.getElementById('u-email').value);
+            formData.append('direccion_completa', document.getElementById('cli-direccion').value);
+
+            // Sección 2: Hacienda y P12
+            formData.append('api_sucursal', document.getElementById('api-sucursal').value);
+            formData.append('api_terminal', document.getElementById('api-terminal').value);
+            formData.append('ultimo_consecutivo', document.getElementById('ultimo_numero_factura_mh').value);
+            formData.append('api_usuario', form.querySelector('input[placeholder="Usuario API"]').value);
+            formData.append('api_password', form.querySelector('input[placeholder="Contraseña API"]').value);
+            formData.append('api_pin', pinInput.value);
+            if (fileInput.files[0]) formData.append('api_p12_file', fileInput.files[0]);
+
+            // Sección 3: Contacto Administrativo
+            formData.append('contacto_nombre', form.querySelector('input[placeholder="Nombre"]').value);
+            formData.append('contacto_apellidos', form.querySelector('input[placeholder="1er Apellido"]').value);
+            formData.append('contacto_telefono', form.querySelector('input[placeholder="Teléfono del Contacto"]').value);
+            formData.append('contacto_email', form.querySelector('input[placeholder="Correo del Contacto"]').value);
+
+            // Sección 4: Credenciales Sistema
+            formData.append('password', pass);
+            formData.append('nombre_admin', document.getElementById('cli-nombre').value);
+
+            Swal.fire({
+                title: 'Procesando Registro...',
+                html: 'Aplicando compresión y configurando bases de datos.',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const res = await fetch('/api/contribuyentes', {
+                    method: 'POST',
+                    body: formData
+                });
+                const resData = await res.json();
+
+                if (res.ok) {
+                    Swal.fire('¡Éxito!', 'Registro completado. Bienvenido a MUROTECH.', 'success')
+                        .then(() => window.location.href = 'inicioSesion.html');
+                } else {
+                    Swal.fire('Error', resData.message || 'No se pudo completar el registro.', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Fallo de conexión con el servidor.', 'error');
+            }
+        };
+
+        // Toggle de contraseñas (restante)
         document.querySelectorAll('.pass-toggle').forEach(btn => {
             btn.addEventListener('click', function() {
                 const input = this.previousElementSibling;

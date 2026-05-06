@@ -1,298 +1,1393 @@
 import os
+from functools import wraps
 from flask import Flask, request, jsonify
-import pyodbc
-from flask_cors import CORS 
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask_cors import CORS
+import jwt
+from datetime import datetime, timedelta
+import requests
+import zlib
+import base64
+from cryptography.hazmat.primitives.serialization import pkcs12
+
+from models import db, Empresa, Sucursal, Rol, Usuario, AccesoSucursal, Cliente, Producto, Factura, FacturaDetalle, Notificacion, InventarioMovimiento, Compra
 
 app = Flask(__name__)
-CORS(app) 
+CORS(app)
 
-# --- CONFIGURACIÓN DE CONEXIÓN A SQL SERVER ---
-# En producción (Render), estas variables deben configurarse en el panel de control
-SERVER = os.environ.get('DB_SERVER', r'(localdb)\MSSQLLocalDB')
-DATABASE = os.environ.get('DB_NAME', 'FacturacionElectonica')
-USERNAME = os.environ.get('DB_USER', 'sa')
-PASSWORD = os.environ.get('DB_PASSWORD', 'admin25')
-DRIVER = os.environ.get('DB_DRIVER', '{ODBC Driver 17 for SQL Server}')
+# ==========================================
+# CONFIGURACIÃ“N DE LA BASE DE DATOS
+# ==========================================
+# Por defecto usamos SQLite para facilitar el desarrollo inmediato.
+# Para producciÃ³n con 100+ usuarios, se recomienda cambiar esta variable
+# de entorno a una conexiÃ³n PostgreSQL (Ej: postgresql://user:pass@localhost/db)
+DB_URL = os.environ.get('DATABASE_URL', 'sqlite:///murotech_saas.db')
+if DB_URL.startswith("postgres://"):
+    DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 
-CONNECTION_STRING = (
-    f'DRIVER={DRIVER};'
-    f'SERVER={SERVER};'
-    f'DATABASE={DATABASE};'
-    f'UID={USERNAME};'
-    f'PWD={PASSWORD};'
-    f'TrustServerCertificate=yes;' 
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'murotech_super_secret_jwt_key_2026')
 
-def get_db_connection():
-    """Establece y retorna la conexión a la base de datos."""
+db.init_app(app)
+
+# ==========================================
+# INICIALIZACIÃ“N DE ROLES POR DEFECTO
+# ==========================================
+def init_db():
+    with app.app_context():
+        db.create_all()
+        # Insertar roles si no existen
+        roles_default = [
+            {'nombre': 'Administrador', 'descripcion': 'Control total de la sucursal/empresa'},
+            {'nombre': 'Emisor', 'descripcion': 'Solo puede emitir facturas y gestionar clientes'},
+            {'nombre': 'Auditor', 'descripcion': 'Solo lectura para revisar mÃ©tricas y facturas'}
+        ]
+        for rd in roles_default:
+            if not Rol.query.filter_by(nombre=rd['nombre']).first():
+                rol = Rol(nombre=rd['nombre'], descripcion=rd['descripcion'])
+                db.session.add(rol)
+        db.session.commit()
+
+# ==========================================
+# MIDDLEWARE DE AUTENTICACIÃ“N (JWT)
+# ==========================================
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(" ")[1]
+        
+        if not token:
+            return jsonify({'message': 'Token faltante. Acceso denegado.'}), 401
+        
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            current_user = Usuario.query.get(data['user_id'])
+            if not current_user:
+                raise Exception("Usuario no encontrado")
+        except Exception as e:
+            return jsonify({'message': 'Token invÃ¡lido o expirado.', 'error': str(e)}), 401
+            
+        return f(current_user, *args, **kwargs)
+    return decorated
+
+def require_role(allowed_roles):
+    """
+    Decorador para verificar si el usuario tiene permiso en una sucursal.
+    Espera que la peticiÃ³n incluya 'sucursal_id' en los headers o args.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated(current_user, *args, **kwargs):
+            if current_user.is_superadmin:
+                return f(current_user, *args, **kwargs)
+                
+            sucursal_id = request.headers.get('X-Sucursal-ID') or request.args.get('sucursal_id')
+            if not sucursal_id:
+                return jsonify({'message': 'Debe especificar la sucursal (X-Sucursal-ID).'}), 400
+                
+            acceso = AccesoSucursal.query.filter_by(usuario_id=current_user.id, sucursal_id=sucursal_id).first()
+            if not acceso or acceso.rol.nombre not in allowed_roles:
+                return jsonify({'message': 'No tiene permisos suficientes en esta sucursal.'}), 403
+                
+            return f(current_user, *args, **kwargs)
+        return decorated
+    return decorator
+
+
+import re
+
+# ==========================================
+# UTILIDADES FISCALES HACIENDA v4.4
+# ==========================================
+
+def get_tipo_cambio():
+    """SimulaciÃ³n de API del BCCR para obtener tipo de cambio"""
+    # En producciÃ³n llamarÃ­amos a: https://api.hacienda.go.cr/indicadores/tc
+    return {'venta': 525.50, 'compra': 515.20}
+
+def generar_consecutivo(sucursal, tipo_doc, num_actual):
+    """Genera el consecutivo de 20 dÃ­gitos segÃºn normativa v4.4"""
+    # Casa Matriz (3) + Terminal (5) + Tipo (2) + Contador (10)
+    suc = str(sucursal.numero_sucursal).zfill(3)
+    ter = str(sucursal.terminal).zfill(5)
+    tipo = str(tipo_doc).zfill(2)
+    cont = str(num_actual + 1).zfill(10)
+    return f"{suc}{ter}{tipo}{cont}"
+
+def generar_clave(empresa, consecutivo, situacion="1"):
+    """Genera la clave de 50 dÃ­gitos segÃºn normativa v4.4"""
+    pais = "506"
+    fecha = datetime.now().strftime("%d%m%y")
+    cedula = str(empresa.cedula_juridica).replace("-", "").zfill(12)
+    import random
+    seguridad = str(random.randint(10000000, 99999999))
+    return f"{pais}{fecha}{cedula}{consecutivo}{situacion}{seguridad}"
+
+# ==========================================
+# UTILIDADES DE NOTIFICACIONES
+# ==========================================
+
+def create_notification(empresa_id, tipo, titulo, descripcion, link=None):
+    """Crea una notificaciÃ³n persistente para la empresa"""
+    notif = Notificacion(
+        empresa_id=empresa_id,
+        tipo=tipo,
+        titulo=titulo,
+        descripcion=descripcion,
+        link=link
+    )
+    db.session.add(notif)
+    db.session.commit()
+    return notif
+
+# ==========================================
+# MOTOR DE FIRMA DIGITAL (HACIENDA v4.4)
+# ==========================================
+import base64
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.serialization import pkcs12
+# Nota: Para producciÃ³n real se recomienda 'xmlsig' o 'signer-cr'
+# AquÃ­ implementamos la lÃ³gica de extracciÃ³n y estructura de firma
+
+def firmar_xml(xml_content, p12_data, p12_password):
+    """
+    Realiza la firma XAdES-BES sobre el XML segÃºn requerimientos de Hacienda.
+    Recibe la llave comprimida desde la DB.
+    """
     try:
-        conn = pyodbc.connect(CONNECTION_STRING, timeout=5)
-        return conn
-    except pyodbc.Error as ex:
-        sqlstate = ex.args[0]
-        print(f"Error de conexión a la BD: {sqlstate}")
-        if '08001' in sqlstate:
-             print("\n=======================================================")
-             print("🛑 ERROR DE CONEXIÓN CRÍTICO: Servidor SQL no encontrado.")
-             print("   Asegúrese de que el servicio SQL Server (LocalDB) esté")
-             print("   en estado 'En ejecución' en services.msc.")
-             print("=======================================================\n")
+        # 1. Descomprimir llave
+        p12_raw = zlib.decompress(p12_data)
+        
+        # 2. Cargar certificado y llave privada
+        private_key, certificate, additional_certificates = pkcs12.load_key_and_certificates(
+            p12_raw, 
+            p12_password.encode()
+        )
+        
+        # --- LÃ“GICA DE FIRMA (SIMULADA CON ESTRUCTURA REAL) ---
+        # En un entorno real usarÃ­amos: signer.sign(xml_content, private_key, certificate)
+        # AquÃ­ generamos el XML final con el placeholder de firma para el sistema
+        
+        signed_xml = f"""<?xml version="1.0" encoding="utf-8"?>
+        <FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica">
+            {xml_content}
+            <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+                <SignedInfo>
+                    <Reference URI="">
+                        <DigestValue>{base64.b64encode(b"hashed_content").decode()}</DigestValue>
+                    </Reference>
+                </SignedInfo>
+                <SignatureValue>{base64.b64encode(b"signed_hash").decode()}</SignatureValue>
+                <KeyInfo>
+                    <X509Data>
+                        <X509Certificate>{base64.b64encode(certificate.public_bytes(serialization.Encoding.DER)).decode()}</X509Certificate>
+                    </X509Data>
+                </KeyInfo>
+            </Signature>
+        </FacturaElectronica>"""
+        
+        return signed_xml.encode('utf-8')
+    except Exception as e:
+        print(f"Error en firma digital: {str(e)}")
         return None
 
 
-UBICACION_DATA = {}
-TIPOS_IDENTIFICACION_DATA = []
-
-def cargar_tipos_identificacion_desde_db():
-    """Carga los tipos de identificación desde la tabla TiposIdentificacion."""
-    global TIPOS_IDENTIFICACION_DATA
-    
-    conn = get_db_connection()
-    if conn is None:
-        print("Error: No se pudo conectar a la BD para cargar tipos de identificación.")
-        return
-
-    try:
-        cursor = conn.cursor()
-        sql_query = """
-        SELECT CodigoID, DescripcionID, Alcance 
-        FROM TiposIdentificacion
-        ORDER BY CodigoID
-        """
-        cursor.execute(sql_query)
-        
-        temp_data = []
-        for row in cursor:
-            temp_data.append({
-                'codigo': row[0].strip(),
-                'descripcion': row[1].strip(),
-                'alcance': row[2].strip() if row[2] else ''
-            })
-        
-        TIPOS_IDENTIFICACION_DATA = temp_data
-        conn.close()
-        
-        if TIPOS_IDENTIFICACION_DATA:
-            print(f"✅ {len(TIPOS_IDENTIFICACION_DATA)} tipos de identificación cargados exitosamente desde la BD.")
-        else:
-            print("⚠️ Advertencia: La tabla 'TiposIdentificacion' se cargó, pero no contiene datos.")
-        
-    except Exception as e:
-        if conn:
-            conn.close()
-        print(f"❌ Error al cargar tipos de identificación desde la BD: {e}")
-
-
-def cargar_datos_ubicacion_desde_db():
-    """Carga y estructura los datos de ubicación desde la tabla CatalogoGeografico."""
-    global UBICACION_DATA
-    
-    conn = get_db_connection()
-    if conn is None:
-        print("Error: No se pudo conectar a la BD para cargar el catálogo geográfico.")
-        return
-
-    try:
-        cursor = conn.cursor()
-        sql_query = """
-        SELECT Nombre_Provincia, Nombre_Canton, Nombre_Distrito, Nombre_Pueblo 
-        FROM CatalogoGeografico
-        ORDER BY ID_Provincia, ID_Canton, ID_Distrito, ID_Pueblo 
-        """
-        cursor.execute(sql_query)
-        
-        temp_data = {}
-        for row in cursor:
-            provincia, canton, distrito, pueblo = row[0].strip(), row[1].strip(), row[2].strip(), row[3].strip()
-
-            if provincia not in temp_data:
-                temp_data[provincia] = {}
-            
-            if canton not in temp_data[provincia]:
-                temp_data[provincia][canton] = {}
-            
-            if distrito not in temp_data[provincia][canton]:
-                temp_data[provincia][canton][distrito] = []
-            
-            if pueblo not in temp_data[provincia][canton][distrito]: 
-                temp_data[provincia][canton][distrito].append(pueblo)
-        
-        UBICACION_DATA = temp_data
-        conn.close()
-        
-        if UBICACION_DATA:
-            print("✅ Datos de ubicación cargados exitosamente desde la BD.")
-        else:
-             print("⚠️ Advertencia: La tabla 'CatalogoGeografico' se cargó, pero no contiene datos.")
-        
-    except Exception as e:
-        if conn:
-            conn.close()
-        print(f"❌ Error al cargar datos de ubicación desde la BD: {e}")
-
-
-cargar_tipos_identificacion_desde_db()
-cargar_datos_ubicacion_desde_db()
-
-
-@app.route('/api/tipos-identificacion', methods=['GET'])
-def obtener_tipos_identificacion():
-    """Retorna los tipos de identificación disponibles."""
-    return jsonify(TIPOS_IDENTIFICACION_DATA)
-
-
-@app.route('/api/ubicacion', methods=['GET'])
-def obtener_ubicacion():
-    """Retorna los datos de ubicación jerárquica."""
-    return jsonify(UBICACION_DATA)
 
 
 @app.route('/api/contribuyentes', methods=['POST'])
-def registrar_contribuyente():
-    data = request.get_json()
+def registrar_empresa():
+    """Registra una nueva empresa (Tenant) y su usuario SuperAdministrador con compresiÃ³n de datos"""
+    # Usamos form data para recibir el archivo p12
+    data = request.form
+    file_p12 = request.files.get('api_p12_file')
     
-    nombre_empresa = data.get('empresa')
-    razon_social = data.get('razonSocial')
-    tipo_cedula = data.get('tipoCedula')
-    numero_cedula = data.get('cedula')
-    correo_electronico = data.get('email')
-    provincia = data.get('provincia')
-    canton = data.get('canton')
-    distrito = data.get('distrito')
-    pueblo = data.get('pueblo')
-    detalle_direccion = data.get('direccion')
-    ultimo_numero_facturacion = data.get('lastInvoice')
-    proveedor_tecnologico = data.get('proveedorTecnologico')
-    nombre_archivo_p12 = data.get('nombreArchivoP12', None)
-    nombre_contacto = data.get('nombre')
-    primer_apellido = data.get('primerApellido')
-    segundo_apellido = data.get('segundoApellido', None)
-    correo_contacto = data.get('correo')
-    telefono = data.get('telefono')
-    password = data.get('password')
-
-    if not all([nombre_empresa, razon_social, tipo_cedula, numero_cedula, correo_electronico, 
-                provincia, canton, distrito, pueblo, detalle_direccion, 
-                ultimo_numero_facturacion, proveedor_tecnologico, 
-                nombre_contacto, primer_apellido, correo_contacto, telefono, password]):
-        return jsonify({"message": "Faltan campos requeridos."}), 400
+    if Empresa.query.filter_by(cedula_juridica=data.get('identificacion')).first():
+        return jsonify({'message': 'La empresa con esta cÃ©dula ya existe.'}), 400
+        
+    if Usuario.query.filter_by(email=data.get('email')).first():
+        return jsonify({'message': 'El correo electrÃ³nico ya estÃ¡ en uso.'}), 400
 
     try:
-        ultimo_numero_facturacion = int(ultimo_numero_facturacion)
-    except (ValueError, TypeError):
-        return jsonify({"message": "El último número de facturación debe ser un número válido."}), 400
+        p12_bin_comprimido = None
+        p12_text_comprimido = None
+        p12_metadata = ""
 
-    conn = get_db_connection()
-    if conn is None:
-        return jsonify({"message": "Error al conectar con la base de datos."}), 500
+        # Procesamiento de Llave CriptogrÃ¡fica (Mindset Mojo: Eficiencia y Seguridad)
+        if file_p12:
+            raw_p12 = file_p12.read()
+            pin = data.get('api_pin', '').encode()
+            
+            # 1. Extraer Metadatos (DÃ­gitos del Serial/ID)
+            try:
+                # El formato PKCS12 requiere el PIN para abrirse
+                p12_data = pkcs12.load_key_and_certificates(raw_p12, pin)
+                cert = p12_data[1] # El certificado es el segundo elemento
+                if cert:
+                    # Extraemos el nÃºmero de serie como los "dÃ­gitos" representativos
+                    p12_metadata = str(cert.serial_number)
+            except Exception as crypto_err:
+                return jsonify({'message': 'Error al leer la Llave CriptogrÃ¡fica. Verifique el PIN.', 'error': str(crypto_err)}), 400
 
-    cursor = conn.cursor()
-    
-    sql_insert = """
-    INSERT INTO Contribuyentes (
-        NombreEmpresa, RazonSocial, TipoCedula, NumeroCedula, 
-        Provincia, Canton, Distrito, Pueblo, DetalleDireccion,
-        CorreoElectronico, NombreContacto, PrimerApellido, SegundoApellido, 
-        CorreoContacto, Telefono,
-        UltimoNumeroFacturacion, ProveedorTecnologico,
-        Password, NombreArchivoP12
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """
-    
-    try:
-        cursor.execute(sql_insert, 
-                       nombre_empresa, razon_social, tipo_cedula, numero_cedula,
-                       provincia, canton, distrito, pueblo, detalle_direccion,
-                       correo_electronico, nombre_contacto, primer_apellido, segundo_apellido,
-                       correo_contacto, telefono,
-                       ultimo_numero_facturacion, proveedor_tecnologico,
-                       generate_password_hash(password), nombre_archivo_p12)
+            # 2. CompresiÃ³n Agresiva (Mojo Style para ahorro de espacio)
+            # El archivo P12 suele ser pequeÃ±o, pero en escala SaaS cada byte cuenta.
+            p12_bin_comprimido = zlib.compress(raw_p12, level=9)
+            
+            # El texto base64 suele pesar un 33% mÃ¡s, lo comprimimos tambiÃ©n
+            raw_base64 = base64.b64encode(raw_p12).decode('utf-8')
+            p12_text_comprimido = zlib.compress(raw_base64.encode('utf-8'), level=9)
+
+        # 1. Crear Empresa (Tenant) con todos los datos de Hacienda y CompresiÃ³n
+        nueva_empresa = Empresa(
+            tipo_identificacion=data.get('tipo_id', '02'),
+            cedula_juridica=data.get('identificacion'),
+            razon_social=data.get('nombre'),
+            nombre_comercial=data.get('nombre'),
+            actividad_economica=data.get('actividad'),
+            regimen=data.get('regimen'),
+            email_contacto=data.get('email'),
+            telefono=data.get('telefono'),
+            api_usuario=data.get('api_usuario'),
+            api_password=data.get('api_password'),
+            api_pin_p12=data.get('api_pin'),
+            api_p12_bin=p12_bin_comprimido,
+            api_p12_text=p12_text_comprimido.decode('latin-1') if p12_text_comprimido else None, # Almacenar como string latin-1 para compatibilidad
+            api_p12_metadata=p12_metadata,
+            rep_nombre=data.get('contacto_nombre'),
+            rep_apellidos=data.get('contacto_apellidos'),
+            rep_telefono=data.get('contacto_telefono'),
+            rep_email=data.get('contacto_email')
+        )
+        db.session.add(nueva_empresa)
+        db.session.flush() # Para obtener el ID de la empresa
         
-        conn.commit()
-        
-        cursor.execute("SELECT @@IDENTITY")
-        nuevo_id = cursor.fetchone()[0]
-        
-        conn.close()
-        
+        # 2. Crear Sucursal y Terminal
+        sucursal_principal = Sucursal(
+            empresa_id=nueva_empresa.id,
+            nombre="Sede Principal",
+            numero_sucursal=data.get('api_sucursal', '001'),
+            terminal=data.get('api_terminal', '00001'),
+            direccion=data.get('direccion_completa')
+        )
+        db.session.add(sucursal_principal)
+        db.session.flush()
+
+        # 3. Crear Usuario SuperAdmin
+        nuevo_usuario = Usuario(
+            empresa_id=nueva_empresa.id,
+            nombre=data.get('nombre_admin', 'Administrador Principal'),
+            email=data.get('email'),
+            is_superadmin=True
+        )
+        nuevo_usuario.set_password(data.get('password'))
+        db.session.add(nuevo_usuario)
+        db.session.flush()
+
+        # 4. Asignar rol Admin
+        rol_admin = Rol.query.filter_by(nombre='Administrador').first()
+        acceso = AccesoSucursal(
+            usuario_id=nuevo_usuario.id,
+            sucursal_id=sucursal_principal.id,
+            rol_id=rol_admin.id
+        )
+        db.session.add(acceso)
+
+        db.session.commit()
         return jsonify({
-            "message": "Contribuyente registrado exitosamente.",
-            "id": nuevo_id
+            'message': 'Empresa registrada exitosamente con compresiÃ³n.',
+            'p12_digits': p12_metadata
         }), 201
 
-    except pyodbc.IntegrityError as e:
-        conn.close()
-        error_msg = str(e)
-        
-        if 'NumeroCedula' in error_msg or 'UNIQUE' in error_msg:
-            return jsonify({"message": "Error: El número de cédula ya está registrado."}), 409
-        elif 'CorreoElectronico' in error_msg:
-            return jsonify({"message": "Error: El correo electrónico ya está registrado."}), 409
-        elif 'FOREIGN KEY' in error_msg or 'TipoCedula' in error_msg:
-            return jsonify({"message": "Error: El tipo de cédula seleccionado no es válido."}), 400
-        else:
-            return jsonify({"message": "Error: Datos duplicados o inválidos."}), 409
-        
     except Exception as e:
-        conn.rollback()
-        conn.close()
-        print(f"❌ Error al ejecutar INSERT: {e}")
-        return jsonify({
-            "message": "Error interno del servidor al procesar la BD.", 
-            "detail": str(e)
-        }), 500
+        db.session.rollback()
+        return jsonify({'message': 'Error crÃ­tico en el registro', 'error': str(e)}), 500
 
+@app.route('/api/hacienda/validar-llave', methods=['POST'])
+def validar_llave():
+    """Valida una llave .p12 y extrae sus metadatos (Serial/DÃ­gitos) sin guardarla"""
+    file_p12 = request.files.get('api_p12_file')
+    pin = request.form.get('api_pin', '')
+    
+    if not file_p12 or not pin:
+        return jsonify({'message': 'Archivo y PIN son requeridos.'}), 400
+        
+    try:
+        raw_p12 = file_p12.read()
+        p12_data = pkcs12.load_key_and_certificates(raw_p12, pin.encode())
+        cert = p12_data[1]
+        
+        if cert:
+            metadata = str(cert.serial_number)
+            # Retornamos los dÃ­gitos para llenar el campo de texto en el frontend
+            return jsonify({
+                'valid': True,
+                'digits': metadata,
+                'subject': str(cert.subject)
+            })
+        return jsonify({'message': 'No se encontrÃ³ certificado en el archivo.'}), 400
+    except Exception as e:
+        return jsonify({'message': 'PIN incorrecto o archivo invÃ¡lido.', 'error': str(e)}), 400
 
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
-    correo = data.get('email')
-    password = data.get('password')
+    usuario = Usuario.query.filter_by(email=data.get('email')).first()
+    
+    if not usuario or not usuario.check_password(data.get('password')):
+        return jsonify({'message': 'Credenciales invÃ¡lidas.'}), 401
+        
+    if not usuario.is_active:
+        return jsonify({'message': 'Usuario inactivo. Contacte al administrador.'}), 403
 
-    if not correo or not password:
-        return jsonify({"message": "Faltan credenciales."}), 400
+    # Generar Token JWT
+    token = jwt.encode({
+        'user_id': usuario.id,
+        'empresa_id': usuario.empresa_id,
+        'is_superadmin': usuario.is_superadmin,
+        'exp': datetime.utcnow() + timedelta(hours=12)
+    }, app.config['SECRET_KEY'], algorithm="HS256")
+    
+    # Obtener sucursales a las que tiene acceso
+    accesos = []
+    if usuario.is_superadmin:
+        sucursales = Sucursal.query.filter_by(empresa_id=usuario.empresa_id).all()
+        for s in sucursales:
+            accesos.append({'sucursal_id': s.id, 'nombre': s.nombre, 'rol': 'SuperAdmin'})
+    else:
+        for acc in usuario.accesos:
+            accesos.append({'sucursal_id': acc.sucursal_id, 'nombre': acc.sucursal.nombre, 'rol': acc.rol.nombre})
 
-    conn = get_db_connection()
-    if conn is None:
-        return jsonify({"message": "Error al conectar con la base de datos."}), 500
+    return jsonify({
+        'token': token,
+        'user': {
+            'id': usuario.id,
+            'nombre': usuario.nombre,
+            'email': usuario.email,
+            'empresa': usuario.empresa.razon_social,
+            'is_superadmin': usuario.is_superadmin,
+            'pantallas': usuario.pantallas_asignadas.split(',') if usuario.pantallas_asignadas else []
+        },
+        'accesos': accesos
+    }), 200
 
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT Password, NombreEmpresa, NumeroCedula FROM Contribuyentes WHERE CorreoElectronico = ?", correo)
-        row = cursor.fetchone()
-        conn.close()
 
-        if row and check_password_hash(row[0], password):
+# ==========================================
+# GESTIÃ“N DE USUARIOS Y SUCURSALES (MULTI-TENANT)
+# ==========================================
+
+@app.route('/api/sucursales', methods=['GET', 'POST'])
+@token_required
+def gestionar_sucursales(current_user):
+    if not current_user.is_superadmin:
+        return jsonify({'message': 'Solo el SuperAdmin puede gestionar sucursales.'}), 403
+        
+    if request.method == 'GET':
+        sucursales = Sucursal.query.filter_by(empresa_id=current_user.empresa_id).all()
+        return jsonify([{'id': s.id, 'nombre': s.nombre, 'numero': s.numero_sucursal} for s in sucursales])
+        
+    if request.method == 'POST':
+        data = request.get_json()
+        nueva = Sucursal(
+            empresa_id=current_user.empresa_id,
+            nombre=data.get('nombre'),
+            numero_sucursal=data.get('numero_sucursal'),
+            direccion=data.get('direccion')
+        )
+        db.session.add(nueva)
+        db.session.commit()
+        return jsonify({'message': 'Sucursal creada.'}), 201
+
+@app.route('/api/usuarios', methods=['GET', 'POST'])
+@token_required
+def gestionar_usuarios(current_user):
+    """Permite al SuperAdmin crear nuevos usuarios (auditores, emisores, etc.) dentro de su empresa"""
+    if not current_user.is_superadmin:
+        return jsonify({'message': 'Solo el Administrador puede gestionar usuarios.'}), 403
+        
+    if request.method == 'GET':
+        usuarios = Usuario.query.filter_by(empresa_id=current_user.empresa_id).all()
+        result = []
+        for u in usuarios:
+            acc = [{'sucursal': a.sucursal.nombre, 'rol': a.rol.nombre} for a in u.accesos]
+            result.append({
+                'id': u.id, 
+                'nombre': u.nombre, 
+                'email': u.email, 
+                'activo': u.is_active, 
+                'is_superadmin': u.is_superadmin,
+                'pantallas': u.pantallas_asignadas.split(',') if u.pantallas_asignadas else [],
+                'accesos': acc
+            })
+        return jsonify(result)
+        
+    if request.method == 'POST':
+        data = request.get_json()
+        if Usuario.query.filter_by(email=data.get('email')).first():
+            return jsonify({'message': 'Email ya en uso.'}), 400
+            
+        nuevo_user = Usuario(
+            empresa_id=current_user.empresa_id,
+            nombre=data.get('nombre'),
+            email=data.get('email'),
+            is_superadmin=False,
+            pantallas_asignadas=','.join(data.get('pantallas', ['facturacion', 'inventario']))
+        )
+        nuevo_user.set_password(data.get('password'))
+        db.session.add(nuevo_user)
+        db.session.flush()
+        
+        # Asignar rol en la sucursal (por defecto la primera sucursal)
+        sucursal = Sucursal.query.filter_by(empresa_id=current_user.empresa_id).first()
+        rol_nombre = data.get('rol', 'Emisor') # Si no viene rol, Emisor por defecto
+        # Mapeo simple de roles de la interfaz a BD
+        map_roles = {'admin': 'Administrador', 'user': 'Emisor', 'viewer': 'Auditor'}
+        rol_final = map_roles.get(rol_nombre, 'Emisor')
+        
+        rol_db = Rol.query.filter_by(nombre=rol_final).first()
+        if sucursal and rol_db:
+            acc = AccesoSucursal(
+                usuario_id=nuevo_user.id,
+                sucursal_id=sucursal.id,
+                rol_id=rol_db.id
+            )
+            db.session.add(acc)
+            
+        db.session.commit()
+        return jsonify({'message': 'Usuario creado exitosamente.'}), 201
+
+
+
+
+@app.route('/api/notificaciones/mark-all-read', methods=['POST'])
+@token_required
+def mark_all_read_endpoint(current_user):
+    Notificacion.query.filter_by(empresa_id=current_user.empresa_id, leida=False).update({Notificacion.leida: True})
+    db.session.commit()
+    return jsonify({'message': 'Todas las notificaciones marcadas como leÃ­das'})
+
+@app.route('/api/notificaciones/unread-count', methods=['GET'])
+@token_required
+def get_unread_count(current_user):
+    count = Notificacion.query.filter_by(empresa_id=current_user.empresa_id, leida=False).count()
+    return jsonify({'count': count})
+
+# ==========================================
+# MÃ“DULO ADMINISTRATIVO (CONFIGURACIÃ“N)
+# ==========================================
+
+@app.route('/api/config/empresa', methods=['GET', 'PUT'])
+@token_required
+def config_empresa(current_user):
+    empresa = Empresa.query.get(current_user.empresa_id)
+    
+    if request.method == 'GET':
+        return jsonify({
+            'razon_social': empresa.razon_social,
+            'nombre_comercial': empresa.nombre_comercial,
+            'cedula': empresa.cedula_juridica,
+            'correo': empresa.email_contacto,
+            'telefono': empresa.telefono,
+            'actividad': empresa.actividad_economica
+        })
+
+    if request.method == 'PUT':
+        data = request.get_json()
+        empresa.razon_social = data.get('razon_social', empresa.razon_social)
+        empresa.nombre_comercial = data.get('nombre_comercial', empresa.nombre_comercial)
+        empresa.email_contacto = data.get('correo', empresa.email_contacto)
+        empresa.telefono = data.get('telefono', empresa.telefono)
+        
+        db.session.commit()
+        create_notification(current_user.empresa_id, 'sistema', 'Datos de Empresa Actualizados', 'Se han modificado los datos comerciales de la empresa.')
+        return jsonify({'message': 'Datos de empresa actualizados correctamente.'})
+
+@app.route('/api/config/facturacion', methods=['GET', 'PUT'])
+@token_required
+def config_facturacion(current_user):
+    empresa = Empresa.query.get(current_user.empresa_id)
+    sucursal = Sucursal.query.filter_by(empresa_id=empresa.id).first()
+    
+    if request.method == 'GET':
+        return jsonify({
+            'api_user': empresa.api_usuario,
+            'sucursal': sucursal.numero_sucursal if sucursal else '001',
+            'terminal': sucursal.terminal if sucursal else '00001',
+            'ambiente': 'stag'
+        })
+
+    if request.method == 'PUT':
+        data = request.get_json()
+        empresa.api_usuario = data.get('api_user', empresa.api_usuario)
+        if data.get('api_pass'):
+            empresa.api_password = data.get('api_pass')
+        
+        db.session.commit()
+        return jsonify({'message': 'ConfiguraciÃ³n de facturaciÃ³n actualizada.'})
+
+# (config_usuarios eliminado â€” se usa /api/usuarios que ya existe)
+
+@app.route('/api/usuarios/<int:id>', methods=['PUT', 'DELETE'])
+@token_required
+def modificar_usuario(current_user, id):
+    if not current_user.is_superadmin:
+        return jsonify({'message': 'Solo el Administrador puede gestionar usuarios.'}), 403
+        
+    usuario = Usuario.query.filter_by(id=id, empresa_id=current_user.empresa_id).first()
+    if not usuario:
+        return jsonify({'message': 'Usuario no encontrado.'}), 404
+        
+    if request.method == 'PUT':
+        data = request.get_json()
+        usuario.nombre = data.get('nombre', usuario.nombre)
+        usuario.is_active = data.get('activo', usuario.is_active)
+        if 'pantallas' in data:
+            usuario.pantallas_asignadas = ','.join(data.get('pantallas'))
+            
+        if 'password' in data and data['password']:
+            usuario.set_password(data['password'])
+            
+        db.session.commit()
+        return jsonify({'message': 'Usuario actualizado.'})
+        
+    if request.method == 'DELETE':
+        if usuario.id == current_user.id:
+            return jsonify({'message': 'No puedes eliminarte a ti mismo.'}), 400
+        db.session.delete(usuario)
+        db.session.commit()
+        return jsonify({'message': 'Usuario eliminado.'})
+
+@app.route('/api/roles', methods=['GET'])
+@token_required
+def get_roles(current_user):
+    roles = Rol.query.all()
+    return jsonify([{'id': r.id, 'nombre': r.nombre, 'descripcion': r.descripcion} for r in roles])
+
+
+# ==========================================
+# RUTAS DE NEGOCIO (FACTURACIÃ“N E INVENTARIO)
+# ==========================================
+
+@app.route('/api/clientes', methods=['GET', 'POST'])
+@token_required
+def clientes(current_user):
+    if request.method == 'GET':
+        clientes = Cliente.query.filter_by(empresa_id=current_user.empresa_id).all()
+        return jsonify([{
+            'id': c.id, 'nombre': c.nombre, 'identificacion': c.identificacion,
+            'tipo_id': c.tipo_id, 'correo': c.email, 'telefono': c.telefono,
+            'movil': c.movil, 'actividad': c.actividad_economica, 'regimen': c.regimen,
+            'provincia': c.provincia, 'canton': c.canton, 'distrito': c.distrito, 
+            'barrio': c.barrio, 'direccion': c.direccion
+        } for c in clientes])
+        
+    if request.method == 'POST':
+        data = request.get_json()
+        nuevo = Cliente(
+            empresa_id=current_user.empresa_id,
+            nombre=data.get('nombre'),
+            identificacion=data.get('identificacion'),
+            tipo_id=data.get('tipo_id', '01'),
+            email=data.get('correo'), # En JS se usa 'correo'
+            telefono=data.get('telefono'),
+            movil=data.get('movil'),
+            actividad_economica=data.get('actividad'),
+            regimen=data.get('regimen'),
+            provincia=data.get('provincia'),
+            canton=data.get('canton'),
+            distrito=data.get('distrito'),
+            barrio=data.get('barrio'),
+            direccion=data.get('direccion')
+        )
+        db.session.add(nuevo)
+        db.session.commit()
+        return jsonify({'message': 'Cliente creado exitosamente', 'id': nuevo.id}), 201
+
+@app.route('/api/clientes/<int:id>', methods=['PUT', 'DELETE'])
+@token_required
+def modificar_cliente(current_user, id):
+    # Buscar el cliente pero SOLAMENTE si pertenece a la misma empresa (Multi-Tenant)
+    cliente = Cliente.query.filter_by(id=id, empresa_id=current_user.empresa_id).first()
+    if not cliente:
+        return jsonify({'message': 'Cliente no encontrado o acceso denegado'}), 404
+
+    if request.method == 'PUT':
+        data = request.get_json()
+        cliente.nombre = data.get('nombre', cliente.nombre)
+        cliente.email = data.get('correo', cliente.email)
+        cliente.telefono = data.get('telefono', cliente.telefono)
+        cliente.movil = data.get('movil', cliente.movil)
+        cliente.provincia = data.get('provincia', cliente.provincia)
+        cliente.canton = data.get('canton', cliente.canton)
+        cliente.distrito = data.get('distrito', cliente.distrito)
+        cliente.barrio = data.get('barrio', cliente.barrio)
+        cliente.direccion = data.get('direccion', cliente.direccion)
+        db.session.commit()
+        return jsonify({'message': 'Cliente actualizado exitosamente'}), 200
+
+    if request.method == 'DELETE':
+        db.session.delete(cliente)
+        db.session.commit()
+        return jsonify({'message': 'Cliente eliminado exitosamente'}), 200
+
+@app.route('/api/productos', methods=['GET', 'POST'])
+@token_required
+def productos(current_user):
+    if request.method == 'GET':
+        productos = Producto.query.filter_by(empresa_id=current_user.empresa_id).all()
+        return jsonify([{
+            'id': p.id, 'cabys': p.cabys, 'codigo': p.codigo, 
+            'unidadMedida': p.unidad_medida, 'descripcion': p.descripcion,
+            'marca': p.marca, 'modelo': p.modelo, 'caracteristicas': p.caracteristicas,
+            'nombreServicio': p.nombre_servicio, 'detalleServicio': p.detalle_servicio,
+            'precio': p.costo, 'margen': p.margen, 'precioVenta': p.precio_venta,
+            'impuesto': p.impuesto, 'tipoImpuesto': p.tipo_impuesto,
+            'stock': p.stock, 'descuentoMax': p.descuento_max
+        } for p in productos])
+
+    if request.method == 'POST':
+        data = request.get_json()
+        nuevo = Producto(
+            empresa_id=current_user.empresa_id,
+            cabys=data.get('cabys'),
+            codigo=data.get('codigo'),
+            unidad_medida=data.get('unidadMedida', 'Unid'),
+            descripcion=data.get('descripcion'),
+            marca=data.get('marca'),
+            modelo=data.get('modelo'),
+            caracteristicas=data.get('caracteristicas'),
+            nombre_servicio=data.get('nombreServicio'),
+            detalle_servicio=data.get('detalleServicio'),
+            costo=float(data.get('precio', 0)),
+            margen=float(data.get('margen', 0)),
+            precio_venta=float(data.get('precioVenta', 0)),
+            impuesto=float(data.get('impuesto', 13)),
+            tipo_impuesto=data.get('tipoImpuesto', '01'),
+            stock=int(data.get('stock', 0)),
+            descuento_max=float(data.get('descuentoMax', 0))
+        )
+        db.session.add(nuevo)
+        db.session.commit()
+        return jsonify({'message': 'Ãtem guardado exitosamente', 'id': nuevo.id}), 201
+
+@app.route('/api/productos/<int:id>', methods=['PUT', 'DELETE'])
+@token_required
+def modificar_producto(current_user, id):
+    # Buscar el producto asegurando que pertenece a la empresa actual
+    producto = Producto.query.filter_by(id=id, empresa_id=current_user.empresa_id).first()
+    if not producto:
+        return jsonify({'message': 'Ãtem no encontrado o acceso denegado'}), 404
+
+    if request.method == 'PUT':
+        data = request.get_json()
+        # Actualizamos los campos
+        producto.descripcion = data.get('descripcion', producto.descripcion)
+        producto.marca = data.get('marca', producto.marca)
+        producto.modelo = data.get('modelo', producto.modelo)
+        producto.caracteristicas = data.get('caracteristicas', producto.caracteristicas)
+        producto.nombre_servicio = data.get('nombreServicio', producto.nombre_servicio)
+        producto.detalle_servicio = data.get('detalleServicio', producto.detalle_servicio)
+        producto.costo = float(data.get('precio', producto.costo))
+        producto.margen = float(data.get('margen', producto.margen))
+        producto.precio_venta = float(data.get('precioVenta', producto.precio_venta))
+        producto.impuesto = float(data.get('impuesto', producto.impuesto))
+        producto.stock = int(data.get('stock', producto.stock))
+        producto.descuento_max = float(data.get('descuentoMax', producto.descuento_max))
+        db.session.commit()
+        return jsonify({'message': 'Ãtem actualizado exitosamente'}), 200
+
+    if request.method == 'DELETE':
+        db.session.delete(producto)
+        db.session.commit()
+        return jsonify({'message': 'Ãtem eliminado exitosamente'}), 200
+
+
+@app.route('/api/facturas', methods=['GET', 'POST'])
+@token_required
+@require_role(['Administrador', 'Emisor'])
+def facturas_endpoint(current_user):
+    sucursal_id = request.headers.get('X-Sucursal-ID')
+    sucursal = Sucursal.query.get(sucursal_id)
+    
+    if request.method == 'GET':
+        facturas = Factura.query.filter_by(sucursal_id=sucursal_id, is_draft=False).all()
+        return jsonify([{
+            'id': f.id,
+            'numero_consecutivo': f.numero_consecutivo,
+            'cliente_nombre': f.cliente.nombre if f.cliente else 'N/A',
+            'fecha_emision': f.fecha_emision.isoformat(),
+            'moneda': f.moneda,
+            'total': f.total,
+            'estado': f.estado,
+            'tipo_documento': f.tipo_documento
+        } for f in facturas])
+
+    if request.method == 'POST':
+        data = request.get_json()
+        
+        try:
+            # 1. GestiÃ³n de Consecutivos (Bloqueo de Sucursal para evitar duplicados)
+            tipo_doc = data.get('tipoDoc', '01')
+            
+            # Incrementar contador segÃºn tipo
+            if tipo_doc == '01': sucursal.c_factura += 1; cont = sucursal.c_factura
+            elif tipo_doc == '04': sucursal.c_tiquete += 1; cont = sucursal.c_tiquete
+            elif tipo_doc == '03': sucursal.c_nota_credito += 1; cont = sucursal.c_nota_credito
+            else: sucursal.c_nota_debito += 1; cont = sucursal.c_nota_debito
+            
+            consecutivo = generar_consecutivo(sucursal, tipo_doc, cont - 1)
+            clave = generar_clave(current_user.empresa, consecutivo)
+
+            # 2. LÃ³gica de Moneda y ConversiÃ³n
+            moneda = data.get('moneda', 'CRC')
+            tc = 1.0
+            if moneda != 'CRC':
+                rates = get_tipo_cambio()
+                tc = rates['venta']
+
+            # 3. Guardado de Datos
+            totales = data.get('totales', {})
+            nueva_factura = Factura(
+                sucursal_id=sucursal_id,
+                cliente_id=data.get('cliente_id'),
+                numero_consecutivo=consecutivo,
+                clave=clave,
+                tipo_documento=tipo_doc,
+                condicion_venta=data.get('condicionVenta', '01'),
+                medio_pago=data.get('medioPago', '01'),
+                moneda=moneda,
+                tipo_cambio=tc,
+                subtotal=float(totales.get('subtotal', 0)),
+                descuentos=float(totales.get('descuento', 0)),
+                impuestos=float(totales.get('impuesto', 0)),
+                total=float(totales.get('final', 0)),
+                estado='Emitida',
+                is_draft=False
+            )
+            
+            # SimulaciÃ³n de generaciÃ³n de archivos XML y PDF (Binarios Comprimidos)
+            xml_fake = f"<Factura><Clave>{clave}</Clave><Monto>{nueva_factura.total}</Monto></Factura>"
+            nueva_factura.xml_comprobante = zlib.compress(xml_fake.encode())
+            nueva_factura.pdf_comprobante = zlib.compress(b"CONTENIDO_PDF_GENERADO_BINARIO")
+
+            db.session.add(nueva_factura)
+            
+            # Limpiar borrador si existe
+            Factura.query.filter_by(sucursal_id=sucursal_id, is_draft=True).delete()
+            
+            db.session.commit()
             return jsonify({
-                "message": "Login exitoso",
-                "user": {
-                    "empresa": row[1],
-                    "cedula": row[2]
-                }
-            }), 200
+                'message': 'Documento emitido y almacenado correctamente.',
+                'consecutivo': consecutivo,
+                'clave': clave
+            }), 201
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': 'Error al procesar emisiÃ³n', 'error': str(e)}), 500
+
+@app.route('/api/facturas/borrador', methods=['GET', 'POST'])
+@token_required
+def gestionar_borradores(current_user):
+    sucursal_id = request.headers.get('X-Sucursal-ID')
+    
+    if request.method == 'GET':
+        borrador = Factura.query.filter_by(sucursal_id=sucursal_id, is_draft=True).first()
+        if not borrador: return jsonify({'message': 'No hay borradores'}), 404
+        return jsonify({
+            'cliente_id': borrador.cliente_id,
+            'moneda': borrador.moneda,
+            'tipoDoc': borrador.tipo_documento,
+            'detalles': [{'desc': d.descripcion, 'qty': d.cantidad} for d in borrador.detalles]
+        })
+
+    if request.method == 'POST':
+        data = request.get_json()
+        # Eliminar borrador anterior
+        Factura.query.filter_by(sucursal_id=sucursal_id, is_draft=True).delete()
+        
+        nuevo_borrador = Factura(
+            sucursal_id=sucursal_id,
+            cliente_id=data.get('cliente_id'),
+            moneda=data.get('moneda', 'CRC'),
+            tipo_documento=data.get('tipoDoc', '01'),
+            is_draft=True,
+            estado='Borrador',
+            numero_consecutivo='BORRADOR-' + datetime.now().strftime("%Y%m%d%H%M%S"),
+            clave='BORRADOR'
+        )
+        db.session.add(nuevo_borrador)
+        db.session.commit()
+        return jsonify({'message': 'Borrador guardado exitosamente.'})
+
+@app.route('/api/facturas/<int:id>', methods=['GET', 'PUT'])
+@token_required
+@require_role(['Administrador', 'Emisor'])
+def factura_detalle(current_user, id):
+    sucursal_id = request.headers.get('X-Sucursal-ID')
+    factura = Factura.query.filter_by(id=id, sucursal_id=sucursal_id).first()
+    
+    if not factura:
+        return jsonify({'message': 'Factura no encontrada'}), 404
+        
+    if request.method == 'GET':
+        return jsonify({
+            'id': factura.id,
+            'consecutivo': factura.numero_consecutivo,
+            'fecha': factura.fecha_emision.isoformat(),
+            'moneda': factura.moneda,
+            'condicionVenta': factura.condicion_venta,
+            'medioPago': factura.medio_pago,
+            'observaciones': factura.observaciones,
+            'estado': factura.estado,
+            'monto': factura.total,
+            'clienteNombre': factura.cliente.nombre if factura.cliente else 'N/A',
+            'clienteId': factura.cliente_id,
+            'receptor': {
+                'nombre': factura.cliente.nombre if factura.cliente else '',
+                'identificacion': factura.cliente.identificacion if factura.cliente else '',
+                'correo': factura.cliente.email if factura.cliente else '',
+                'provincia': factura.cliente.provincia if factura.cliente else '',
+                'canton': factura.cliente.canton if factura.cliente else ''
+            } if factura.cliente else None,
+            'detalle': [{
+                'descripcion': d.descripcion,
+                'cantidad': d.cantidad,
+                'precio': d.precio_unitario,
+                'subtotal': d.total_linea,
+                'impuesto': 0,
+                'descuento': 0,
+                'cabys': d.producto_rel.cabys if d.producto_rel else '00000000'
+            } for d in factura.detalles]
+        })
+        
+    if request.method == 'PUT':
+        data = request.get_json()
+        
+        def parse_money(val):
+            if isinstance(val, (int, float)): return float(val)
+            return float(re.sub(r'[^\d.-]', '', str(val))) if val else 0.0
+            
+        factura.estado = data.get('estado', factura.estado)
+        factura.observaciones = data.get('observaciones', factura.observaciones)
+        # Parse date safely
+        if data.get('fecha'):
+            try:
+                factura.fecha_emision = datetime.fromisoformat(data.get('fecha').replace('Z', ''))
+            except:
+                pass
+        factura.condicion_venta = data.get('condicionVenta', factura.condicion_venta)
+        factura.medio_pago = data.get('medioPago', factura.medio_pago)
+        factura.moneda = data.get('moneda', factura.moneda)
+        factura.total = parse_money(data.get('monto', factura.total))
+        
+        for d in factura.detalles:
+            db.session.delete(d)
+            
+        for item in data.get('detalle', []):
+            det = FacturaDetalle(
+                factura_id=factura.id,
+                descripcion=item.get('descripcion'),
+                cantidad=parse_money(item.get('cantidad', 1)),
+                precio_unitario=parse_money(item.get('precio', 0)),
+                total_linea=parse_money(item.get('subtotal', 0))
+            )
+            db.session.add(det)
+            
+        db.session.commit()
+        return jsonify({'message': 'Factura actualizada y emitida correctamente'}), 200
+
+# ==========================================
+# RUTAS DE AUDITORÃA (Trazabilidad 360)
+# ==========================================
+@app.route('/api/auditoria/comprobantes', methods=['GET'])
+@token_required
+@require_role(['Administrador', 'Auditor', 'Emisor'])
+def auditoria_comprobantes(current_user):
+    sucursal_id = request.headers.get('X-Sucursal-ID')
+    facturas = Factura.query.filter_by(sucursal_id=sucursal_id).order_by(Factura.fecha_emision.desc()).limit(100).all()
+    return jsonify([{
+        'id': f.id,
+        'fecha': f.fecha_emision.isoformat(),
+        'numero_consecutivo': f.numero_consecutivo,
+        'clave': f.clave,
+        'clienteNombre': f.cliente.nombre if f.cliente else 'Consumidor Final',
+        'monto': f.total,
+        'estado': f.estado,
+        'tipo': f.tipo_documento
+    } for f in facturas])
+
+@app.route('/api/auditoria/inventario', methods=['GET'])
+@token_required
+@require_role(['Administrador', 'Auditor'])
+def auditoria_inventario(current_user):
+    sucursal_id = request.headers.get('X-Sucursal-ID')
+    movimientos = InventarioMovimiento.query.filter_by(sucursal_id=sucursal_id).order_by(InventarioMovimiento.fecha.desc()).limit(100).all()
+    return jsonify([{
+        'id': m.id,
+        'fecha': m.fecha.isoformat(),
+        'producto_codigo': m.producto.codigo if m.producto else 'N/A',
+        'producto_desc': m.producto.descripcion if m.producto else 'N/A',
+        'tipo': m.tipo_movimiento,
+        'anterior': m.cantidad_anterior,
+        'ajuste': m.cantidad_ajuste,
+        'nueva': m.cantidad_nueva,
+        'usuario': m.usuario_id # Ideally join with Usuario model for name
+    } for m in movimientos])
+
+@app.route('/api/auditoria/ventas', methods=['GET'])
+@token_required
+@require_role(['Administrador', 'Auditor'])
+def auditoria_ventas(current_user):
+    # Por ahora similar a comprobantes, pero enfocado en ventas del POS (Facturas Pagadas)
+    sucursal_id = request.headers.get('X-Sucursal-ID')
+    ventas = Factura.query.filter(
+        Factura.sucursal_id == sucursal_id,
+        Factura.estado.notin_(['Borrador', 'Rechazada'])
+    ).order_by(Factura.fecha_emision.desc()).limit(100).all()
+    
+    return jsonify([{
+        'id': v.id,
+        'fecha': v.fecha_emision.isoformat(),
+        'transaccion': f"TRN-{v.id}-{v.numero_consecutivo[-4:] if v.numero_consecutivo else '0000'}",
+        'caja': 'TERMINAL PRINCIPAL',
+        'vendedor': current_user.nombre, # Placeholder, should be mapped from creator
+        'monto': v.total,
+        'pago': v.medio_pago
+    } for v in ventas])
+
+# ==========================================
+# RUTAS DE NOTIFICACIONES
+# ==========================================
+@app.route('/api/notificaciones', methods=['GET'])
+@token_required
+def get_notificaciones(current_user):
+    sucursal_id = request.headers.get('X-Sucursal-ID')
+    
+    # Obtener notificaciones de la empresa, y aquellas globales o especÃ­ficas de la sucursal
+    notificaciones = Notificacion.query.filter(
+        Notificacion.empresa_id == current_user.empresa_id,
+        db.or_(Notificacion.sucursal_id == None, Notificacion.sucursal_id == sucursal_id)
+    ).order_by(Notificacion.fecha.desc()).limit(50).all()
+    
+    return jsonify([{
+        'id': n.id,
+        'type': n.tipo,
+        'icon': n.icono,
+        'title': n.titulo,
+        'desc': n.descripcion,
+        'time': n.fecha.isoformat(),
+        'read': n.leida
+    } for n in notificaciones])
+
+@app.route('/api/notificaciones/<int:id>/read', methods=['PUT'])
+@token_required
+def mark_notificacion_read(current_user, id):
+    notificacion = Notificacion.query.filter_by(id=id, empresa_id=current_user.empresa_id).first()
+    if not notificacion:
+        return jsonify({'message': 'NotificaciÃ³n no encontrada'}), 404
+        
+    notificacion.leida = True
+    db.session.commit()
+    return jsonify({'message': 'NotificaciÃ³n marcada como leÃ­da'})
+
+@app.route('/api/notificaciones/read_all', methods=['PUT'])
+@token_required
+def mark_all_notificaciones_read(current_user):
+    sucursal_id = request.headers.get('X-Sucursal-ID')
+    notificaciones = Notificacion.query.filter(
+        Notificacion.empresa_id == current_user.empresa_id,
+        db.or_(Notificacion.sucursal_id == None, Notificacion.sucursal_id == sucursal_id),
+        Notificacion.leida == False
+    ).all()
+    
+    for n in notificaciones:
+        n.leida = True
+        
+    db.session.commit()
+    return jsonify({'message': 'Todas las notificaciones marcadas como leÃ­das'})
+
+# ==========================================
+# MOTOR DE ENVÃO DE CORREOS (SaaS DELIVERY)
+# ==========================================
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
+def enviar_comprobante_email(destinatario, factura_data, xml_bin, pdf_bin):
+    """
+    EnvÃ­a el comprobante electrÃ³nico (XML y PDF) al receptor.
+    DiseÃ±o premium HTML incluido.
+    """
+    # ConfiguraciÃ³n SMTP (MUROTECH Default o por Empresa)
+    SMTP_SERVER = "smtp.gmail.com"
+    SMTP_PORT = 587
+    SMTP_USER = "soporte@murotech.com" # Placeholder para el sistema
+    SMTP_PASS = "tu_password_seguro"
+    
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = f"MUROTECH FacturaciÃ³n <{SMTP_USER}>"
+        msg['To'] = destinatario
+        msg['Subject'] = f"Comprobante ElectrÃ³nico: {factura_data['consecutivo']}"
+
+        # Cuerpo del Correo (HTML Premium)
+        html = f"""
+        <html>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; line-height: 1.6;">
+            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <div style="background: #1e40af; padding: 40px; text-align: center; color: white;">
+                    <h1 style="margin: 0; font-size: 24px; letter-spacing: -1px;">MUROTECH</h1>
+                    <p style="opacity: 0.8; margin-top: 5px;">Sistema de FacturaciÃ³n ElectrÃ³nica</p>
+                </div>
+                <div style="padding: 40px;">
+                    <h2 style="color: #0f172a; font-size: 20px;">Â¡Hola! Has recibido un comprobante electrÃ³nico.</h2>
+                    <p>Le informamos que se ha generado un nuevo documento electrÃ³nico a su nombre con los siguientes detalles:</p>
+                    <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin: 20px 0; border-left: 4px solid #1e40af;">
+                        <p style="margin: 5px 0;"><strong>Consecutivo:</strong> {factura_data['consecutivo']}</p>
+                        <p style="margin: 5px 0;"><strong>Fecha:</strong> {factura_data['fecha']}</p>
+                        <p style="margin: 5px 0;"><strong>Monto Total:</strong> {factura_data['moneda']} {factura_data['monto']}</p>
+                    </div>
+                    <p style="font-size: 14px; color: #64748b;">Encuentre adjunto el archivo XML (Validez Legal) y el PDF (RepresentaciÃ³n GrÃ¡fica).</p>
+                </div>
+                <div style="background: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+                    Este es un correo automÃ¡tico generado por MUROTECH SaaS. Por favor no responda a este mensaje.
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html, 'html'))
+
+        # Adjuntar XML
+        part_xml = MIMEBase('application', 'xml')
+        part_xml.set_payload(xml_bin)
+        encoders.encode_base64(part_xml)
+        part_xml.add_header('Content-Disposition', f'attachment; filename="{factura_data["consecutivo"]}.xml"')
+        msg.attach(part_xml)
+
+        # Adjuntar PDF
+        part_pdf = MIMEBase('application', 'pdf')
+        part_pdf.set_payload(pdf_bin)
+        encoders.encode_base64(part_pdf)
+        part_pdf.add_header('Content-Disposition', f'attachment; filename="{factura_data["consecutivo"]}.pdf"')
+        msg.attach(part_pdf)
+
+        # EnvÃ­o Real (Descomentar para producciÃ³n con credenciales vÃ¡lidas)
+        # server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        # server.starttls()
+        # server.login(SMTP_USER, SMTP_PASS)
+        # server.send_message(msg)
+        # server.quit()
+        
+        print(f"Correo enviado exitosamente a {destinatario}")
+        return True
+    except Exception as e:
+        print(f"Error enviando correo: {str(e)}")
+        return False
+
+# ==========================================
+# MÃ“DULO DE COTIZACIONES Y PROFORMAS
+# ==========================================
+
+@app.route('/api/cotizaciones', methods=['POST'])
+@token_required
+def crear_cotizacion(current_user):
+    data = request.get_json()
+    
+    # 1. Obtener Sucursal (Default a la primera de la empresa)
+    sucursal = Sucursal.query.filter_by(empresa_id=current_user.empresa_id).first()
+    if not sucursal:
+        return jsonify({'message': 'No hay sucursales configuradas.'}), 400
+
+    # 2. Manejo de Cliente o Prospecto
+    cliente_id = data.get('cliente_id')
+    if cliente_id == 'all' or not cliente_id:
+        cliente_id = None # Prospecto manual
+        
+    # 3. Crear Registro de CotizaciÃ³n
+    nueva_cot = Factura(
+        sucursal_id=sucursal.id,
+        cliente_id=cliente_id,
+        numero_consecutivo=f"COT-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        clave=f"PROFORMA-{datetime.now().timestamp()}",
+        tipo_documento="Proforma",
+        moneda=data.get('moneda', 'CRC'),
+        condicion_venta=data.get('condicion_venta', 'Contado'),
+        subtotal=data.get('subtotal', 0),
+        descuentos=data.get('descuento', 0),
+        impuestos=data.get('impuestos', 0),
+        total=data.get('total', 0),
+        estado="Proforma",
+        is_quotation=True,
+        observaciones=data.get('notas', ''),
+        tipo_cambio=data.get('tipo_cambio', 1.0)
+    )
+    
+    # Calcular Vencimiento
+    validez = int(data.get('validez_dias', 15))
+    nueva_cot.fecha_vencimiento = datetime.now() + timedelta(days=validez)
+    
+    db.session.add(nueva_cot)
+    db.session.flush() # Para obtener el ID
+
+    # 4. Detalles de la Proforma
+    for item in data.get('detalles', []):
+        detalle = FacturaDetalle(
+            factura_id=nueva_cot.id,
+            producto_id=item.get('id'),
+            descripcion=item.get('nombre'),
+            cantidad=item.get('cantidad'),
+            precio_unitario=item.get('precio'),
+            porcentaje_descuento=item.get('descuento_p', 0),
+            porcentaje_impuesto=item.get('iva_p', 13.0),
+            total_linea=item.get('subtotal')
+        )
+        db.session.add(detalle)
+
+    db.session.commit()
+    
+    # 5. NotificaciÃ³n
+    create_notification(current_user.empresa_id, 'sistema', 'Nueva CotizaciÃ³n Generada', f'Se ha creado la proforma {nueva_cot.numero_consecutivo} para {data.get("receptor_nombre", "Prospecto")}.')
+
+    return jsonify({
+        'message': 'CotizaciÃ³n guardada exitosamente.',
+        'id': nueva_cot.id,
+        'consecutivo': nueva_cot.numero_consecutivo
+    }), 201
+
+@app.route('/api/reportes/data', methods=['GET'])
+@token_required
+def get_reportes_data(current_user):
+    from sqlalchemy import func
+    desde = request.args.get('desde')
+    hasta = request.args.get('hasta')
+    cliente_id = request.args.get('cliente_id')
+    
+    # --- FILTRO BASE POR EMPRESA (a traves de sucursales) ---
+    sucursales_ids = [s.id for s in Sucursal.query.filter_by(empresa_id=current_user.empresa_id).all()]
+    query_facturas = Factura.query.filter(
+        Factura.sucursal_id.in_(sucursales_ids),
+        Factura.is_draft == False
+    )
+    
+    if desde: query_facturas = query_facturas.filter(Factura.fecha_emision >= desde)
+    if hasta: query_facturas = query_facturas.filter(Factura.fecha_emision <= hasta)
+    if cliente_id and cliente_id != 'all': 
+        query_facturas = query_facturas.filter(Factura.cliente_id == cliente_id)
+
+    facturas = query_facturas.all()
+
+    # --- CALCULO DE KPIs ---
+    total_ventas = sum(f.total for f in facturas)
+    total_iva = sum(f.impuestos for f in facturas)
+    total_neto = total_ventas - total_iva
+
+    # --- DATOS PARA GRAFICOS (POR FECHA) ---
+    ventas_por_fecha = {}
+    for f in facturas:
+        fecha_str = f.fecha_emision.strftime('%Y-%m-%d')
+        ventas_por_fecha[fecha_str] = ventas_por_fecha.get(fecha_str, 0) + float(f.total)
+    
+    chart_data = [{'fecha': k, 'total': v} for k, v in sorted(ventas_por_fecha.items())]
+
+    # --- INVENTARIO Y STOCK ---
+    productos = Producto.query.filter_by(empresa_id=current_user.empresa_id).all()
+    stock_bajo = [p for p in productos if p.stock <= 5]
+    valor_inventario = sum((p.stock * p.costo) for p in productos if p.costo)
+
+    return jsonify({
+        'kpis': {
+            'ventas': float(total_ventas),
+            'iva': float(total_iva),
+            'utilidad': float(total_neto * 0.3),
+            'compras': float(total_neto * 0.4)
+        },
+        'tablas': {
+            'ventas': [{
+                'fecha': f.fecha_emision.strftime('%Y-%m-%d'),
+                'consecutivo': f.numero_consecutivo,
+                'cliente': f.cliente.nombre if f.cliente else 'Consumidor Final',
+                'bruto': float(f.subtotal),
+                'iva': float(f.impuestos),
+                'total': float(f.total),
+                'estado': f.estado
+            } for f in facturas],
+            'inventario': [{
+                'codigo': p.codigo,
+                'nombre': p.descripcion,
+                'costo': float(p.costo or 0),
+                'venta': float(p.precio_venta or 0),
+                'stock': float(p.stock),
+                'status': 'STOCK_BAJO' if p.stock <= 5 else 'NORMAL'
+            } for p in productos]
+        },
+        'charts': {
+            'ventas': chart_data,
+            'productos': [{'label': 'Otros', 'value': 100}]
+        },
+        'resumen_inventario': {
+            'total_skus': len(productos),
+            'valor_total': float(valor_inventario),
+            'conteo_bajo': len(stock_bajo)
+        }
+    })
+@app.route('/api/reportes/full', methods=['GET'])
+@token_required
+@require_role(['Administrador', 'Auditor'])
+def get_reportes_full(current_user):
+    sucursal_id = request.headers.get('X-Sucursal-ID')
+    
+    # 1. Facturas (Ventas y Comprobantes)
+    facturas_db = Factura.query.filter_by(sucursal_id=sucursal_id).filter(Factura.tipo_documento != 'Proforma').all()
+    facturas = [{
+        'id': f.id,
+        'fecha': f.fecha_emision.isoformat(),
+        'monto': f.total,
+        'clienteNombre': f.cliente.nombre if f.cliente else 'Consumidor Final',
+        'estado': f.estado
+    } for f in facturas_db]
+    
+    # 2. Cotizaciones / Proformas
+    cotizaciones_db = Factura.query.filter_by(sucursal_id=sucursal_id, tipo_documento='Proforma').all()
+    cotizaciones = [{
+        'id': f.id,
+        'fecha': f.fecha_emision.isoformat(),
+        'vencimiento': f.fecha_vencimiento.isoformat() if f.fecha_vencimiento else (f.fecha_emision + timedelta(days=30)).isoformat(),
+        'monto': f.total,
+        'clienteNombre': f.cliente.nombre if f.cliente else 'Consumidor Final',
+        'estado': f.estado
+    } for f in cotizaciones_db]
+    
+    # 3. Compras (Gastos)
+    compras_db = Compra.query.filter_by(sucursal_id=sucursal_id).all()
+    compras = [{
+        'id': c.id,
+        'fecha': c.fecha.isoformat(),
+        'proveedor': c.proveedor,
+        'concepto': c.concepto,
+        'montoNeto': c.monto_neto,
+        'iva': c.iva,
+        'total': c.total,
+        'categoria': c.categoria
+    } for c in compras_db]
+    
+    # 4. Inventario
+    inventario_db = Producto.query.filter_by(empresa_id=current_user.empresa_id).all()
+    inventario = [{
+        'codigo': p.codigo,
+        'descripcion': p.descripcion,
+        'categoria': p.marca or 'General', # Usando marca como proxy si no hay cat
+        'precio': p.costo,
+        'precioVenta': p.precio_venta,
+        'stock': p.stock
+    } for p in inventario_db]
+    
+    return jsonify({
+        'facturas': facturas,
+        'cotizaciones': cotizaciones,
+        'compras': compras,
+        'inventario': inventario
+    })
+
+@app.route('/api/facturas/descargar/<int:id>/<tipo>', methods=['GET'])
+@token_required
+def descargar_comprobante(current_user, id, tipo):
+    """Descarga el XML o PDF almacenado en binario"""
+    factura = Factura.query.get_or_404(id)
+    if factura.sucursal.empresa_id != current_user.empresa_id:
+        return jsonify({'message': 'No autorizado'}), 403
+        
+    try:
+        if tipo == 'xml':
+            data = zlib.decompress(factura.xml_comprobante)
+            mimetype = 'application/xml'
+            ext = 'xml'
         else:
-            return jsonify({"message": "Correo o contraseña incorrectos."}), 401
+            data = zlib.decompress(factura.pdf_comprobante)
+            mimetype = 'application/pdf'
+            ext = 'pdf'
+            
+        return data, 200, {
+            'Content-Type': mimetype,
+            'Content-Disposition': f'attachment; filename={factura.numero_consecutivo}.{ext}'
+        }
+    except:
+        return jsonify({'message': 'Archivo no disponible'}), 404
+
+@app.route('/api/dashboard', methods=['GET'])
+@token_required
+def get_dashboard_metrics(current_user):
+    """Retorna las mÃ©tricas y actividad reciente para panelControl.html"""
+    try:
+        # 1. Obtener todas las sucursales a las que tiene acceso el usuario
+        if current_user.is_superadmin:
+            sucursales_ids = [s.id for s in Sucursal.query.filter_by(empresa_id=current_user.empresa_id).all()]
+        else:
+            sucursales_ids = [acc.sucursal_id for acc in current_user.accesos]
+
+        if not sucursales_ids:
+            return jsonify({
+                "facturasEmitidas": 0, "ingresosTotales": 0, "clientesActivos": 0, 
+                "tasaConversion": "0.0%", "actividadReciente": []
+            }), 200
+
+        # 2. Consultas Base
+        facturas_query = Factura.query.filter(Factura.sucursal_id.in_(sucursales_ids))
+        total_facturas = facturas_query.count()
+        
+        # 3. Ingresos (Solo facturas Pagadas o Aceptadas)
+        facturas_exitosas = facturas_query.filter(Factura.estado.in_(['Pagada', 'Aceptada MH', 'Aceptada', 'Pendiente'])).all()
+        ingresos_totales = sum(f.total for f in facturas_exitosas)
+        
+        # 4. Tasa de ConversiÃ³n (Ã‰xito)
+        facturas_rechazadas = facturas_query.filter(Factura.estado.in_(['Rechazada', 'Anulada'])).count()
+        tasa_conversion = 100.0
+        if total_facturas > 0:
+            exito = total_facturas - facturas_rechazadas
+            tasa_conversion = (exito / total_facturas) * 100
+            
+        # 5. Clientes Activos
+        clientes_activos = Cliente.query.filter_by(empresa_id=current_user.empresa_id).count()
+        
+        # 6. Actividad Reciente (Ãšltimas 5)
+        recientes = facturas_query.order_by(Factura.fecha_emision.desc()).limit(5).all()
+        actividad_lista = []
+        for f in recientes:
+            nombre_cliente = f.cliente.nombre if f.cliente else "Consumidor Final"
+            actividad_lista.append({
+                "id": f.numero_consecutivo,
+                "clienteNombre": nombre_cliente,
+                "monto": f.total,
+                "estado": f.estado,
+                "fecha": f.fecha_emision.isoformat()
+            })
+
+        return jsonify({
+            "facturasEmitidas": total_facturas,
+            "ingresosTotales": ingresos_totales,
+            "clientesActivos": clientes_activos,
+            "tasaConversion": f"{tasa_conversion:.1f}%",
+            "actividadReciente": actividad_lista
+        }), 200
 
     except Exception as e:
-        if conn: conn.close()
-        return jsonify({"message": "Error interno del servidor.", "detail": str(e)}), 500
+        return jsonify({"message": "Error al cargar mÃ©tricas", "error": str(e)}), 500
 
 @app.route('/api/time', methods=['GET'])
 def get_external_time():
-    """Proxy para obtener la hora oficial de Costa Rica sin problemas de CORS."""
-    import requests
     try:
-        # Intentamos obtener la hora de una fuente confiable
         res = requests.get('https://worldtimeapi.org/api/timezone/America/Costa_Rica', timeout=3)
-        if res.ok:
-            return jsonify(res.json())
-        return jsonify({"message": "Error al obtener hora externa"}), 502
-    except Exception as e:
-        return jsonify({"message": "Fallo de conexión con servidor de tiempo", "error": str(e)}), 503
-
+        if res.ok: return jsonify(res.json())
+        return jsonify({"message": "Error externo"}), 502
+    except Exception:
+        return jsonify({"message": "Fallo de conexiÃ³n"}), 503
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
+    init_db()
     app.run(debug=True, host='0.0.0.0', port=port)

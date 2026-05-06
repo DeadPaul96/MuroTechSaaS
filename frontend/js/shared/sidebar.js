@@ -8,7 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const isActive = (file) => {
     const normalizedFile = file.toLowerCase().replace('.html', '');
     const normalizedPath = path.replace('.html', '');
-    return normalizedPath.endsWith('/' + normalizedFile) || normalizedPath.endsWith('\\' + normalizedFile);
+    
+    // Caso especial para Dashboard
+    if (normalizedFile === 'dashboard' && normalizedPath.endsWith('panelcontrol')) return true;
+    
+    return normalizedPath.endsWith('/' + normalizedFile) || 
+           normalizedPath.endsWith('\\' + normalizedFile) || 
+           normalizedPath === normalizedFile;
   };
 
   const btn = (target, icon, title, onclick, activeFile = target) => `
@@ -17,21 +23,61 @@ document.addEventListener('DOMContentLoaded', () => {
       <span style="display: none;">${title}</span>
     </button>`;
 
+  // Obtener permisos del usuario desde el localStorage
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const permisos = (user && user.pantallas) ? user.pantallas : [];
+  
+  // Modo Invitado/Local (para cuando se abren los archivos directamente o no hay login)
+  const isLocal = location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const showAll = !user || user.is_superadmin || isLocal;
+
+  const renderButtons = () => {
+    // 1. Dashboard
+    let html = btn('panelControl.html', 'fas fa-th-large', 'Dashboard', "irA('panelControl.html')", 'dashboard');
+    
+    // Separador después de Dashboard
+    html += '<hr style="width: 20px; border: 0; border-top: 1px solid rgba(0,0,0,0.05); margin: 8px auto; opacity: 0.5;">';
+    
+    // 2. Módulos principales
+    const mainModules = [
+      { id: 'facturacion', file: 'pantallaFacturacion.html', icon: 'fas fa-file-invoice-dollar', title: 'Facturación' },
+      { id: 'clientes', file: 'clientes.html', icon: 'fas fa-users', title: 'Clientes' },
+      { id: 'inventario', file: 'inventario.html', icon: 'fas fa-boxes', title: 'Inventario' },
+      { id: 'editarFactura', file: 'editarFactura.html', icon: 'fas fa-edit', title: 'Editar Factura' },
+      { id: 'auditoria', file: 'auditoria.html', icon: 'fas fa-search', title: 'Auditoría' },
+      { id: 'notificaciones', file: 'notificaciones.html', icon: 'fas fa-bell', title: 'Notificaciones' },
+      { id: 'configuracion', file: 'configuracion.html', icon: 'fas fa-user-shield', title: 'Administrador' }
+    ];
+
+    mainModules.forEach(m => {
+      if (showAll || permisos.includes(m.id)) {
+        html += btn(m.file, m.icon, m.title, `irA('${m.file}')`);
+      }
+    });
+
+    // Separador antes de Reportes
+    html += '<hr style="width: 20px; border: 0; border-top: 1px solid rgba(0,0,0,0.05); margin: 8px auto; opacity: 0.5;">';
+
+    // 3. Módulos secundarios
+    const secondModules = [
+      { id: 'reportes', file: 'reportes.html', icon: 'fas fa-chart-line', title: 'Reportes' },
+      { id: 'cotizaciones', file: 'cotizaciones.html', icon: 'fas fa-file-signature', title: 'Cotizaciones' }
+    ];
+
+    secondModules.forEach(m => {
+      if (showAll || permisos.includes(m.id)) {
+        html += btn(m.file, m.icon, m.title, `irA('${m.file}')`);
+      }
+    });
+
+    return html;
+  };
+
   aside.innerHTML = `
-    <div class="sidebar-pill" id="sidebar-pill" style="opacity: 0;"></div>
     <div class="sidebar-section">
-      ${btn('panelControl.html', 'fas fa-th-large', 'Dashboard', "irA('panelControl.html')")}
-      <hr style="width: 25px; border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 5px 0;">
-      ${btn('pantallaFacturacion.html', 'fas fa-file-invoice-dollar', 'Facturación', "irA('pantallaFacturacion.html')")}
-      ${btn('clientes.html', 'fas fa-users', 'Clientes', "irA('clientes.html')")}
-      ${btn('inventario.html', 'fas fa-boxes', 'Inventario', "irA('inventario.html')")}
-      ${btn('editarFactura.html', 'fas fa-edit', 'Editar Factura', "irA('editarFactura.html')")}
-      ${btn('auditoria.html', 'fas fa-search', 'Auditoría', "irA('auditoria.html')")}
-      ${btn('notificaciones.html', 'fas fa-bell', 'Notificaciones', "irA('notificaciones.html')")}
-      ${btn('configuracion.html', 'fas fa-user-shield', 'Administrador', "irA('configuracion.html')")}
-      <hr style="width: 25px; border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 5px 0;">
-      ${btn('reportes.html', 'fas fa-chart-line', 'Reportes', "irA('reportes.html')")}
-      ${btn('cotizaciones.html', 'fas fa-file-signature', 'Cotizaciones', "irA('cotizaciones.html')")}
+      <div class="sidebar-pill" id="sidebar-pill" style="opacity: 0;"></div>
+      ${renderButtons()}
     </div>
     
     <div class="sidebar-section" style="margin-top: auto; padding-bottom: 5px;">
@@ -41,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Posicionar el Pill inicialmente (sin lag visual)
   const setInitialPill = () => {
-    const activeBtn = aside.querySelector('.sidebar-btn.active');
+    const activeBtn = aside.querySelector('.sidebar-section .sidebar-btn.active');
     const pill = document.getElementById('sidebar-pill');
     if (activeBtn && pill) {
       // Desactivar transición momentáneamente para el salto inicial
