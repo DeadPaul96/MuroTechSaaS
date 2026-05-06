@@ -15,8 +15,21 @@
             el.addEventListener('input', setDirty);
             el.addEventListener('change', setDirty);
         });
-        /* ── Clientes en memoria (desde MockDB) ──────────────────── */
-        let clientes = window.muroDB ? window.muroDB.getClientes() : [];
+        /* ── Clientes en memoria (desde API) ──────────────────── */
+        let clientes = [];
+        
+        async function loadClientes() {
+            try {
+                showLoading(true);
+                clientes = await fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes`);
+                renderTabla(clientes);
+                actualizarBadge();
+            } catch (err) {
+                showError('Error al cargar clientes desde el servidor.');
+            } finally {
+                showLoading(false);
+            }
+        }
 
         function actualizarBadge() {
             document.getElementById('total-clientes-badge').innerHTML = `<i class="fas fa-users-cog"></i> ${clientes.length} Clientes Registrados`;
@@ -39,7 +52,7 @@
                 tr.innerHTML = `
                     <td style="padding:16px 20px;">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:0.6rem; font-weight:900; background:#f1f5f9; color:#64748b; padding:3px 8px; border-radius:6px; letter-spacing:0.5px;">${c.tipoId}</span>
+                            <span style="font-size:0.6rem; font-weight:900; background:#f1f5f9; color:#64748b; padding:3px 8px; border-radius:6px; letter-spacing:0.5px;">${c.tipo_id || '01'}</span>
                             <span style="font-weight:900; font-size:0.9rem; color:#1e293b; letter-spacing:0.5px;">${c.identificacion}</span>
                         </div>
                     </td>
@@ -205,11 +218,15 @@
                         direccion: document.getElementById('swal-direccion').value
                     };
                     
-                    window.muroDB.updateCliente(id, updatedData);
-                    clientes = window.muroDB.getClientes();
-                    renderTabla(clientes);
-                    actualizarBadge();
-                    Swal.fire('Guardado', 'Datos del cliente actualizados.', 'success');
+                    fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(updatedData)
+                    }).then(() => {
+                        loadClientes();
+                        Swal.fire('Guardado', 'Datos del cliente actualizados.', 'success');
+                    }).catch(err => {
+                        showError('Error al actualizar el cliente');
+                    });
                 }
             });
         };
@@ -228,10 +245,14 @@
                 confirmButtonText: 'Sí, eliminar'
             }).then(r => {
                 if (r.isConfirmed) {
-                    window.muroDB.deleteCliente(id);
-                    clientes = window.muroDB.getClientes();
-                    renderTabla(clientes);
-                    actualizarBadge();
+                    fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes/${id}`, {
+                        method: 'DELETE'
+                    }).then(() => {
+                        loadClientes();
+                        Swal.fire('Eliminado', 'El cliente fue eliminado', 'success');
+                    }).catch(err => {
+                        showError('Error al eliminar cliente');
+                    });
                 }
             });
         };
@@ -376,26 +397,30 @@
 
             const actividad = document.getElementById('cli-actividad').value.trim();
             
-            // Guardar en el mockDB centralizado
-            window.muroDB.addCliente({ 
-                tipoId, identificacion, nombre, correo, 
+            const dataPayload = { 
+                tipo_id: tipoId, identificacion, nombre, correo, 
                 telefono, movil, provincia, canton, distrito, barrio, direccion, 
                 actividad, regimen: document.getElementById('cli-regimen').value || 'general' 
+            };
+            
+            fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes`, {
+                method: 'POST',
+                body: JSON.stringify(dataPayload)
+            }).then(() => {
+                this.reset();
+                clearDirty();
+                
+                // Limpieza manual de campos especiales y paneles
+                document.getElementById('mh-result-panel').style.display = 'none';
+                document.getElementById('mh-error-panel').style.display = 'none';
+                const cliAct = document.getElementById('cli-actividad');
+                if (cliAct) cliAct.style.height = '45px'; // Reset height
+                
+                loadClientes();
+                Swal.fire({ icon: 'success', title: 'Cliente registrado correctamente en la nube.', timer: 2000, showConfirmButton: false });
+            }).catch(err => {
+                showError('Error al registrar cliente: ' + err.message);
             });
-            
-            this.reset();
-            clearDirty();
-            
-            // Limpieza manual de campos especiales y paneles
-            document.getElementById('mh-result-panel').style.display = 'none';
-            document.getElementById('mh-error-panel').style.display = 'none';
-            const cliAct = document.getElementById('cli-actividad');
-            if (cliAct) cliAct.style.height = '45px'; // Reset height
-            
-            clientes = window.muroDB.getClientes();
-            renderTabla(clientes);
-            actualizarBadge();
-            Swal.fire({ icon: 'success', title: 'Cliente registrado correctamente, normativa aprobada.', timer: 2000, showConfirmButton: false });
         });
 
         /* ── Filtrar ──────────────────────────────────────────────── */
@@ -440,7 +465,7 @@
                         <div class="autocomplete-info">
                             <div class="autocomplete-name">${c.nombre}</div>
                             <div class="autocomplete-subinfo">
-                                <span class="autocomplete-badge">${c.tipoId}-${c.identificacion}</span>
+                                <span class="autocomplete-badge">${c.tipo_id || '01'}-${c.identificacion}</span>
                                 <span style="opacity:0.7;"><i class="fas fa-envelope" style="margin-right:4px;"></i>${c.correo || 'S/C'}</span>
                             </div>
                         </div>
@@ -482,7 +507,7 @@
                     
                     const c = {
                         id: Date.now() + i,
-                        tipoId: row[0] || '01',
+                        tipo_id: row[0] || '01',
                         identificacion: row[1] || `000000000`,
                         nombre: row[2] || 'Cliente Importado',
                         correo: row[3] || '',
@@ -490,7 +515,11 @@
                         direccion: row[5] || '',
                         provincia: 'San José' // Default visual para tabla
                     };
-                    if (window.muroDB) window.muroDB.addCliente(c);
+                    
+                    fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes`, {
+                        method: 'POST',
+                        body: JSON.stringify(c)
+                    }).catch(console.error);
                     count++;
                 }
                 clientes = window.muroDB.getClientes();
@@ -582,9 +611,7 @@
         });
 
         /* ── Renderizado Inicial ──────────────────────── */
-        clientes = window.muroDB ? window.muroDB.getClientes() : [];
-        renderTabla(clientes);
-        actualizarBadge();
+        loadClientes();
     })();
     
 

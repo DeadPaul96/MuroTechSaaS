@@ -220,12 +220,20 @@ function showLoading(show = true) {
 // Hacer petición HTTP con manejo de errores
 async function fetchAPI(url, options = {}) {
     try {
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+        
+        // Inyectar Token JWT si existe
+        const token = localStorage.getItem('token');
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(url, {
             ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-			}
+            headers: headers
         });
 
         if (!response.ok) {
