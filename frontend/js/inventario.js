@@ -152,7 +152,19 @@
         // Inicial: mostrar panel producto por defecto
         toggleCtxPanels();
 
-        let inventario = window.muroDB ? window.muroDB.getProductos() : [];
+        let inventario = [];
+
+        async function loadInventario() {
+            try {
+                showLoading(true);
+                inventario = await fetchAPI(`${CONFIG.API_BASE_URL}/api/productos`);
+                renderTabla();
+            } catch (err) {
+                showError('Error al cargar inventario desde el servidor.');
+            } finally {
+                showLoading(false);
+            }
+        }
 
         function renderTabla() {
             const tbody = document.getElementById('lista-inventario');
@@ -277,7 +289,7 @@
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                             <div>
                                 <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Descuento Máximo (%)</label>
-                                <input id="swal-desc-max" type="number" class="fi" value="${item.descuento_maximo || 0}" style="box-sizing:border-box; width:100%;">
+                                <input id="swal-desc-max" type="number" class="fi" value="${item.descuentoMax || item.descuento_maximo || 0}" style="box-sizing:border-box; width:100%;">
                             </div>
                             <div>
                                 <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Stock Actual</label>
@@ -337,7 +349,7 @@
                         precio: parseFloat(document.getElementById('swal-costo').value),
                         margen: parseFloat(document.getElementById('swal-margen').value),
                         precioVenta: parseFloat(document.getElementById('swal-venta').value),
-                        descuento_maximo: parseFloat(document.getElementById('swal-desc-max').value) || 0,
+                        descuentoMax: parseFloat(document.getElementById('swal-desc-max').value) || 0,
                         stock: esServicio ? 0 : parseInt(document.getElementById('swal-stock').value),
                         impuesto: document.getElementById('swal-iva').value,
                         tipoImpuesto: document.getElementById('swal-tipo-impuesto').value
@@ -350,10 +362,15 @@
                         updatedData.nombreServicio = document.getElementById('swal-nombre-svc').value;
                     }
                     
-                    if (window.muroDB) window.muroDB.updateProducto(id, updatedData);
-                    inventario = window.muroDB.getProductos();
-                    renderTabla();
-                    Swal.fire('Catálogo Actualizado', 'Los valores de costo y utilidad han sido recalculados.', 'success');
+                    fetchAPI(`${CONFIG.API_BASE_URL}/api/productos/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(updatedData)
+                    }).then(() => {
+                        loadInventario();
+                        Swal.fire('Catálogo Actualizado', 'Los valores de costo y utilidad han sido recalculados.', 'success');
+                    }).catch(err => {
+                        showError('Error al actualizar el ítem.');
+                    });
                 }
             });
         };
@@ -369,9 +386,13 @@
                 confirmButtonText: 'Sí, eliminar'
             }).then(r => {
                 if (r.isConfirmed) {
-                    if (window.muroDB) window.muroDB.deleteProducto(id);
-                    inventario = window.muroDB.getProductos();
-                    renderTabla();
+                    fetchAPI(`${CONFIG.API_BASE_URL}/api/productos/${id}`, {
+                        method: 'DELETE'
+                    }).then(() => {
+                        loadInventario();
+                    }).catch(err => {
+                        showError('Error al eliminar ítem.');
+                    });
                 }
             });
         };
@@ -397,19 +418,25 @@
                 caracteristicas: esServicio ? '' : (document.getElementById('inv-caracteristicas').value || ''),
                 nombreServicio: esServicio ? (document.getElementById('inv-nombre-servicio').value || '') : '',
                 detalleServicio: esServicio ? (document.getElementById('inv-detalle-servicio').value || '') : '',
-                descuento_maximo: parseFloat(document.getElementById('inv-descuento-max').value) || 0
+                descuentoMax: parseFloat(document.getElementById('inv-descuento-max').value) || 0
             };
-            if (window.muroDB) window.muroDB.addProducto(producto);
-            inventario = window.muroDB.getProductos();
-            renderTabla();
-            this.reset();
-            clearDirty();
-            toggleCtxPanels();
-            Swal.fire({
-                icon: 'success',
-                title: 'Registro Exitoso',
-                text: esServicio ? 'Servicio registrado correctamente' : 'Producto registrado correctamente',
-                confirmButtonColor: '#1e40af'
+            
+            fetchAPI(`${CONFIG.API_BASE_URL}/api/productos`, {
+                method: 'POST',
+                body: JSON.stringify(producto)
+            }).then(() => {
+                loadInventario();
+                this.reset();
+                clearDirty();
+                toggleCtxPanels();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registro Exitoso',
+                    text: esServicio ? 'Servicio registrado correctamente' : 'Producto registrado correctamente',
+                    confirmButtonColor: '#1e40af'
+                });
+            }).catch(err => {
+                showError('Error al registrar ítem: ' + err.message);
             });
         });
 
@@ -454,11 +481,13 @@
                         margen: row[5] && row[6] ? (((parseFloat(row[6])/parseFloat(row[5])) - 1) * 100).toFixed(2) : 0,
                         tipoImpuesto: '01'
                     };
-                    if (window.muroDB) window.muroDB.addProducto(p);
+                    fetchAPI(`${CONFIG.API_BASE_URL}/api/productos`, {
+                        method: 'POST',
+                        body: JSON.stringify(p)
+                    }).catch(console.error);
                     count++;
                 }
-                inventario = window.muroDB.getProductos();
-                renderTabla();
+                loadInventario();
                 Swal.fire({
                     icon: 'success',
                     title: 'Catálogo Actualizado',
@@ -470,5 +499,5 @@
             reader.readAsArrayBuffer(file);
         });
 
-        renderTabla();
+        loadInventario();
     })();
