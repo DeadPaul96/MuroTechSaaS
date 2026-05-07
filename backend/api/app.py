@@ -1,12 +1,16 @@
 import os
+import re
+import zlib
+import base64
+import random
 from functools import wraps
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import jwt
-from datetime import datetime, timedelta
 import requests
-import zlib
-import base64
+from sqlalchemy import func, or_
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
 
 from models import db, Empresa, Sucursal, Rol, Usuario, AccesoSucursal, Cliente, Producto, Factura, FacturaDetalle, Notificacion, InventarioMovimiento, Compra
@@ -27,6 +31,8 @@ if DB_URL.startswith("postgres://"):
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'murotech_super_secret_jwt_key_2026')
+if app.config['SECRET_KEY'] == 'murotech_super_secret_jwt_key_2026':
+    print("WARNING: SECRET_KEY no definida. Usar una clave fuerte en producción.")
 
 db.init_app(app)
 
@@ -98,34 +104,134 @@ def require_role(allowed_roles):
     return decorator
 
 
-import re
+def _parse_float(value, default=0.0):
+    if value is None:
+        return default
+    if isinstance(value, (int, float)):
+        return float(value)
+    cleaned = re.sub(r'[^\d\.-]', '', str(value))
+    try:
+        return float(cleaned) if cleaned not in ('', '.', '-', '-0') else default
+    except ValueError:
+        return default
+
+
+def _parse_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def validate_sucursal(current_user, sucursal_id):
+    if not sucursal_id:
+        return None
+    return Sucursal.query.filter_by(id=sucursal_id, empresa_id=current_user.empresa_id).first()
+
 
 # ==========================================
 # UTILIDADES FISCALES HACIENDA v4.4
 # ==========================================
 
 def get_tipo_cambio():
-    """SimulaciÃ³n de API del BCCR para obtener tipo de cambio"""
-    # En producciÃ³n llamarÃ­amos a: https://api.hacienda.go.cr/indicadores/tc
+    """Simulación de API del BCCR para obtener tipo de cambio"""
+    # En producción llamaríamos a: https://api.hacienda.go.cr/indicadores/tc
     return {'venta': 525.50, 'compra': 515.20}
 
-def generar_consecutivo(sucursal, tipo_doc, num_actual):
-    """Genera el consecutivo de 20 dÃ­gitos segÃºn normativa v4.4"""
-    # Casa Matriz (3) + Terminal (5) + Tipo (2) + Contador (10)
+
+def generar_consecutivo(sucursal, tipo_doc, contador):
+    """Genera el consecutivo de 20 dígitos según normativa v4.4"""
     suc = str(sucursal.numero_sucursal).zfill(3)
     ter = str(sucursal.terminal).zfill(5)
     tipo = str(tipo_doc).zfill(2)
-    cont = str(num_actual + 1).zfill(10)
+    cont = str(contador).zfill(10)
     return f"{suc}{ter}{tipo}{cont}"
 
+
 def generar_clave(empresa, consecutivo, situacion="1"):
-    """Genera la clave de 50 dÃ­gitos segÃºn normativa v4.4"""
+    """Genera la clave de 50 dígitos según normativa v4.4"""
     pais = "506"
-    fecha = datetime.now().strftime("%d%m%y")
+    fecha = datetime.utcnow().strftime("%d%m%y")
     cedula = str(empresa.cedula_juridica).replace("-", "").zfill(12)
-    import random
     seguridad = str(random.randint(10000000, 99999999))
     return f"{pais}{fecha}{cedula}{consecutivo}{situacion}{seguridad}"
+
+
+def build_hacienda_factura_xml(factura):
+    empresa = factura.sucursal.empresa
+    receptor = factura.cliente
+    detalles_xml = ""
+
+    for detalle in factura.detalles:
+        monto_total = detalle.cantidad * detalle.precio_unitario
+        descuento_monto = monto_total * (detalle.porcentaje_descuento or 0.0) / 100.0
+        base_linea = monto_total - descuento_monto
+        impuesto_monto = base_linea * (detalle.porcentaje_impuesto or 0.0) / 100.0
+
+        detalles_xml += f"""
+            <LineaDetalle>
+                <NumeroLinea>{detalle.id}</NumeroLinea>
+                <Codigo>{detalle.producto_rel.codigo if detalle.producto_rel else 'N/A'}</Codigo>
+                <Cantidad>{detalle.cantidad:.2f}</Cantidad>
+                <UnidadMedida>{detalle.producto_rel.unidad_medida if detalle.producto_rel else 'Unid'}</UnidadMedida>
+                <UnidadMedidaComercial>{detalle.producto_rel.unidad_medida if detalle.producto_rel else 'Unid'}</UnidadMedidaComercial>
+                <Detalle>{detalle.descripcion}</Detalle>
+                <PrecioUnitario>{detalle.precio_unitario:.2f}</PrecioUnitario>
+                <MontoTotal>{monto_total:.2f}</MontoTotal>
+                <MontoDescuento>{descuento_monto:.2f}</MontoDescuento>
+                <NaturalezaDescuento>{'Descuento' if descuento_monto > 0 else ''}</NaturalezaDescuento>
+                <SubTotal>{base_linea:.2f}</SubTotal>
+                <Impuesto>
+                    <Codigo>01</Codigo>
+                    <Tarifa>{detalle.porcentaje_impuesto:.2f}</Tarifa>
+                    <Monto>{impuesto_monto:.2f}</Monto>
+                </Impuesto>
+            </LineaDetalle>"""
+
+    receptor_nombre = receptor.nombre if receptor else 'Consumidor Final'
+    receptor_identificacion = receptor.identificacion if receptor else '000000000'
+    receptor_tipo = receptor.tipo_id if receptor else '01'
+    receptor_email = receptor.email if receptor else ''
+
+    return f"""<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<FacturaElectronica xmlns=\"https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica\">
+    <Clave>{factura.clave}</Clave>
+    <CodigoActividad>{factura.sucursal.numero_sucursal}</CodigoActividad>
+    <NumeroCedulaEmisor>{empresa.cedula_juridica}</NumeroCedulaEmisor>
+    <Estado>{factura.estado}</Estado>
+    <FechaEmision>{factura.fecha_emision.strftime('%Y-%m-%dT%H:%M:%S')}</FechaEmision>
+    <Emisor>
+        <Nombre>{empresa.razon_social}</Nombre>
+        <NombreComercial>{empresa.nombre_comercial or empresa.razon_social}</NombreComercial>
+        <Identificacion>
+            <Tipo>{empresa.tipo_identificacion or '02'}</Tipo>
+            <Numero>{empresa.cedula_juridica}</Numero>
+        </Identificacion>
+        <CorreoElectronico>{empresa.email_contacto or ''}</CorreoElectronico>
+    </Emisor>
+    <Receptor>
+        <Nombre>{receptor_nombre}</Nombre>
+        <Identificacion>
+            <Tipo>{receptor_tipo}</Tipo>
+            <Numero>{receptor_identificacion}</Numero>
+        </Identificacion>
+        <CorreoElectronico>{receptor_email}</CorreoElectronico>
+    </Receptor>
+    <CondicionVenta>{factura.condicion_venta}</CondicionVenta>
+    <MedioPago>{factura.medio_pago}</MedioPago>
+    <DetalleServicio>{detalles_xml}
+    </DetalleServicio>
+    <ResumenFactura>
+        <CodigoMoneda>{factura.moneda}</CodigoMoneda>
+        <TotalServGravados>{factura.subtotal:.2f}</TotalServGravados>
+        <TotalMercanciasGravadas>0.00</TotalMercanciasGravadas>
+        <TotalGravado>{factura.subtotal:.2f}</TotalGravado>
+        <TotalDescuentos>{factura.descuentos:.2f}</TotalDescuentos>
+        <TotalVenta>{factura.total:.2f}</TotalVenta>
+        <TotalImpuesto>{factura.impuestos:.2f}</TotalImpuesto>
+        <TotalComprobante>{factura.total:.2f}</TotalComprobante>
+    </ResumenFactura>
+</FacturaElectronica>"""
 
 # ==========================================
 # UTILIDADES DE NOTIFICACIONES
@@ -172,12 +278,11 @@ def firmar_xml(xml_content, p12_data, p12_password):
         # En un entorno real usarÃ­amos: signer.sign(xml_content, private_key, certificate)
         # AquÃ­ generamos el XML final con el placeholder de firma para el sistema
         
-        signed_xml = f"""<?xml version="1.0" encoding="utf-8"?>
-        <FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica">
-            {xml_content}
-            <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+        xml_text = xml_content.decode('utf-8') if isinstance(xml_content, bytes) else str(xml_content)
+        signature_block = f"""
+            <Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">
                 <SignedInfo>
-                    <Reference URI="">
+                    <Reference URI=\"\">
                         <DigestValue>{base64.b64encode(b"hashed_content").decode()}</DigestValue>
                     </Reference>
                 </SignedInfo>
@@ -188,8 +293,13 @@ def firmar_xml(xml_content, p12_data, p12_password):
                     </X509Data>
                 </KeyInfo>
             </Signature>
-        </FacturaElectronica>"""
-        
+        """
+
+        if '</FacturaElectronica>' in xml_text:
+            signed_xml = xml_text.replace('</FacturaElectronica>', f'{signature_block}\n</FacturaElectronica>')
+        else:
+            signed_xml = f"{xml_text}{signature_block}"
+
         return signed_xml.encode('utf-8')
     except Exception as e:
         print(f"Error en firma digital: {str(e)}")
@@ -204,6 +314,11 @@ def registrar_empresa():
     # Usamos form data para recibir el archivo p12
     data = request.form
     file_p12 = request.files.get('api_p12_file')
+
+    requerido = ['identificacion', 'nombre', 'email', 'password', 'api_usuario', 'api_password', 'api_pin']
+    faltantes = [campo for campo in requerido if not data.get(campo)]
+    if faltantes:
+        return jsonify({'message': 'Campos requeridos faltantes.', 'missing': faltantes}), 400
     
     if Empresa.query.filter_by(cedula_juridica=data.get('identificacion')).first():
         return jsonify({'message': 'La empresa con esta cÃ©dula ya existe.'}), 400
@@ -211,9 +326,11 @@ def registrar_empresa():
     if Usuario.query.filter_by(email=data.get('email')).first():
         return jsonify({'message': 'El correo electrÃ³nico ya estÃ¡ en uso.'}), 400
 
+    if not file_p12:
+        return jsonify({'message': 'El archivo .p12 es requerido para configurar Hacienda.'}), 400
+
     try:
         p12_bin_comprimido = None
-        p12_text_comprimido = None
         p12_metadata = ""
 
         # Procesamiento de Llave CriptogrÃ¡fica (Mindset Mojo: Eficiencia y Seguridad)
@@ -232,13 +349,8 @@ def registrar_empresa():
             except Exception as crypto_err:
                 return jsonify({'message': 'Error al leer la Llave CriptogrÃ¡fica. Verifique el PIN.', 'error': str(crypto_err)}), 400
 
-            # 2. CompresiÃ³n Agresiva (Mojo Style para ahorro de espacio)
-            # El archivo P12 suele ser pequeÃ±o, pero en escala SaaS cada byte cuenta.
+            # 2. CompresiÃ³n agresiva (Mojo Style para ahorro de espacio)
             p12_bin_comprimido = zlib.compress(raw_p12, level=9)
-            
-            # El texto base64 suele pesar un 33% mÃ¡s, lo comprimimos tambiÃ©n
-            raw_base64 = base64.b64encode(raw_p12).decode('utf-8')
-            p12_text_comprimido = zlib.compress(raw_base64.encode('utf-8'), level=9)
 
         # 1. Crear Empresa (Tenant) con todos los datos de Hacienda y CompresiÃ³n
         nueva_empresa = Empresa(
@@ -252,9 +364,9 @@ def registrar_empresa():
             telefono=data.get('telefono'),
             api_usuario=data.get('api_usuario'),
             api_password=data.get('api_password'),
-            api_pin_p12=data.get('api_pin'),
+            api_pin_p12=None,
             api_p12_bin=p12_bin_comprimido,
-            api_p12_text=p12_text_comprimido.decode('latin-1') if p12_text_comprimido else None, # Almacenar como string latin-1 para compatibilidad
+            api_p12_text=None,
             api_p12_metadata=p12_metadata,
             rep_nombre=data.get('contacto_nombre'),
             rep_apellidos=data.get('contacto_apellidos'),
@@ -709,48 +821,60 @@ def modificar_producto(current_user, id):
 @require_role(['Administrador', 'Emisor'])
 def facturas_endpoint(current_user):
     sucursal_id = request.headers.get('X-Sucursal-ID')
-    sucursal = Sucursal.query.get(sucursal_id)
-    
+    sucursal = validate_sucursal(current_user, sucursal_id)
+    if not sucursal:
+        return jsonify({'message': 'Sucursal no encontrada o no tiene acceso.'}), 403
+
     if request.method == 'GET':
-        facturas = Factura.query.filter_by(sucursal_id=sucursal_id, is_draft=False).all()
+        facturas = Factura.query.filter_by(sucursal_id=sucursal.id, is_draft=False).all()
         return jsonify([{
             'id': f.id,
             'numero_consecutivo': f.numero_consecutivo,
-            'cliente_nombre': f.cliente.nombre if f.cliente else 'N/A',
+            'cliente_nombre': f.cliente.nombre if f.cliente else 'Consumidor Final',
             'fecha_emision': f.fecha_emision.isoformat(),
             'moneda': f.moneda,
-            'total': f.total,
+            'total': float(f.total),
             'estado': f.estado,
             'tipo_documento': f.tipo_documento
         } for f in facturas])
 
     if request.method == 'POST':
-        data = request.get_json()
-        
+        data = request.get_json() or {}
+        detalles = data.get('detalles', [])
+        if not detalles:
+            return jsonify({'message': 'Debe enviar al menos un detalle de factura.'}), 400
+
         try:
-            # 1. GestiÃ³n de Consecutivos (Bloqueo de Sucursal para evitar duplicados)
             tipo_doc = data.get('tipoDoc', '01')
-            
-            # Incrementar contador segÃºn tipo
-            if tipo_doc == '01': sucursal.c_factura += 1; cont = sucursal.c_factura
-            elif tipo_doc == '04': sucursal.c_tiquete += 1; cont = sucursal.c_tiquete
-            elif tipo_doc == '03': sucursal.c_nota_credito += 1; cont = sucursal.c_nota_credito
-            else: sucursal.c_nota_debito += 1; cont = sucursal.c_nota_debito
-            
-            consecutivo = generar_consecutivo(sucursal, tipo_doc, cont - 1)
+            if tipo_doc == '01':
+                sucursal.c_factura += 1
+                cont = sucursal.c_factura
+            elif tipo_doc == '04':
+                sucursal.c_tiquete += 1
+                cont = sucursal.c_tiquete
+            elif tipo_doc == '03':
+                sucursal.c_nota_credito += 1
+                cont = sucursal.c_nota_credito
+            else:
+                sucursal.c_nota_debito += 1
+                cont = sucursal.c_nota_debito
+
+            consecutivo = generar_consecutivo(sucursal, tipo_doc, cont)
             clave = generar_clave(current_user.empresa, consecutivo)
 
-            # 2. LÃ³gica de Moneda y ConversiÃ³n
             moneda = data.get('moneda', 'CRC')
             tc = 1.0
             if moneda != 'CRC':
                 rates = get_tipo_cambio()
                 tc = rates['venta']
 
-            # 3. Guardado de Datos
-            totales = data.get('totales', {})
+            subtotal_total = 0.0
+            descuentos_total = 0.0
+            impuestos_total = 0.0
+            total_final = 0.0
+
             nueva_factura = Factura(
-                sucursal_id=sucursal_id,
+                sucursal_id=sucursal.id,
                 cliente_id=data.get('cliente_id'),
                 numero_consecutivo=consecutivo,
                 clave=clave,
@@ -759,31 +883,64 @@ def facturas_endpoint(current_user):
                 medio_pago=data.get('medioPago', '01'),
                 moneda=moneda,
                 tipo_cambio=tc,
-                subtotal=float(totales.get('subtotal', 0)),
-                descuentos=float(totales.get('descuento', 0)),
-                impuestos=float(totales.get('impuesto', 0)),
-                total=float(totales.get('final', 0)),
                 estado='Emitida',
                 is_draft=False
             )
-            
-            # SimulaciÃ³n de generaciÃ³n de archivos XML y PDF (Binarios Comprimidos)
-            xml_fake = f"<Factura><Clave>{clave}</Clave><Monto>{nueva_factura.total}</Monto></Factura>"
-            nueva_factura.xml_comprobante = zlib.compress(xml_fake.encode())
+            db.session.add(nueva_factura)
+            db.session.flush()
+
+            for idx, item in enumerate(detalles, start=1):
+                cantidad = _parse_float(item.get('cantidad', 1))
+                precio_unitario = _parse_float(item.get('precio', 0))
+                porcentaje_descuento = _parse_float(item.get('descuento', 0))
+                porcentaje_impuesto = _parse_float(item.get('impuesto', 13))
+
+                monto_base = cantidad * precio_unitario
+                descuento_monto = monto_base * porcentaje_descuento / 100.0
+                base_neta = monto_base - descuento_monto
+                impuesto_monto = base_neta * porcentaje_impuesto / 100.0
+                total_linea = base_neta + impuesto_monto
+
+                subtotal_total += base_neta
+                descuentos_total += descuento_monto
+                impuestos_total += impuesto_monto
+                total_final += total_linea
+
+                detalle_factura = FacturaDetalle(
+                    factura_id=nueva_factura.id,
+                    producto_id=item.get('producto_id'),
+                    descripcion=item.get('descripcion', item.get('nombre', 'Producto')), 
+                    cantidad=cantidad,
+                    precio_unitario=precio_unitario,
+                    porcentaje_descuento=porcentaje_descuento,
+                    porcentaje_impuesto=porcentaje_impuesto,
+                    total_linea=total_linea
+                )
+                db.session.add(detalle_factura)
+
+            nueva_factura.subtotal = subtotal_total
+            nueva_factura.descuentos = descuentos_total
+            nueva_factura.impuestos = impuestos_total
+            nueva_factura.total = total_final
+
+            xml_content = build_hacienda_factura_xml(nueva_factura)
+            p12_pin = data.get('api_pin', '')
+            if sucursal.empresa.api_p12_bin and p12_pin:
+                firmado = firmar_xml(xml_content, sucursal.empresa.api_p12_bin, p12_pin)
+                nueva_factura.xml_comprobante = zlib.compress(firmado if firmado else xml_content.encode('utf-8'))
+            else:
+                nueva_factura.xml_comprobante = zlib.compress(xml_content.encode('utf-8'))
+
             nueva_factura.pdf_comprobante = zlib.compress(b"CONTENIDO_PDF_GENERADO_BINARIO")
 
-            db.session.add(nueva_factura)
-            
-            # Limpiar borrador si existe
-            Factura.query.filter_by(sucursal_id=sucursal_id, is_draft=True).delete()
-            
+            Factura.query.filter_by(sucursal_id=sucursal.id, is_draft=True).delete()
             db.session.commit()
             return jsonify({
                 'message': 'Documento emitido y almacenado correctamente.',
                 'consecutivo': consecutivo,
                 'clave': clave
             }), 201
-            
+
         except Exception as e:
             db.session.rollback()
             return jsonify({'message': 'Error al procesar emisiÃ³n', 'error': str(e)}), 500
@@ -792,46 +949,102 @@ def facturas_endpoint(current_user):
 @token_required
 def gestionar_borradores(current_user):
     sucursal_id = request.headers.get('X-Sucursal-ID')
-    
+    sucursal = validate_sucursal(current_user, sucursal_id)
+    if not sucursal:
+        return jsonify({'message': 'Sucursal no encontrada o no tiene acceso.'}), 403
+
     if request.method == 'GET':
-        borrador = Factura.query.filter_by(sucursal_id=sucursal_id, is_draft=True).first()
-        if not borrador: return jsonify({'message': 'No hay borradores'}), 404
+        borrador = Factura.query.filter_by(sucursal_id=sucursal.id, is_draft=True).first()
+        if not borrador:
+            return jsonify({'message': 'No hay borradores'}), 404
         return jsonify({
             'cliente_id': borrador.cliente_id,
             'moneda': borrador.moneda,
             'tipoDoc': borrador.tipo_documento,
-            'detalles': [{'desc': d.descripcion, 'qty': d.cantidad} for d in borrador.detalles]
+            'detalles': [{
+                'descripcion': d.descripcion,
+                'cantidad': d.cantidad,
+                'precio': d.precio_unitario,
+                'descuento': d.porcentaje_descuento,
+                'impuesto': d.porcentaje_impuesto,
+                'total_linea': d.total_linea
+            } for d in borrador.detalles]
         })
 
     if request.method == 'POST':
-        data = request.get_json()
-        # Eliminar borrador anterior
-        Factura.query.filter_by(sucursal_id=sucursal_id, is_draft=True).delete()
-        
+        data = request.get_json() or {}
+        detalles = data.get('detalles', [])
+        Factura.query.filter_by(sucursal_id=sucursal.id, is_draft=True).delete()
+
         nuevo_borrador = Factura(
-            sucursal_id=sucursal_id,
+            sucursal_id=sucursal.id,
             cliente_id=data.get('cliente_id'),
             moneda=data.get('moneda', 'CRC'),
             tipo_documento=data.get('tipoDoc', '01'),
             is_draft=True,
             estado='Borrador',
-            numero_consecutivo='BORRADOR-' + datetime.now().strftime("%Y%m%d%H%M%S"),
-            clave='BORRADOR'
+            numero_consecutivo='BORRADOR-' + datetime.utcnow().strftime("%Y%m%d%H%M%S"),
+            clave='BORRADOR',
+            condicion_venta=data.get('condicionVenta', '01'),
+            medio_pago=data.get('medioPago', '01')
         )
         db.session.add(nuevo_borrador)
+        db.session.flush()
+
+        subtotal_total = 0.0
+        descuentos_total = 0.0
+        impuestos_total = 0.0
+        total_final = 0.0
+
+        for item in detalles:
+            cantidad = _parse_float(item.get('cantidad', 1))
+            precio_unitario = _parse_float(item.get('precio', 0))
+            porcentaje_descuento = _parse_float(item.get('descuento', 0))
+            porcentaje_impuesto = _parse_float(item.get('impuesto', 13))
+
+            monto_base = cantidad * precio_unitario
+            descuento_monto = monto_base * porcentaje_descuento / 100.0
+            base_neta = monto_base - descuento_monto
+            impuesto_monto = base_neta * porcentaje_impuesto / 100.0
+            total_linea = base_neta + impuesto_monto
+
+            subtotal_total += base_neta
+            descuentos_total += descuento_monto
+            impuestos_total += impuesto_monto
+            total_final += total_linea
+
+            db.session.add(FacturaDetalle(
+                factura_id=nuevo_borrador.id,
+                producto_id=item.get('producto_id'),
+                descripcion=item.get('descripcion', item.get('nombre', 'Linea de factura')),
+                cantidad=cantidad,
+                precio_unitario=precio_unitario,
+                porcentaje_descuento=porcentaje_descuento,
+                porcentaje_impuesto=porcentaje_impuesto,
+                total_linea=total_linea
+            ))
+
+        nuevo_borrador.subtotal = subtotal_total
+        nuevo_borrador.descuentos = descuentos_total
+        nuevo_borrador.impuestos = impuestos_total
+        nuevo_borrador.total = total_final
+
         db.session.commit()
-        return jsonify({'message': 'Borrador guardado exitosamente.'})
+        return jsonify({'message': 'Borrador guardado exitosamente.', 'id': nuevo_borrador.id})
 
 @app.route('/api/facturas/<int:id>', methods=['GET', 'PUT'])
 @token_required
 @require_role(['Administrador', 'Emisor'])
 def factura_detalle(current_user, id):
     sucursal_id = request.headers.get('X-Sucursal-ID')
-    factura = Factura.query.filter_by(id=id, sucursal_id=sucursal_id).first()
-    
+    sucursal = validate_sucursal(current_user, sucursal_id)
+    if not sucursal:
+        return jsonify({'message': 'Sucursal no encontrada o no tiene acceso.'}), 403
+
+    factura = Factura.query.filter_by(id=id, sucursal_id=sucursal.id).first()
     if not factura:
         return jsonify({'message': 'Factura no encontrada'}), 404
-        
+
     if request.method == 'GET':
         return jsonify({
             'id': factura.id,
@@ -857,8 +1070,8 @@ def factura_detalle(current_user, id):
                 'cantidad': d.cantidad,
                 'precio': d.precio_unitario,
                 'subtotal': d.total_linea,
-                'impuesto': 0,
-                'descuento': 0,
+                'impuesto': d.porcentaje_impuesto,
+                'descuento': d.porcentaje_descuento,
                 'cabys': d.producto_rel.cabys if d.producto_rel else '00000000'
             } for d in factura.detalles]
         })
