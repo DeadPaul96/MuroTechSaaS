@@ -25,7 +25,8 @@
                 renderTabla(clientes);
                 actualizarBadge();
             } catch (err) {
-                showError('Error al cargar clientes desde el servidor.');
+                console.error("DEBUG FETCH:", err);
+                showError('Error: ' + err.message);
             } finally {
                 showLoading(false);
             }
