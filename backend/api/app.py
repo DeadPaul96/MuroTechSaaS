@@ -472,6 +472,9 @@ def login():
         for acc in usuario.accesos:
             accesos.append({'sucursal_id': acc.sucursal_id, 'nombre': acc.sucursal.nombre, 'rol': acc.rol.nombre})
 
+    if not accesos and not usuario.is_superadmin:
+        return jsonify({'message': 'Usuario sin acceso a sucursales. Contacte al administrador.'}), 403
+
     return jsonify({
         'token': token,
         'user': {
@@ -536,39 +539,56 @@ def gestionar_usuarios(current_user):
         return jsonify(result)
         
     if request.method == 'POST':
-        data = request.get_json()
+        data = request.get_json() or {}
+        
+        if not data.get('email') or not data.get('password') or not data.get('nombre'):
+            return jsonify({'message': 'Email, nombre y contraseña son requeridos.'}), 400
+        
         if Usuario.query.filter_by(email=data.get('email')).first():
             return jsonify({'message': 'Email ya en uso.'}), 400
-            
+        
+        sucursal = Sucursal.query.filter_by(empresa_id=current_user.empresa_id).first()
+        if not sucursal:
+            return jsonify({'message': 'No hay sucursales configuradas. Contacte al administrador.'}), 400
+
         nuevo_user = Usuario(
             empresa_id=current_user.empresa_id,
             nombre=data.get('nombre'),
             email=data.get('email'),
             is_superadmin=False,
-            pantallas_asignadas=','.join(data.get('pantallas', ['facturacion', 'inventario']))
+            pantallas_asignadas=','.join(data.get('pantallas', ['facturacion', 'inventario'])),
+            is_active=True
         )
         nuevo_user.set_password(data.get('password'))
         db.session.add(nuevo_user)
         db.session.flush()
         
-        # Asignar rol en la sucursal (por defecto la primera sucursal)
-        sucursal = Sucursal.query.filter_by(empresa_id=current_user.empresa_id).first()
-        rol_nombre = data.get('rol', 'Emisor') # Si no viene rol, Emisor por defecto
-        # Mapeo simple de roles de la interfaz a BD
+        rol_nombre = data.get('rol', 'Emisor')
         map_roles = {'admin': 'Administrador', 'user': 'Emisor', 'viewer': 'Auditor'}
         rol_final = map_roles.get(rol_nombre, 'Emisor')
         
         rol_db = Rol.query.filter_by(nombre=rol_final).first()
-        if sucursal and rol_db:
-            acc = AccesoSucursal(
-                usuario_id=nuevo_user.id,
-                sucursal_id=sucursal.id,
-                rol_id=rol_db.id
-            )
-            db.session.add(acc)
-            
+        if not rol_db:
+            return jsonify({'message': f'Rol {rol_final} no configurado en el sistema.'}), 400
+
+        acc = AccesoSucursal(
+            usuario_id=nuevo_user.id,
+            sucursal_id=sucursal.id,
+            rol_id=rol_db.id
+        )
+        db.session.add(acc)
         db.session.commit()
-        return jsonify({'message': 'Usuario creado exitosamente.'}), 201
+        
+        return jsonify({
+            'message': 'Usuario creado exitosamente.',
+            'usuario': {
+                'id': nuevo_user.id,
+                'nombre': nuevo_user.nombre,
+                'email': nuevo_user.email,
+                'rol': rol_final,
+                'sucursal': sucursal.nombre
+            }
+        }), 201
 
 
 
