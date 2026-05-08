@@ -436,25 +436,17 @@
                 status.style.color = '#10b981';
             }
         } catch (err) {
-            console.warn('SyncRates API falló, usando fallback:', err);
+            console.warn('SyncRates API falló:', err);
             const elUsdVenta = document.getElementById('fx-usd-venta');
             const elEurValor = document.getElementById('fx-eur-valor');
-            const elUsdFecha = document.getElementById('fx-usd-fecha');
-            const elEurFecha = document.getElementById('fx-eur-fecha');
-            
-            // Fallback premium
-            currentRates = { usd: 460.89, eur: 541.64 };
-            const fmtRate = (val) => '₡' + Number(val).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            
-            if (elUsdVenta) elUsdVenta.textContent = fmtRate(currentRates.usd);
-            if (elEurValor) elEurValor.textContent = fmtRate(currentRates.eur);
-            if (elUsdFecha) elUsdFecha.textContent = '--/--/--';
-            if (elEurFecha) elEurFecha.textContent = '--/--/--';
+            if (elUsdVenta) elUsdVenta.textContent = 'No disponible';
+            if (elEurValor) elEurValor.textContent = 'No disponible';
 
             if (status) {
-                status.innerHTML = '<i class="fas fa-history"></i> MODO OFFLINE';
-                status.style.background = '#fffbeb';
-                status.style.color = '#d97706';
+                status.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR API';
+                status.style.background = '#fef2f2';
+                status.style.color = '#ef4444';
+                status.style.border = 'none';
             }
         }
     }
@@ -566,11 +558,11 @@
         } catch (e) {
             console.error('Error syncTime:', e);
             if (statusEl) {
-                statusEl.innerHTML = `<i class="fas fa-history"></i> MODO OFFLINE`;
-                statusEl.style.color = '#d97706';
-                statusEl.style.background = 'transparent';
+                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ERROR API`;
+                statusEl.style.color = '#ef4444';
+                statusEl.style.background = '#fef2f2';
             }
-            if (dot) dot.style.background = '#f59e0b';
+            if (dot) dot.style.background = '#ef4444';
         }
     }
 
@@ -585,12 +577,8 @@
                 return res.consecutivo;
             }
         } catch (err) {
-            console.warn('Error al obtener consecutivo, usando fallback:', err);
-            // Fallback Premium
-            let tipo = selectTipo.value || '01';
-            let mockCons = `00100001${tipo}0000000100`;
-            display.innerText = mockCons;
-            return mockCons;
+            console.error('Error al obtener consecutivo:', err);
+            display.innerText = 'No disponible';
         }
         return null;
     }
