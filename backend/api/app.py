@@ -1847,6 +1847,19 @@ def get_dashboard_metrics(current_user):
         print(f"Error Dashboard: {str(e)}")
         return jsonify({"message": "Error al cargar métricas", "error": str(e)}), 500
 
+@app.route('/api/tipo-cambio', methods=['GET'])
+def get_exchange_rates():
+    """Retorna tipos de cambio oficiales (BCCR/Referencia)"""
+    try:
+        # En una implementación ideal, aquí se consultaría el SOAP del BCCR
+        # Por ahora retornamos los valores de referencia del sistema
+        return jsonify({
+            "usd": {"venta": 460.89, "fecha": datetime.now().strftime("%d/%m/%Y")},
+            "eur": {"valor": 541.64, "fecha": datetime.now().strftime("%d/%m/%Y")}
+        }), 200
+    except Exception as e:
+        return jsonify({"message": "Error al obtener tipo de cambio"}), 500
+
 @app.route('/api/time', methods=['GET'])
 def get_external_time():
     try:

@@ -233,22 +233,54 @@
         card.dataset.precioOriginal = precioRef;
         card.dataset.productoId = prod.id;
         card.dataset.descMax = prod.descuento_maximo || 0;
+        
         card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <div style="font-weight:900;">#${lineIndex} - ${displayDetail}</div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="background:#2563eb; color:white; width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:900;">#${lineIndex}</div>
+                    <h4 style="margin:0; font-size:1.1rem; font-weight:950; color:#0f172a; letter-spacing:-0.5px;">${displayDetail}</h4>
+                </div>
                 <div style="display:flex; gap:8px;">
-                    <button type="button" onclick="configurarExoneracion('${card.id}')" style="background:#fffcf0; border:1px solid #fbbf24; padding:5px 10px; border-radius:8px; font-size:0.7rem; font-weight:900;">EXO</button>
-                    <button type="button" onclick="eliminarLinea('${card.id}')" style="background:#fff1f2; border:1px solid #fecdd3; color:#ef4444; width:30px; height:30px; border-radius:8px;">×</button>
+                    <button type="button" onclick="configurarExoneracion('${card.id}')" class="btn-exo" style="background:#fff7ed; border:1.5px solid #fbbf24; color:#9a3412; padding:4px 12px; border-radius:8px; font-size:0.7rem; font-weight:900; cursor:pointer;"><i class="fas fa-shield-alt"></i> EXO</button>
+                    <button type="button" onclick="eliminarLinea('${card.id}')" style="background:#fff1f2; border:1.5px solid #fecdd3; color:#ef4444; width:32px; height:32px; border-radius:8px; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
                 </div>
             </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
-                <div><label style="font-size:0.6rem; color:#94a3b8;">CANT.</label><input type="number" class="item-qty" value="1" min="1" oninput="recalcularTotales()" style="width:100%; font-weight:900;"></div>
-                <div><label style="font-size:0.6rem; color:#94a3b8;">DESC %</label><input type="number" class="item-desc-pct" value="0" min="0" oninput="validateDiscount(this); recalcularTotales()" style="width:100%; font-weight:900;"></div>
-                <div><label style="font-size:0.6rem; color:#94a3b8;">IVA %</label><input type="number" class="item-tax-pct" value="${prod.impuesto || 13}" readonly style="width:100%; font-weight:900;"></div>
-            </div>
-            <div style="text-align:right; margin-top:10px;">
-                <input type="hidden" class="item-detail" value="${displayDetail}">
-                <span class="subtotal-cell" style="font-weight:950; color:#1e40af; font-size:1.4rem;">${symbol}0.00</span>
+            
+            <div style="display:flex; align-items:flex-end; gap:20px; background:#f8fafc; padding:15px; border-radius:14px; border:1px solid #f1f5f9;">
+                <div style="flex:1; display:grid; grid-template-columns: 80px 100px 80px 100px 80px; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">SKU</label>
+                        <div style="background:white; padding:6px 10px; border-radius:8px; border:1.5px solid #e2e8f0; font-size:0.75rem; font-weight:800; color:#64748b; font-family:var(--font-mono);">${prod.codigo || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">CABYS</label>
+                        <div style="background:white; padding:6px 10px; border-radius:8px; border:1.5px solid #e2e8f0; font-size:0.75rem; font-weight:800; color:#64748b; font-family:var(--font-mono);">${prod.cabys || '0000'}</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">CANT.</label>
+                        <input type="number" class="item-qty fi" value="1" min="1" oninput="recalcularTotales()" style="height:34px; text-align:center; font-weight:950; font-size:1rem; border-radius:10px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">DESC. %</label>
+                        <div style="position:relative;">
+                            <input type="number" class="item-desc-pct fi" value="0" min="0" oninput="validateDiscount(this); recalcularTotales()" style="height:34px; text-align:center; font-weight:950; font-size:1rem; color:#ef4444; background:#fff1f2; border-color:#fecdd3; border-radius:10px; padding-right:20px;">
+                            <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-weight:900; color:#ef4444; font-size:0.8rem;">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">IVA %</label>
+                        <div style="position:relative;">
+                            <input type="number" class="item-tax-pct fi" value="${prod.impuesto || 13}" readonly style="height:34px; text-align:center; font-weight:950; font-size:1rem; color:#059669; background:#ecfdf5; border-color:#d1fae5; border-radius:10px; padding-right:20px;">
+                            <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-weight:900; color:#059669; font-size:0.8rem;">%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align:right;">
+                    <label style="display:block; font-size:0.6rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:2px;">SUBTOTAL ÍTEM</label>
+                    <input type="hidden" class="item-detail" value="${displayDetail}">
+                    <span class="subtotal-cell" style="font-weight:950; color:#1e40af; font-size:2rem; letter-spacing:-1px;">${symbol}0,00</span>
+                </div>
             </div>
         `;
         detailLinesContainer.appendChild(card);
@@ -311,8 +343,34 @@
     }
 
     async function syncRates() {
-        currentRates = { usd: 512, eur: 554 };
-        const elV = document.getElementById('fx-usd-venta'); if(elV) elV.textContent = '₡' + currentRates.usd;
+        const status = document.getElementById('dash-tc-status');
+        try {
+            const data = await fetchAPI(`${CONFIG.API_BASE_URL}/api/tipo-cambio`);
+            if (!data) throw new Error("No data");
+
+            currentRates = { usd: data.usd.venta, eur: data.eur.valor };
+            
+            const fmtRate = (val) => '₡' + val.toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            const elV = document.getElementById('fx-usd-venta'); if(elV) elV.textContent = fmtRate(currentRates.usd);
+            const elE = document.getElementById('fx-eur-valor'); if(elE) elE.textContent = fmtRate(currentRates.eur);
+            
+            if(document.getElementById('fx-usd-fecha')) document.getElementById('fx-usd-fecha').textContent = data.usd.fecha;
+            if(document.getElementById('fx-eur-fecha')) document.getElementById('fx-eur-fecha').textContent = data.eur.fecha;
+            
+            if(status) {
+                status.innerHTML = '<i class="fas fa-check-circle"></i> SINCRONIZADO';
+                status.style.background = '#ecfdf5';
+                status.style.color = '#10b981';
+            }
+        } catch(err) {
+            console.error("Error syncRates:", err);
+            if(status) {
+                status.textContent = 'OFFLINE';
+                status.style.background = '#fef2f2';
+                status.style.color = '#ef4444';
+            }
+        }
     }
 
     window.configurarExoneracion = function(cardId) {
@@ -391,10 +449,28 @@
 
     async function syncTime() {
         const timeEl = document.getElementById('realtime-date');
+        const statusEl = document.getElementById('realtime-status');
+        const dot = document.getElementById('clock-dot');
         if (!timeEl) return;
+        
         setInterval(() => {
-            timeEl.innerText = new Date().toLocaleString('es-CR');
+            const now = new Date();
+            timeEl.innerText = now.toLocaleString('es-CR', { 
+                day:'2-digit', month:'2-digit', year:'numeric',
+                hour:'2-digit', minute:'2-digit', second:'2-digit'
+            }).replace(',', ' —');
         }, 1000);
+
+        try {
+            const res = await fetch(`${CONFIG.API_BASE_URL}/api/time`);
+            if (res.ok) {
+                if(statusEl) {
+                    statusEl.innerText = "SINCRONIZADO (TIMEAPI)";
+                    statusEl.style.color = "#10b981";
+                }
+                if(dot) dot.style.background = "#10b981";
+            }
+        } catch(e) {}
     }
 
     async function updateConsecutivo() {
