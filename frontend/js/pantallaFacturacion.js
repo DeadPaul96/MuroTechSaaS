@@ -161,13 +161,22 @@
                 if (!matches || !matches.length) {
                     dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No se encontraron clientes</div>';
                 } else {
-                    matches.slice(0, 8).forEach(cliente => {
-                        const item = document.createElement('div');
-                        item.className = 'autocomplete-item';
-                        item.innerHTML = `<div><strong>${cliente.nombre}</strong><br><small>${cliente.identificacion}</small></div>`;
-                        item.onclick = () => { window.seleccionarCliente(cliente); closeDropdown(); };
-                        dropdown.appendChild(item);
-                    });
+                    const filtered = matches.filter(c => 
+                        (c.nombre || '').toLowerCase().includes(q) || 
+                        (c.identificacion || '').toLowerCase().includes(q) ||
+                        (c.correo || '').toLowerCase().includes(q)
+                    );
+                    if (filtered.length === 0) {
+                        dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No hay coincidencias exactas</div>';
+                    } else {
+                        filtered.slice(0, 8).forEach(cliente => {
+                            const item = document.createElement('div');
+                            item.className = 'autocomplete-item';
+                            item.innerHTML = `<div><strong>${cliente.nombre}</strong><br><small>${cliente.identificacion}</small></div>`;
+                            item.onclick = () => { window.seleccionarCliente(cliente); closeDropdown(); };
+                            dropdown.appendChild(item);
+                        });
+                    }
                 }
                 dropdown.style.display = 'block';
             } catch (err) { console.error(err); }
@@ -225,28 +234,40 @@
                 if (!matches || !matches.length) {
                     dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">Sin resultados</div>';
                 } else {
-                    matches.slice(0, 10).forEach(prod => {
-                        const identity = [prod.marca, prod.modelo, prod.caracteristicas].filter(Boolean).join(' ');
-                        const title = identity || prod.nombre || prod.descripcion;
-                        
-                        const item = document.createElement('div');
-                        item.className = 'autocomplete-item';
-                        item.style.display = 'flex';
-                        item.style.justifyContent = 'space-between';
-                        item.innerHTML = `
-                            <div style="flex:1;">
-                                <div style="font-weight:900; color:#0f172a;">${title}</div>
-                                <div style="font-size:0.65rem; color:#94a3b8;">${prod.cabys || '—'}</div>
-                            </div>
-                            <div style="font-weight:900; color:#1e40af;">₡${(prod.precio_venta || prod.precio || 0).toLocaleString()}</div>
-                        `;
-                        item.onclick = () => {
-                            input.value = '';
-                            closeDropdown();
-                            agregarLineaProducto(prod);
-                        };
-                        dropdown.appendChild(item);
-                    });
+                    const filtered = matches.filter(p => 
+                        (p.nombre || p.descripcion || '').toLowerCase().includes(q) || 
+                        (p.cabys || '').toLowerCase().includes(q) ||
+                        (p.codigo || '').toLowerCase().includes(q) ||
+                        (p.marca || '').toLowerCase().includes(q) ||
+                        (p.modelo || '').toLowerCase().includes(q)
+                    );
+                    
+                    if (filtered.length === 0) {
+                        dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No hay coincidencias exactas</div>';
+                    } else {
+                        filtered.slice(0, 10).forEach(prod => {
+                            const identity = [prod.marca, prod.modelo, prod.caracteristicas].filter(Boolean).join(' ');
+                            const title = identity || prod.nombre || prod.descripcion;
+                            
+                            const item = document.createElement('div');
+                            item.className = 'autocomplete-item';
+                            item.style.display = 'flex';
+                            item.style.justifyContent = 'space-between';
+                            item.innerHTML = `
+                                <div style="flex:1;">
+                                    <div style="font-weight:900; color:#0f172a;">${title}</div>
+                                    <div style="font-size:0.65rem; color:#94a3b8;">${prod.cabys || '—'}</div>
+                                </div>
+                                <div style="font-weight:900; color:#1e40af;">₡${(prod.precio_venta || prod.precio || 0).toLocaleString()}</div>
+                            `;
+                            item.onclick = () => {
+                                input.value = '';
+                                closeDropdown();
+                                agregarLineaProducto(prod);
+                            };
+                            dropdown.appendChild(item);
+                        });
+                    }
                 }
                 dropdown.style.display = 'block';
             } catch (err) { console.error(err); }
