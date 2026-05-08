@@ -16,7 +16,8 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from models import db, Empresa, Sucursal, Rol, Usuario, AccesoSucursal, Cliente, Producto, Factura, FacturaDetalle, Notificacion, InventarioMovimiento, Compra
 
 app = Flask(__name__)
-CORS(app)
+# Configuración de CORS ultra-permisiva para desarrollo y migración
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # ==========================================
 # CONFIGURACIÃ“N DE LA BASE DE DATOS
