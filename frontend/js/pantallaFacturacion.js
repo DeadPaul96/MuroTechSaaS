@@ -541,10 +541,9 @@
 
         setInterval(() => {
             const now = new Date();
-            timeEl.innerText = now.toLocaleString('es-CR', {
-                day:'2-digit', month:'2-digit', year:'numeric',
-                hour:'2-digit', minute:'2-digit', second:'2-digit'
-            }).replace(',', ' —');
+            const dateStr = now.toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
+            const timeStr = now.toLocaleTimeString('es-CR', { hour:'2-digit', minute:'2-digit', hour12: true });
+            timeEl.innerText = `${dateStr} — ${timeStr.toLowerCase()}`;
         }, 1000);
 
         try {
