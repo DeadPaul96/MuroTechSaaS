@@ -301,8 +301,9 @@
                 </div>
             </div>
             
-            <div style="display:flex; align-items:flex-end; gap:20px; background:#f8fafc; padding:15px; border-radius:14px; border:1px solid #f1f5f9;">
-                <div style="flex:1; display:grid; grid-template-columns: 80px 100px 80px 100px 80px; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <!-- Columna Izquierda: Metadatos -->
+                <div style="display:flex; gap:12px;">
                     <div>
                         <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">SKU</label>
                         <div style="background:white; padding:6px 10px; border-radius:8px; border:1.5px solid #e2e8f0; font-size:0.75rem; font-weight:800; color:#64748b; font-family:var(--font-mono);">${prod.codigo || 'N/A'}</div>
@@ -311,30 +312,36 @@
                         <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">CABYS</label>
                         <div style="background:white; padding:6px 10px; border-radius:8px; border:1.5px solid #e2e8f0; font-size:0.75rem; font-weight:800; color:#64748b; font-family:var(--font-mono);">${prod.cabys || '0000'}</div>
                     </div>
-                    <div style="text-align:center;">
-                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">CANT.</label>
-                        <input type="number" class="item-qty fi" value="1" min="1" oninput="recalcularTotales()" style="height:34px; text-align:center; font-weight:950; font-size:1rem; border-radius:10px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">DESC. %</label>
-                        <div style="position:relative;">
-                            <input type="number" class="item-desc-pct fi" value="0" min="0" oninput="validateDiscount(this); recalcularTotales()" style="height:34px; text-align:center; font-weight:950; font-size:1rem; color:#ef4444; background:#fff1f2; border-color:#fecdd3; border-radius:10px; padding-right:20px;">
-                            <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-weight:900; color:#ef4444; font-size:0.8rem;">%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">IVA %</label>
-                        <div style="position:relative;">
-                            <input type="number" class="item-tax-pct fi" value="${prod.impuesto || 13}" readonly style="height:34px; text-align:center; font-weight:950; font-size:1rem; color:#059669; background:#ecfdf5; border-color:#d1fae5; border-radius:10px; padding-right:20px;">
-                            <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-weight:900; color:#059669; font-size:0.8rem;">%</span>
-                        </div>
-                    </div>
                 </div>
-                
-                <div style="text-align:right;">
-                    <label style="display:block; font-size:0.6rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:2px;">SUBTOTAL ÍTEM</label>
-                    <input type="hidden" class="item-detail" value="${displayDetail}">
-                    <span class="subtotal-cell" style="font-weight:950; color:#1e40af; font-size:2rem; letter-spacing:-1px;">${symbol}0,00</span>
+
+                <!-- Columna Derecha: Controles Numéricos -->
+                <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                    <div style="display:flex; gap:12px;">
+                        <div style="width:65px;">
+                            <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">CANT.</label>
+                            <input type="number" class="item-qty fi" value="1" min="1" oninput="recalcularTotales()" style="width:100%; height:34px; text-align:center; font-weight:950; font-size:1rem; border-radius:10px; padding:0;">
+                        </div>
+                        <div style="width:80px;">
+                            <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">DESC. %</label>
+                            <div style="position:relative;">
+                                <input type="number" class="item-desc-pct fi" value="0" min="0" oninput="validateDiscount(this); recalcularTotales()" style="width:100%; height:34px; text-align:center; font-weight:950; font-size:1rem; color:#ef4444; background:#fff1f2; border-color:#fecdd3; border-radius:10px; padding-right:20px;">
+                                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-weight:900; color:#ef4444; font-size:0.8rem;">%</span>
+                            </div>
+                        </div>
+                        <div style="width:80px;">
+                            <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">IVA %</label>
+                            <div style="position:relative;">
+                                <input type="number" class="item-tax-pct fi" value="${prod.impuesto || 13}" readonly style="width:100%; height:34px; text-align:center; font-weight:950; font-size:1rem; color:#059669; background:#ecfdf5; border-color:#d1fae5; border-radius:10px; padding-right:20px;">
+                                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-weight:900; color:#059669; font-size:0.8rem;">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align:right; margin-top:16px;">
+                        <label style="display:block; font-size:0.6rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:2px;">SUBTOTAL ÍTEM</label>
+                        <input type="hidden" class="item-detail" value="${displayDetail}">
+                        <span class="subtotal-cell" style="font-weight:950; color:#1e40af; font-size:2rem; letter-spacing:-1px; line-height:1;">${symbol}0,00</span>
+                    </div>
                 </div>
             </div>
         `;
