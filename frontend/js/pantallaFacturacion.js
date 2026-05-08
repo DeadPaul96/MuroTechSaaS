@@ -424,7 +424,7 @@
             if (elEurFecha) elEurFecha.textContent = data.eur.fecha || '--/--/--';
 
             if (status) {
-                status.innerHTML = `<i class="fas fa-check-circle"></i> API: ${apiUrl}`;
+                status.innerHTML = `<i class="fas fa-check-circle"></i> SINCRONIZADO`;
                 status.style.background = '#ecfdf5';
                 status.style.color = '#10b981';
             }
@@ -535,7 +535,7 @@
 
         const apiUrl = new URL(CONFIG.API_BASE_URL);
         if (statusEl) {
-            statusEl.innerText = `API: ${apiUrl.origin}`;
+            statusEl.innerText = `CONECTANDO...`;
             statusEl.style.color = '#2563eb';
             statusEl.style.background = '#eff6ff';
         }
@@ -551,17 +551,17 @@
         try {
             const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/time`);
             if (res && res.datetime && statusEl) {
-                statusEl.innerHTML = `<i class="fas fa-check-circle"></i> API: ${apiUrl.origin}`;
+                statusEl.innerHTML = `SINCRONIZADO (TIMEAPI)`;
                 statusEl.style.color = '#10b981';
-                statusEl.style.background = '#ecfdf5';
+                statusEl.style.background = 'transparent';
                 if (dot) dot.style.background = '#10b981';
             }
         } catch (e) {
             console.error('Error syncTime:', e);
             if (statusEl) {
-                statusEl.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> API: ${apiUrl.origin}`;
-                statusEl.style.color = '#2563eb';
-                statusEl.style.background = '#eff6ff';
+                statusEl.innerHTML = `<i class="fas fa-history"></i> MODO OFFLINE`;
+                statusEl.style.color = '#d97706';
+                statusEl.style.background = 'transparent';
             }
             if (dot) dot.style.background = '#f59e0b';
         }
