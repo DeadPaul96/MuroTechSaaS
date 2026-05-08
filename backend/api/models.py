@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import uuid
 
 db = SQLAlchemy()
 
@@ -11,7 +12,7 @@ db = SQLAlchemy()
 class Empresa(db.Model):
     """Representa el inquilino principal (Tenant)"""
     __tablename__ = 'empresas'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     razon_social = db.Column(db.String(200), nullable=False)
     nombre_comercial = db.Column(db.String(200))
     cedula_juridica = db.Column(db.String(50), unique=True, nullable=False)
@@ -47,8 +48,8 @@ class Empresa(db.Model):
 class Sucursal(db.Model):
     """Sucursales físicas o lógicas de una empresa (Ej: 001, 002)"""
     __tablename__ = 'sucursales'
-    id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
     numero_sucursal = db.Column(db.String(10), nullable=False, default="001")
     terminal = db.Column(db.String(10), default="00001")
     nombre = db.Column(db.String(100), nullable=False)
@@ -65,15 +66,15 @@ class Sucursal(db.Model):
 class Rol(db.Model):
     """Roles del sistema: 'Admin', 'Emisor', 'Auditor'"""
     __tablename__ = 'roles'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     nombre = db.Column(db.String(50), unique=True, nullable=False)
     descripcion = db.Column(db.String(200))
 
 class Usuario(db.Model):
     """Usuarios del sistema. Pertenecen a una Empresa."""
     __tablename__ = 'usuarios'
-    id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
     nombre = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
@@ -92,10 +93,10 @@ class Usuario(db.Model):
 class AccesoSucursal(db.Model):
     """Tabla pivote que asigna a un Usuario un Rol dentro de una Sucursal específica."""
     __tablename__ = 'accesos_sucursal'
-    id = db.Column(db.Integer, primary_key=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=False)
-    rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    usuario_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'), nullable=False)
+    sucursal_id = db.Column(db.String(36), db.ForeignKey('sucursales.id'), nullable=False)
+    rol_id = db.Column(db.String(36), db.ForeignKey('roles.id'), nullable=False)
 
 # ==========================================
 # MODELOS DE NEGOCIO (FACTURACIÓN E INVENTARIO)
@@ -103,8 +104,8 @@ class AccesoSucursal(db.Model):
 
 class Cliente(db.Model):
     __tablename__ = 'clientes'
-    id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
     tipo_id = db.Column(db.String(10)) # 01, 02, etc.
     identificacion = db.Column(db.String(50), nullable=False)
     nombre = db.Column(db.String(200), nullable=False)
@@ -123,8 +124,8 @@ class Cliente(db.Model):
 
 class Producto(db.Model):
     __tablename__ = 'productos'
-    id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
     
     # Datos Principales MH
     cabys = db.Column(db.String(20))
@@ -159,10 +160,10 @@ class Producto(db.Model):
 
 class InventarioMovimiento(db.Model):
     __tablename__ = 'inventario_movimientos'
-    id = db.Column(db.Integer, primary_key=True)
-    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
-    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=False)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    producto_id = db.Column(db.String(36), db.ForeignKey('productos.id'), nullable=False)
+    sucursal_id = db.Column(db.String(36), db.ForeignKey('sucursales.id'), nullable=False)
+    usuario_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'), nullable=False)
     
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     tipo_movimiento = db.Column(db.String(50)) # Venta, Ajuste, Devolución, Ingreso
@@ -173,9 +174,9 @@ class InventarioMovimiento(db.Model):
 
 class Compra(db.Model):
     __tablename__ = 'compras'
-    id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
-    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
+    sucursal_id = db.Column(db.String(36), db.ForeignKey('sucursales.id'), nullable=True)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     proveedor = db.Column(db.String(150), nullable=False)
     concepto = db.Column(db.String(200), nullable=False)
@@ -186,9 +187,9 @@ class Compra(db.Model):
 
 class Factura(db.Model):
     __tablename__ = 'facturas'
-    id = db.Column(db.Integer, primary_key=True)
-    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=False)
-    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'))
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    sucursal_id = db.Column(db.String(36), db.ForeignKey('sucursales.id'), nullable=False)
+    cliente_id = db.Column(db.String(36), db.ForeignKey('clientes.id'))
     numero_consecutivo = db.Column(db.String(50), unique=True, nullable=False)
     clave = db.Column(db.String(100), unique=True, nullable=False)
     tipo_documento = db.Column(db.String(50), default="Factura Electrónica")
@@ -206,7 +207,7 @@ class Factura(db.Model):
     observaciones = db.Column(db.Text)
     
     # Trazabilidad
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    usuario_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'), nullable=True)
     usuario = db.relationship('Usuario', backref='facturas_emitidas', lazy=True)
 
     # Conversión de Moneda
@@ -225,9 +226,9 @@ class Factura(db.Model):
 
 class FacturaDetalle(db.Model):
     __tablename__ = 'facturas_detalle'
-    id = db.Column(db.Integer, primary_key=True)
-    factura_id = db.Column(db.Integer, db.ForeignKey('facturas.id'), nullable=False)
-    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'))
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    factura_id = db.Column(db.String(36), db.ForeignKey('facturas.id'), nullable=False)
+    producto_id = db.Column(db.String(36), db.ForeignKey('productos.id'))
     descripcion = db.Column(db.String(200), nullable=False)
     cantidad = db.Column(db.Float, nullable=False)
     precio_unitario = db.Column(db.Float, nullable=False)
@@ -237,9 +238,9 @@ class FacturaDetalle(db.Model):
 
 class Notificacion(db.Model):
     __tablename__ = 'notificaciones'
-    id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
-    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True) # Puede ser global a la empresa
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
+    sucursal_id = db.Column(db.String(36), db.ForeignKey('sucursales.id'), nullable=True) # Puede ser global a la empresa
     
     tipo = db.Column(db.String(50), nullable=False) # hacienda, inventario, sistema, pago
     icono = db.Column(db.String(50), default='fas fa-bell')

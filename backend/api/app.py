@@ -158,8 +158,23 @@ def validate_sucursal(current_user, sucursal_id):
 # ==========================================
 
 def get_tipo_cambio():
-    """Simulación de API del BCCR para obtener tipo de cambio"""
-    # En producción llamaríamos a: https://api.hacienda.go.cr/indicadores/tc
+    """Obtiene el tipo de cambio base para la facturación electrónica.
+    En producción recomendamos configurar una URL real o llamar al endpoint del BCCR.
+    """
+    api_url = os.environ.get('TIPO_CAMBIO_API_URL')
+    if api_url:
+        try:
+            response = requests.get(api_url, timeout=6)
+            if response.ok:
+                data = response.json()
+                return {
+                    'venta': float(data.get('venta', 0.0)),
+                    'compra': float(data.get('compra', 0.0))
+                }
+        except Exception as e:
+            app.logger.warning(f"Error obteniendo tipo de cambio desde API externa: {e}")
+
+    # Fallback local para entornos de desarrollo
     return {'venta': 525.50, 'compra': 515.20}
 
 
@@ -186,7 +201,7 @@ def build_hacienda_factura_xml(factura):
     receptor = factura.cliente
     detalles_xml = ""
 
-    for detalle in factura.detalles:
+    for idx, detalle in enumerate(factura.detalles, start=1):
         monto_total = detalle.cantidad * detalle.precio_unitario
         descuento_monto = monto_total * (detalle.porcentaje_descuento or 0.0) / 100.0
         base_linea = monto_total - descuento_monto
@@ -194,7 +209,7 @@ def build_hacienda_factura_xml(factura):
 
         detalles_xml += f"""
             <LineaDetalle>
-                <NumeroLinea>{detalle.id}</NumeroLinea>
+                <NumeroLinea>{idx}</NumeroLinea>
                 <Codigo>{detalle.producto_rel.codigo if detalle.producto_rel else 'N/A'}</Codigo>
                 <Cantidad>{detalle.cantidad:.2f}</Cantidad>
                 <UnidadMedida>{detalle.producto_rel.unidad_medida if detalle.producto_rel else 'Unid'}</UnidadMedida>
@@ -206,7 +221,7 @@ def build_hacienda_factura_xml(factura):
                 <NaturalezaDescuento>{'Descuento' if descuento_monto > 0 else ''}</NaturalezaDescuento>
                 <SubTotal>{base_linea:.2f}</SubTotal>
                 <Impuesto>
-                    <Codigo>01</Codigo>
+                    <Codigo>{detalle.tipo_impuesto or '01'}</Codigo>
                     <Tarifa>{detalle.porcentaje_impuesto:.2f}</Tarifa>
                     <Monto>{impuesto_monto:.2f}</Monto>
                 </Impuesto>
@@ -217,10 +232,13 @@ def build_hacienda_factura_xml(factura):
     receptor_tipo = receptor.tipo_id if receptor else '01'
     receptor_email = receptor.email if receptor else ''
 
+    actividad_codigo = empresa.actividad_economica or '000000'
+    tipo_cambio_line = f"<TipoCambio>{factura.tipo_cambio:.2f}</TipoCambio>" if factura.moneda != 'CRC' else ''
+
     return f"""<?xml version=\"1.0\" encoding=\"utf-8\"?>
-<FacturaElectronica xmlns=\"https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica\">
+<FacturaElectronica xmlns=\"https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica.xsd\">
     <Clave>{factura.clave}</Clave>
-    <CodigoActividad>{factura.sucursal.numero_sucursal}</CodigoActividad>
+    <CodigoActividad>{actividad_codigo}</CodigoActividad>
     <NumeroCedulaEmisor>{empresa.cedula_juridica}</NumeroCedulaEmisor>
     <Estado>{factura.estado}</Estado>
     <FechaEmision>{factura.fecha_emision.strftime('%Y-%m-%dT%H:%M:%S')}</FechaEmision>
@@ -247,7 +265,9 @@ def build_hacienda_factura_xml(factura):
     </DetalleServicio>
     <ResumenFactura>
         <CodigoMoneda>{factura.moneda}</CodigoMoneda>
+        {tipo_cambio_line}
         <TotalServGravados>{factura.subtotal:.2f}</TotalServGravados>
+        <TotalServExentos>0.00</TotalServExentos>
         <TotalMercanciasGravadas>0.00</TotalMercanciasGravadas>
         <TotalGravado>{factura.subtotal:.2f}</TotalGravado>
         <TotalDescuentos>{factura.descuentos:.2f}</TotalDescuentos>
@@ -737,13 +757,27 @@ def get_roles(current_user):
 @token_required
 def clientes(current_user):
     if request.method == 'GET':
-        clientes = Cliente.query.filter_by(empresa_id=current_user.empresa_id).all()
+        q = request.args.get('q', '').strip().lower()
+        query = Cliente.query.filter_by(empresa_id=current_user.empresa_id)
+        
+        if q:
+            # Buscar por nombre, identificación o correo
+            query = query.filter(
+                or_(
+                    Cliente.nombre.ilike(f'%{q}%'),
+                    Cliente.identificacion.ilike(f'%{q}%'),
+                    Cliente.email.ilike(f'%{q}%')
+                )
+            )
+        
+        clientes = query.limit(50).all()  # Limitar resultados para performance
         return jsonify([{
             'id': c.id, 'nombre': c.nombre, 'identificacion': c.identificacion,
             'tipo_id': c.tipo_id, 'correo': c.email, 'telefono': c.telefono,
-            'movil': c.movil, 'actividad': c.actividad_economica, 'regimen': c.regimen,
+            'movil': c.movil, 'actividad_economica': c.actividad_economica, 'regimen': c.regimen,
             'provincia': c.provincia, 'canton': c.canton, 'distrito': c.distrito, 
-            'barrio': c.barrio, 'direccion': c.direccion
+            'barrio': c.barrio, 'direccion': c.direccion,
+            'nombre_comercial': c.nombre_comercial
         } for c in clientes])
         
     if request.method == 'POST':
@@ -799,15 +833,33 @@ def modificar_cliente(current_user, id):
 @token_required
 def productos(current_user):
     if request.method == 'GET':
-        productos = Producto.query.filter_by(empresa_id=current_user.empresa_id).all()
+        q = request.args.get('q', '').strip().lower()
+        query = Producto.query.filter_by(empresa_id=current_user.empresa_id)
+        
+        if q:
+            # Buscar por nombre, descripción, marca, modelo, características, cabys, código
+            query = query.filter(
+                or_(
+                    Producto.descripcion.ilike(f'%{q}%'),
+                    Producto.nombre_servicio.ilike(f'%{q}%'),
+                    Producto.marca.ilike(f'%{q}%'),
+                    Producto.modelo.ilike(f'%{q}%'),
+                    Producto.caracteristicas.ilike(f'%{q}%'),
+                    Producto.cabys.ilike(f'%{q}%'),
+                    Producto.codigo.ilike(f'%{q}%')
+                )
+            )
+        
+        productos = query.limit(50).all()  # Limitar resultados para performance
         return jsonify([{
             'id': p.id, 'cabys': p.cabys, 'codigo': p.codigo, 
             'unidadMedida': p.unidad_medida, 'descripcion': p.descripcion,
             'marca': p.marca, 'modelo': p.modelo, 'caracteristicas': p.caracteristicas,
             'nombreServicio': p.nombre_servicio, 'detalleServicio': p.detalle_servicio,
-            'precio': p.costo, 'margen': p.margen, 'precioVenta': p.precio_venta,
+            'precio': p.costo, 'margen': p.margen, 'precio_venta': p.precio_venta,
             'impuesto': p.impuesto, 'tipoImpuesto': p.tipo_impuesto,
-            'stock': p.stock, 'descuentoMax': p.descuento_max
+            'stock': p.stock, 'descuento_max': p.descuento_max,
+            'nombre': p.descripcion or p.nombre_servicio  # Para compatibilidad con el JS
         } for p in productos])
 
     if request.method == 'POST':
@@ -935,7 +987,8 @@ def facturas_endpoint(current_user):
                 moneda=moneda,
                 tipo_cambio=tc,
                 estado='Emitida',
-                is_draft=False
+                is_draft=False,
+                usuario_id=current_user.id
             )
             db.session.add(nueva_factura)
             db.session.flush()
@@ -1145,21 +1198,48 @@ def factura_detalle(current_user, id):
         factura.condicion_venta = data.get('condicionVenta', factura.condicion_venta)
         factura.medio_pago = data.get('medioPago', factura.medio_pago)
         factura.moneda = data.get('moneda', factura.moneda)
-        factura.total = parse_money(data.get('monto', factura.total))
-        
+
+        subtotal_total = 0.0
+        descuentos_total = 0.0
+        impuestos_total = 0.0
+        total_final = 0.0
+
         for d in factura.detalles:
             db.session.delete(d)
             
         for item in data.get('detalle', []):
+            cantidad = parse_money(item.get('cantidad', 1))
+            precio_unitario = parse_money(item.get('precio', 0))
+            porcentaje_descuento = parse_money(item.get('descuento', 0))
+            porcentaje_impuesto = parse_money(item.get('impuesto', 13))
+
+            monto_base = cantidad * precio_unitario
+            descuento_monto = monto_base * porcentaje_descuento / 100.0
+            base_neta = monto_base - descuento_monto
+            impuesto_monto = base_neta * porcentaje_impuesto / 100.0
+            total_linea = base_neta + impuesto_monto
+
+            subtotal_total += base_neta
+            descuentos_total += descuento_monto
+            impuestos_total += impuesto_monto
+            total_final += total_linea
+
             det = FacturaDetalle(
                 factura_id=factura.id,
                 descripcion=item.get('descripcion'),
-                cantidad=parse_money(item.get('cantidad', 1)),
-                precio_unitario=parse_money(item.get('precio', 0)),
-                total_linea=parse_money(item.get('subtotal', 0))
+                cantidad=cantidad,
+                precio_unitario=precio_unitario,
+                porcentaje_descuento=porcentaje_descuento,
+                porcentaje_impuesto=porcentaje_impuesto,
+                total_linea=total_linea
             )
             db.session.add(det)
             
+        factura.subtotal = subtotal_total
+        factura.descuentos = descuentos_total
+        factura.impuestos = impuestos_total
+        factura.total = total_final
+
         db.session.commit()
         return jsonify({'message': 'Factura actualizada y emitida correctamente'}), 200
 
@@ -1171,7 +1251,11 @@ def factura_detalle(current_user, id):
 @require_role(['Administrador', 'Auditor', 'Emisor'])
 def auditoria_comprobantes(current_user):
     sucursal_id = request.headers.get('X-Sucursal-ID')
-    facturas = Factura.query.filter_by(sucursal_id=sucursal_id).order_by(Factura.fecha_emision.desc()).limit(100).all()
+    sucursal = validate_sucursal(current_user, sucursal_id)
+    if not sucursal:
+        return jsonify({'message': 'Sucursal no encontrada o no tiene acceso.'}), 403
+
+    facturas = Factura.query.filter_by(sucursal_id=sucursal.id).order_by(Factura.fecha_emision.desc()).limit(100).all()
     return jsonify([{
         'id': f.id,
         'fecha': f.fecha_emision.isoformat(),
@@ -1188,7 +1272,11 @@ def auditoria_comprobantes(current_user):
 @require_role(['Administrador', 'Auditor'])
 def auditoria_inventario(current_user):
     sucursal_id = request.headers.get('X-Sucursal-ID')
-    movimientos = InventarioMovimiento.query.filter_by(sucursal_id=sucursal_id).order_by(InventarioMovimiento.fecha.desc()).limit(100).all()
+    sucursal = validate_sucursal(current_user, sucursal_id)
+    if not sucursal:
+        return jsonify({'message': 'Sucursal no encontrada o no tiene acceso.'}), 403
+
+    movimientos = InventarioMovimiento.query.filter_by(sucursal_id=sucursal.id).order_by(InventarioMovimiento.fecha.desc()).limit(100).all()
     return jsonify([{
         'id': m.id,
         'fecha': m.fecha.isoformat(),
@@ -1207,8 +1295,12 @@ def auditoria_inventario(current_user):
 def auditoria_ventas(current_user):
     # Por ahora similar a comprobantes, pero enfocado en ventas del POS (Facturas Pagadas)
     sucursal_id = request.headers.get('X-Sucursal-ID')
+    sucursal = validate_sucursal(current_user, sucursal_id)
+    if not sucursal:
+        return jsonify({'message': 'Sucursal no encontrada o no tiene acceso.'}), 403
+
     ventas = Factura.query.filter(
-        Factura.sucursal_id == sucursal_id,
+        Factura.sucursal_id == sucursal.id,
         Factura.estado.notin_(['Borrador', 'Rechazada'])
     ).order_by(Factura.fecha_emision.desc()).limit(100).all()
     
@@ -1229,11 +1321,14 @@ def auditoria_ventas(current_user):
 @token_required
 def get_notificaciones(current_user):
     sucursal_id = request.headers.get('X-Sucursal-ID')
+    sucursal = validate_sucursal(current_user, sucursal_id)
+    if not sucursal:
+        return jsonify({'message': 'Sucursal no encontrada o no tiene acceso.'}), 403
     
-    # Obtener notificaciones de la empresa, y aquellas globales o especÃ­ficas de la sucursal
+    # Obtener notificaciones de la empresa, y aquellas globales o específicas de la sucursal
     notificaciones = Notificacion.query.filter(
         Notificacion.empresa_id == current_user.empresa_id,
-        db.or_(Notificacion.sucursal_id == None, Notificacion.sucursal_id == sucursal_id)
+        db.or_(Notificacion.sucursal_id == None, Notificacion.sucursal_id == sucursal.id)
     ).order_by(Notificacion.fecha.desc()).limit(50).all()
     
     return jsonify([{
@@ -1432,27 +1527,33 @@ def crear_cotizacion(current_user):
 @token_required
 def get_next_consecutivo(current_user):
     """
-    Calcula el siguiente número de consecutivo para la empresa según tipo de documento.
+    Calcula el siguiente número de consecutivo para la sucursal y tipo de documento.
     Formato MH: Sucursal(3) + PuntoVenta(5) + TipoDoc(2) + Correlativo(10)
     """
     tipo_doc = request.args.get('tipo', '01')
-    sucursal_num = "001" # Por ahora fijo, puede ser dinámico por perfil
-    punto_venta = "00001"
-    
-    # Contar facturas emitidas de este tipo para esta empresa
-    # Buscamos en todas las sucursales de la empresa para el correlativo global o por sucursal?
-    # Usualmente es por sucursal y punto de venta.
-    total = Factura.query.join(Sucursal).filter(
-        Sucursal.empresa_id == current_user.empresa_id,
-        Factura.tipo_documento.like(f"%{tipo_doc}%") # Ajuste según cómo guardamos el tipo
-    ).count()
-    
-    correlativo = str(total + 1).zfill(10)
-    consecutivo = f"{sucursal_num}{punto_venta}{tipo_doc}{correlativo}"
-    
+    sucursal_id = request.headers.get('X-Sucursal-ID') or request.args.get('sucursal_id')
+    sucursal = validate_sucursal(current_user, sucursal_id)
+    if not sucursal:
+        return jsonify({'message': 'Sucursal no encontrada o no tiene acceso.'}), 403
+
+    if tipo_doc == '01':
+        siguiente = sucursal.c_factura + 1
+    elif tipo_doc == '04':
+        siguiente = sucursal.c_tiquete + 1
+    elif tipo_doc == '03':
+        siguiente = sucursal.c_nota_credito + 1
+    elif tipo_doc == '02':
+        siguiente = sucursal.c_nota_debito + 1
+    else:
+        siguiente = sucursal.c_factura + 1
+
+    consecutivo = generar_consecutivo(sucursal, tipo_doc, siguiente)
     return jsonify({
         'consecutivo': consecutivo,
-        'correlativo': total + 1
+        'sucursal': sucursal.numero_sucursal,
+        'terminal': sucursal.terminal,
+        'correlativo': siguiente,
+        'tipo_doc': tipo_doc
     })
 
 @app.route('/api/reportes/data', methods=['GET'])
@@ -1793,8 +1894,11 @@ def get_dashboard_metrics(current_user):
                 "tasaConversion": "0.0%", "actividadReciente": []
             }), 200
 
-        # Métrica: Facturas
-        facturas_query = Factura.query.filter(Factura.sucursal_id.in_(sucursales_ids))
+        # Métrica: Facturas emitidas (no borradores)
+        facturas_query = Factura.query.filter(
+            Factura.sucursal_id.in_(sucursales_ids),
+            Factura.is_draft == False
+        )
         total_facturas = facturas_query.count()
         
         # Métrica: Ingresos (Solo facturas Pagadas o Aceptadas)
@@ -1851,11 +1955,17 @@ def get_dashboard_metrics(current_user):
 def get_exchange_rates():
     """Retorna tipos de cambio oficiales (BCCR/Referencia)"""
     try:
-        # En una implementación ideal, aquí se consultaría el SOAP del BCCR
-        # Por ahora retornamos los valores de referencia del sistema
+        usd_rates = get_tipo_cambio()
         return jsonify({
-            "usd": {"venta": 460.89, "fecha": datetime.now().strftime("%d/%m/%Y")},
-            "eur": {"valor": 541.64, "fecha": datetime.now().strftime("%d/%m/%Y")}
+            "usd": {
+                "venta": usd_rates.get('venta', 0.0),
+                "compra": usd_rates.get('compra', 0.0),
+                "fecha": datetime.now().strftime("%d/%m/%Y")
+            },
+            "eur": {
+                "valor": 541.64,
+                "fecha": datetime.now().strftime("%d/%m/%Y")
+            }
         }), 200
     except Exception as e:
         return jsonify({"message": "Error al obtener tipo de cambio"}), 500
@@ -1985,6 +2095,6 @@ def seed_endpoint():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5001))
     init_db()
     app.run(debug=True, host='0.0.0.0', port=port)

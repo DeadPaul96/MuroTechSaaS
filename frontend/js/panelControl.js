@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     cargarDashboard();
+    setInterval(cargarDashboard, 15000);
 
     // --- Lógica del Tipo de Cambio (Original de Hacienda) ---
     async function actualizarTipoCambio() {

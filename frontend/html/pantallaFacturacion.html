@@ -13,7 +13,7 @@
 
     <script src="../js/shared/config.js?v=2"></script>
     <script src="../js/shared/utils.js?v=2"></script>
-    <script src="../js/shared/mockDB.js"></script>
+    
     <script src="../js/shared/sidebar.js"></script>
 
     <!-- jsPDF para Generación de PDF -->
@@ -43,7 +43,7 @@
                             <div style="width:10px; height:10px; border-radius:50%; background:#f59e0b; box-shadow:0 0 10px rgba(245, 158, 11, 0.4);" id="clock-dot"></div>
                             <div style="display:flex; flex-direction:column;">
                                 <span id="realtime-date" style="font-size:1.05rem; font-weight:900; color:#0f172a; font-family:var(--font-mono);">--/--/---- 00:00</span>
-                                <span id="realtime-status" style="font-size:0.6rem; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.5px;">Sincronizando...</span>
+                                <span id="realtime-status" style="font-size:0.6rem; font-weight:800; color:#2563eb; text-transform:uppercase; letter-spacing:0.5px;">API: cargando...</span>
                             </div>
                         </div>
                         
@@ -55,7 +55,7 @@
                                 <i class="fas fa-hashtag"></i>
                             </div>
                             <div style="display:flex; flex-direction:column;">
-                                <span id="mh-consecutivo" style="font-size:1.05rem; font-weight:900; color:#2563eb; font-family:var(--font-mono); letter-spacing:1px;">00000000000000000000</span>
+                                <span id="mh-consecutivo" style="font-size:1.05rem; font-weight:900; color:#2563eb; font-family:var(--font-mono); letter-spacing:1px;">Cargando...</span>
                                 <span style="font-size:0.6rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Consecutivo Oficial MH v4.4</span>
                             </div>
                         </div>
@@ -189,8 +189,8 @@
                                     </div>
                                     <span style="font-weight: 800; font-size: 0.75rem; color: #1e293b; letter-spacing: 0.5px;">TASA MH ACTUAL</span>
                                 </div>
-                                <div id="dash-tc-status" style="font-size: 0.6rem; font-weight: 700; color: #10b981; background: #ecfdf5; padding: 2px 8px; border-radius: 12px;">
-                                    <i class="fas fa-sync-alt fa-spin"></i> SINCRONIZANDO
+                                <div id="dash-tc-status" style="font-size: 0.6rem; font-weight: 700; color: #0f172a; background: #e2e8f0; padding: 2px 8px; border-radius: 12px;">
+                                    <i class="fas fa-sync-alt fa-spin"></i> API: cargando...
                                 </div>
                             </div>
 
@@ -227,16 +227,21 @@
                             <div style="background: var(--grad-premium); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; font-size: 0.8rem;">
                                 <i class="fas fa-search"></i>
                             </div>
-                            <div style="flex: 1; display: flex; gap: 10px;">
+                            <div style="flex: 1; display: flex; gap: 8px;">
+                                <select id="tipo-id-cliente" class="premium-select" style="width: 150px; height: 38px; margin: 0; font-size: 0.8rem;">
+                                    <option value="01">01 – Física</option>
+                                    <option value="02">02 – Jurídica</option>
+                                    <option value="03">03 – DIMEX</option>
+                                    <option value="04">04 – NITE</option>
+                                </select>
                                 <div class="autocomplete-wrapper" style="flex: 1; position: relative;">
-                                    <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.9rem; z-index: 5;"></i>
-                                    <input type="text" id="buscar-cliente-id" class="fi" style="height: 46px; font-size: 0.95rem; border-radius: 12px; padding-left: 45px; border: 2px solid #e2e8f0; transition: all 0.2s;" placeholder="Buscar cliente por nombre, identificación o correo..." autocomplete="off">
-                                    <div id="cliente-dropdown" class="autocomplete-dropdown" style="border-radius: 14px; box-shadow: 0 15px 35px rgba(0,0,0,0.1);"></div>
+                                    <input type="text" id="buscar-cliente-id" class="fi" style="height: 38px; font-size: 0.9rem; border-radius: 8px;" placeholder="Buscar por nombre, ID o correo..." autocomplete="off">
+                                    <div id="cliente-dropdown" class="autocomplete-dropdown"></div>
                                 </div>
-                                <button type="button" id="btn-buscar-cliente" class="btn-primary" style="height: 46px; width: 50px; border-radius: 12px; padding: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e40af, #3b82f6); border: none; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.2);">
+                                <button type="button" id="btn-buscar-cliente" class="btn-primary" style="height: 38px; width: 44px; border-radius: 8px; padding: 0;">
                                     <i class="fas fa-arrow-right"></i>
                                 </button>
-                                <button type="button" id="btn-limpiar-cliente" class="btn-secondary" style="height: 46px; width: 50px; border-radius: 12px; padding: 0; background: #f1f5f9; color: #64748b; border: 1.5px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                                <button type="button" id="btn-limpiar-cliente" class="btn-secondary" style="height: 38px; width: 44px; border-radius: 8px; padding: 0; background: #f1f5f9; color: #64748b;">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>

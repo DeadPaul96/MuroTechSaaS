@@ -43,6 +43,7 @@
 
     function init() {
         syncRates();
+        setInterval(syncRates, 30000);
         checkDraft();
         toggleVentaSection(false);
         syncTime();
@@ -143,21 +144,24 @@
         setDirty();
     };
 
+    // --- AUTOCOMPLETE CLIENTES ---
     (function() {
         const input = document.getElementById('buscar-cliente-id');
         const dropdown = document.getElementById('cliente-dropdown');
         if (!input || !dropdown) return;
+
         function closeDropdown() { dropdown.style.display = 'none'; dropdown.innerHTML = ''; }
+
         input.addEventListener('input', async function() {
-            const q = this.value.trim();
-            if (q.length < 2) { closeDropdown(); return; }
+            const q = this.value.trim().toLowerCase();
+            if (q.length < 1) { closeDropdown(); return; }
             try {
                 const matches = await fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes?q=${encodeURIComponent(q)}`);
                 dropdown.innerHTML = '';
                 if (!matches || !matches.length) {
-                    dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8;">No se encontraron clientes</div>';
+                    dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No se encontraron clientes</div>';
                 } else {
-                    matches.forEach(cliente => {
+                    matches.slice(0, 8).forEach(cliente => {
                         const item = document.createElement('div');
                         item.className = 'autocomplete-item';
                         item.innerHTML = `<div><strong>${cliente.nombre}</strong><br><small>${cliente.identificacion}</small></div>`;
@@ -168,49 +172,79 @@
                 dropdown.style.display = 'block';
             } catch (err) { console.error(err); }
         });
+
         window.seleccionarCliente = function(cliente) {
             const tiposTexto = {'01':'FÍSICA', '02':'JURÍDICA', '03':'DIMEX', '04':'NITE'};
             mostrarCliente({
-                id: cliente.id, tipo_id: tiposTexto[cliente.tipo_id] || cliente.tipo_id, num_id: cliente.identificacion, nombre: cliente.nombre,
-                nombre_comercial: cliente.nombre_comercial || cliente.nombre, provincia: cliente.provincia, canton: cliente.canton, distrito: cliente.distrito,
-                otras_senas: cliente.direccion, telefono: cliente.telefono || cliente.movil, email: cliente.email || cliente.correo,
-                actividad: cliente.actividad_economica || cliente.actividad, regimen: cliente.regimen || 'General'
+                tipo_id: tiposTexto[cliente.tipo_id] || cliente.tipo_id,
+                num_id: cliente.identificacion,
+                nombre: cliente.nombre,
+                nombre_comercial: cliente.nombre_comercial || cliente.nombre,
+                provincia: cliente.provincia || '—',
+                canton: cliente.canton || '—',
+                distrito: cliente.distrito || '—',
+                otras_senas: cliente.direccion || '—',
+                telefono: cliente.telefono || cliente.movil || '—',
+                email: cliente.email || cliente.correo || '—',
+                actividad: cliente.actividad_economica || cliente.actividad || 'Actividad Hacienda',
+                regimen: cliente.regimen || 'General'
             });
             input.value = cliente.identificacion;
-            document.getElementById('cliente-info-panel').dataset.clientId = cliente.id;
-        };
+        }
+
         document.getElementById('btn-buscar-cliente').onclick = async () => {
-            const q = input.value.trim();
+            const q = input.value.trim().toLowerCase();
             if (!q) return;
-            const matches = await fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes?q=${encodeURIComponent(q)}`);
-            if (matches && matches.length > 0) seleccionarCliente(matches[0]);
-            else Swal.fire('Error', 'Cliente no encontrado', 'error');
+            try {
+                const matches = await fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes?q=${encodeURIComponent(q)}`);
+                if (matches && matches.length > 0) seleccionarCliente(matches[0]);
+                else Swal.fire('Error', 'Cliente no encontrado', 'error');
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Error al buscar cliente', 'error');
+            }
         };
         document.getElementById('btn-limpiar-cliente').onclick = limpiarCliente;
         document.addEventListener('click', (e) => { if (e.target !== input) closeDropdown(); });
     })();
 
+    // --- AUTOCOMPLETE PRODUCTOS ---
     (function() {
         const input = document.getElementById('buscar-cabys');
         const dropdown = document.getElementById('cabys-dropdown');
         if (!input || !dropdown) return;
-        function closeDropdown() { dropdown.style.display = 'none'; dropdown.innerHTML = ''; }
+
+        function closeDropdown() { dropdown.style.display = 'none'; }
+
         input.addEventListener('input', async function() {
-            const q = this.value.trim();
-            if (q.length < 2) { closeDropdown(); return; }
+            const q = this.value.trim().toLowerCase();
+            if (q.length < 1) { closeDropdown(); return; }
             try {
                 const matches = await fetchAPI(`${CONFIG.API_BASE_URL}/api/productos?q=${encodeURIComponent(q)}`);
                 dropdown.innerHTML = '';
                 if (!matches || !matches.length) {
-                    dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8;">Sin resultados</div>';
+                    dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">Sin resultados</div>';
                 } else {
-                    matches.forEach(prod => {
+                    matches.slice(0, 10).forEach(prod => {
+                        const identity = [prod.marca, prod.modelo, prod.caracteristicas].filter(Boolean).join(' ');
+                        const title = identity || prod.nombre || prod.descripcion;
+                        
                         const item = document.createElement('div');
                         item.className = 'autocomplete-item';
                         item.style.display = 'flex';
                         item.style.justifyContent = 'space-between';
-                        item.innerHTML = `<div><strong>${prod.nombre || prod.descripcion}</strong><br><small>${prod.cabys || ''}</small></div><div style="font-weight:900; color:#1e40af;">₡${(prod.precio_venta || 0).toLocaleString()}</div>`;
-                        item.onclick = () => { input.value = ''; closeDropdown(); agregarLineaProducto(prod); };
+                        item.innerHTML = `
+                            <div style="flex:1;">
+                                <div style="font-weight:900; color:#0f172a;">${title}</div>
+                                <div style="font-size:0.65rem; color:#94a3b8;">${prod.cabys || '—'}</div>
+                            </div>
+                            <div style="font-weight:900; color:#1e40af;">₡${(prod.precio_venta || prod.precio || 0).toLocaleString()}</div>
+                        `;
+                        item.onclick = () => {
+                            input.value = '';
+                            closeDropdown();
+                            agregarLineaProducto(prod);
+                        };
                         dropdown.appendChild(item);
                     });
                 }
@@ -344,29 +378,44 @@
 
     async function syncRates() {
         const status = document.getElementById('dash-tc-status');
+        const apiUrl = CONFIG.API_BASE_URL ? new URL(CONFIG.API_BASE_URL).origin : 'API';
         try {
+            if (status) {
+                status.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> CONECTANDO...';
+                status.style.background = '#e2e8f0';
+                status.style.color = '#0f172a';
+            }
+
             const data = await fetchAPI(`${CONFIG.API_BASE_URL}/api/tipo-cambio`);
-            if (!data) throw new Error("No data");
+            if (!data || !data.usd || !data.eur) throw new Error('Respuesta inválida de tipo de cambio');
 
             currentRates = { usd: data.usd.venta, eur: data.eur.valor };
-            
-            const fmtRate = (val) => '₡' + val.toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            
-            const elV = document.getElementById('fx-usd-venta'); if(elV) elV.textContent = fmtRate(currentRates.usd);
-            const elE = document.getElementById('fx-eur-valor'); if(elE) elE.textContent = fmtRate(currentRates.eur);
-            
-            if(document.getElementById('fx-usd-fecha')) document.getElementById('fx-usd-fecha').textContent = data.usd.fecha;
-            if(document.getElementById('fx-eur-fecha')) document.getElementById('fx-eur-fecha').textContent = data.eur.fecha;
-            
-            if(status) {
-                status.innerHTML = '<i class="fas fa-check-circle"></i> SINCRONIZADO';
+            const fmtRate = (val) => '₡' + Number(val).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const elUsdVenta = document.getElementById('fx-usd-venta');
+            const elEurValor = document.getElementById('fx-eur-valor');
+            const elUsdFecha = document.getElementById('fx-usd-fecha');
+            const elEurFecha = document.getElementById('fx-eur-fecha');
+
+            if (elUsdVenta) elUsdVenta.textContent = fmtRate(currentRates.usd);
+            if (elEurValor) elEurValor.textContent = fmtRate(currentRates.eur);
+            if (elUsdFecha) elUsdFecha.textContent = data.usd.fecha || '--/--/--';
+            if (elEurFecha) elEurFecha.textContent = data.eur.fecha || '--/--/--';
+
+            if (status) {
+                status.innerHTML = `<i class="fas fa-check-circle"></i> API: ${apiUrl}`;
                 status.style.background = '#ecfdf5';
                 status.style.color = '#10b981';
             }
-        } catch(err) {
-            console.error("Error syncRates:", err);
-            if(status) {
-                status.textContent = 'OFFLINE';
+        } catch (err) {
+            console.warn('SyncRates API falló:', err);
+            const elUsdVenta = document.getElementById('fx-usd-venta');
+            const elEurValor = document.getElementById('fx-eur-valor');
+            if (elUsdVenta) elUsdVenta.textContent = 'No disponible';
+            if (elEurValor) elEurValor.textContent = 'No disponible';
+
+            if (status) {
+                status.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR API';
                 status.style.background = '#fef2f2';
                 status.style.color = '#ef4444';
             }
@@ -398,7 +447,7 @@
             const lines = document.querySelectorAll('.item-card');
             if (lines.length === 0) return Swal.fire('Error', 'El detalle está vacío', 'error');
             const consecutivo = document.getElementById('mh-consecutivo')?.innerText || "";
-            if (!consecutivo || consecutivo.includes("ERROR")) return Swal.fire('Error', 'Consecutivo no válido', 'error');
+            if (!/^[0-9]{20}$/.test(consecutivo)) return Swal.fire('Error', 'Consecutivo no válido', 'error');
 
             const confirm = await Swal.fire({
                 title: '¿Emitir Comprobante?',
@@ -442,6 +491,7 @@
                 clearDirty();
                 localStorage.removeItem('muro_draft_factura');
                 await Swal.fire('¡Éxito!', 'Factura emitida y guardada en base de datos.', 'success');
+                await updateConsecutivo();
                 window.location.reload();
             }
         } catch (err) { Swal.fire('Error', err.message || 'Error al emitir factura', 'error'); }
@@ -452,37 +502,56 @@
         const statusEl = document.getElementById('realtime-status');
         const dot = document.getElementById('clock-dot');
         if (!timeEl) return;
-        
+
+        const apiUrl = new URL(CONFIG.API_BASE_URL);
+        if (statusEl) {
+            statusEl.innerText = `API: ${apiUrl.origin}`;
+            statusEl.style.color = '#2563eb';
+            statusEl.style.background = '#eff6ff';
+        }
+
         setInterval(() => {
             const now = new Date();
-            timeEl.innerText = now.toLocaleString('es-CR', { 
+            timeEl.innerText = now.toLocaleString('es-CR', {
                 day:'2-digit', month:'2-digit', year:'numeric',
                 hour:'2-digit', minute:'2-digit', second:'2-digit'
             }).replace(',', ' —');
         }, 1000);
 
         try {
-            const res = await fetch(`${CONFIG.API_BASE_URL}/api/time`);
-            if (res.ok) {
-                if(statusEl) {
-                    statusEl.innerText = "SINCRONIZADO (TIMEAPI)";
-                    statusEl.style.color = "#10b981";
-                }
-                if(dot) dot.style.background = "#10b981";
+            const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/time`);
+            if (res && res.datetime && statusEl) {
+                statusEl.innerHTML = `<i class="fas fa-check-circle"></i> API: ${apiUrl.origin}`;
+                statusEl.style.color = '#10b981';
+                statusEl.style.background = '#ecfdf5';
+                if (dot) dot.style.background = '#10b981';
             }
-        } catch(e) {}
+        } catch (e) {
+            console.error('Error syncTime:', e);
+            if (statusEl) {
+                statusEl.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> API: ${apiUrl.origin}`;
+                statusEl.style.color = '#2563eb';
+                statusEl.style.background = '#eff6ff';
+            }
+            if (dot) dot.style.background = '#f59e0b';
+        }
     }
 
     async function updateConsecutivo() {
         const selectTipo = document.getElementById('tipo-documento');
         const display = document.getElementById('mh-consecutivo');
-        if (!selectTipo || !display) return;
+        if (!selectTipo || !display) return null;
         try {
             const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/facturas/consecutivo?tipo=${selectTipo.value}`);
             if (res && res.consecutivo) {
                 display.innerText = res.consecutivo;
+                return res.consecutivo;
             }
-        } catch (err) { display.innerText = "ERROR"; }
+        } catch (err) {
+            console.error('Error al obtener consecutivo:', err);
+            display.innerText = 'No disponible';
+        }
+        return null;
     }
 
     document.getElementById('tipo-documento')?.addEventListener('change', updateConsecutivo);
