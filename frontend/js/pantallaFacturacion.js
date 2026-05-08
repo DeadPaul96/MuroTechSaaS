@@ -155,23 +155,29 @@
         input.addEventListener('input', async function() {
             const q = this.value.trim().toLowerCase();
             if (q.length < 1) { closeDropdown(); return; }
+            
+            // Efecto visual de carga
+            dropdown.innerHTML = '<div style="padding:15px; text-align:center;"><i class="fas fa-sync-alt fa-spin"></i> Buscando...</div>';
+            dropdown.style.display = 'block';
+
             try {
                 const matches = await fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes?q=${encodeURIComponent(q)}`);
                 dropdown.innerHTML = '';
                 if (!matches || !matches.length) {
                     dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No se encontraron clientes</div>';
                 } else {
-                    // Usar resultados directos del backend
                     matches.slice(0, 8).forEach(cliente => {
                         const item = document.createElement('div');
                         item.className = 'autocomplete-item';
-                        item.innerHTML = `<div><strong>${cliente.nombre}</strong><br><small>${cliente.identificacion}</small></div>`;
+                        item.innerHTML = `<div><strong>${cliente.nombre}</strong><br><small>${cliente.identificacion} · ${cliente.email || ''}</small></div>`;
                         item.onclick = () => { window.seleccionarCliente(cliente); closeDropdown(); };
                         dropdown.appendChild(item);
                     });
                 }
-                dropdown.style.display = 'block';
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.error("Autocomplete Error:", err);
+                dropdown.innerHTML = `<div style="padding:15px; text-align:center; color:#ef4444; font-size:0.75rem;">${err.message}</div>`;
+            }
         });
 
         window.seleccionarCliente = function(cliente) {

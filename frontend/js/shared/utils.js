@@ -238,15 +238,15 @@ async function fetchAPI(url, options = {}) {
 
         // Manejo robusto de errores
         if (!response.ok) {
-            let errorMessage = `Error ${response.status}: ${response.statusText}`;
+            let errorMessage = `Error ${response.status}`;
             try {
-                // Intentar leer error como JSON
                 const errorData = await response.json();
                 errorMessage = errorData.message || errorMessage;
             } catch (jsonErr) {
-                // Si no es JSON, capturar texto (podría ser HTML de error)
                 const textError = await response.text();
-                console.error('Error del servidor (No-JSON):', textError);
+                const match = textError.match(/<title>(.*?)<\/title>/i) || textError.match(/<h1>(.*?)<\/h1>/i);
+                errorMessage = match ? `Error Servidor: ${match[1]}` : `Error Crítico: El servidor no respondió JSON (Posible caída)`;
+                console.error('SERVER HTML ERROR:', textError);
             }
             throw new Error(errorMessage);
         }

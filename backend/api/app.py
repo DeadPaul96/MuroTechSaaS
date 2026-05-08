@@ -2102,8 +2102,22 @@ def seed_endpoint():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Inicializar DB al cargar el módulo (para Render/Gunicorn)
-init_db()
+# Manejador global de errores para asegurar que SIEMPRE devuelva JSON
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log del error en el servidor
+    print(f"ERROR GLOBAL: {str(e)}")
+    # Retornar JSON en lugar del HTML por defecto de Flask
+    return jsonify({
+        "message": "Error interno del servidor",
+        "error": str(e)
+    }), 500
+
+# Inicializar DB de forma segura
+try:
+    init_db()
+except Exception as e:
+    print(f"CRITICAL: Fallo al inicializar DB: {e}")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
