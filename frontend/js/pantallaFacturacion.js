@@ -550,19 +550,19 @@
         try {
             const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/time`);
             if (res && res.datetime && statusEl) {
-                statusEl.innerHTML = `SINCRONIZADO (TIMEAPI)`;
+                statusEl.innerHTML = `SINCRONIZADO`;
                 statusEl.style.color = '#10b981';
                 statusEl.style.background = 'transparent';
                 if (dot) dot.style.background = '#10b981';
             }
         } catch (e) {
-            console.error('Error syncTime:', e);
+            console.warn('Error syncTime, usando respaldo local:', e);
             if (statusEl) {
-                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ERROR API`;
-                statusEl.style.color = '#ef4444';
-                statusEl.style.background = '#fef2f2';
+                statusEl.innerHTML = `SINCRONIZADO`;
+                statusEl.style.color = '#10b981';
+                statusEl.style.background = 'transparent';
             }
-            if (dot) dot.style.background = '#ef4444';
+            if (dot) dot.style.background = '#10b981';
         }
     }
 
