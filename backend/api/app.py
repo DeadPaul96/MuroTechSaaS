@@ -281,7 +281,7 @@ def build_hacienda_factura_xml(factura):
 # ==========================================
 
 def create_notification(empresa_id, tipo, titulo, descripcion, link=None):
-    """Crea una notificaciÃ³n persistente para la empresa"""
+    """Crea una notificación persistente para la empresa"""
     notif = Notificacion(
         empresa_id=empresa_id,
         tipo=tipo,
@@ -299,12 +299,12 @@ def create_notification(empresa_id, tipo, titulo, descripcion, link=None):
 import base64
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
-# Nota: Para producciÃ³n real se recomienda 'xmlsig' o 'signer-cr'
-# AquÃ­ implementamos la lÃ³gica de extracciÃ³n y estructura de firma
+# Nota: Para producción real se recomienda 'xmlsig' o 'signer-cr'
+# Aquí implementamos la lógica de extracción y estructura de firma
 
 def firmar_xml(xml_content, p12_data, p12_password):
     """
-    Realiza la firma XAdES-BES sobre el XML segÃºn requerimientos de Hacienda.
+    Realiza la firma XAdES-BES sobre el XML según requerimientos de Hacienda.
     Recibe la llave comprimida desde la DB.
     """
     try:
@@ -317,9 +317,9 @@ def firmar_xml(xml_content, p12_data, p12_password):
             p12_password.encode()
         )
         
-        # --- LÃ“GICA DE FIRMA (SIMULADA CON ESTRUCTURA REAL) ---
-        # En un entorno real usarÃ­amos: signer.sign(xml_content, private_key, certificate)
-        # AquÃ­ generamos el XML final con el placeholder de firma para el sistema
+        # --- LÓGICA DE FIRMA (SIMULADA CON ESTRUCTURA REAL) ---
+        # En un entorno real usaríamos: signer.sign(xml_content, private_key, certificate)
+        # Aquí generamos el XML final con el placeholder de firma para el sistema
         
         xml_text = xml_content.decode('utf-8') if isinstance(xml_content, bytes) else str(xml_content)
         signature_block = f"""
@@ -353,7 +353,7 @@ def firmar_xml(xml_content, p12_data, p12_password):
 
 @app.route('/api/contribuyentes', methods=['POST'])
 def registrar_empresa():
-    """Registra una nueva empresa (Tenant) y su usuario SuperAdministrador con compresiÃ³n de datos"""
+    """Registra una nueva empresa (Tenant) y su usuario SuperAdministrador con compresión de datos"""
     # Usamos form data para recibir el archivo p12
     data = request.form
     file_p12 = request.files.get('api_p12_file')
@@ -364,10 +364,10 @@ def registrar_empresa():
         return jsonify({'message': 'Campos requeridos faltantes.', 'missing': faltantes}), 400
     
     if Empresa.query.filter_by(cedula_juridica=data.get('identificacion')).first():
-        return jsonify({'message': 'La empresa con esta cÃ©dula ya existe.'}), 400
+        return jsonify({'message': 'La empresa con esta cédula ya existe.'}), 400
         
     if Usuario.query.filter_by(email=data.get('email')).first():
-        return jsonify({'message': 'El correo electrÃ³nico ya estÃ¡ en uso.'}), 400
+        return jsonify({'message': 'El correo electrónico ya está en uso.'}), 400
 
     if not file_p12:
         return jsonify({'message': 'El archivo .p12 es requerido para configurar Hacienda.'}), 400
@@ -376,26 +376,26 @@ def registrar_empresa():
         p12_bin_comprimido = None
         p12_metadata = ""
 
-        # Procesamiento de Llave CriptogrÃ¡fica (Mindset Mojo: Eficiencia y Seguridad)
+        # Procesamiento de Llave Criptográfica (Mindset Mojo: Eficiencia y Seguridad)
         if file_p12:
             raw_p12 = file_p12.read()
             pin = data.get('api_pin', '').encode()
             
-            # 1. Extraer Metadatos (DÃ­gitos del Serial/ID)
+            # 1. Extraer Metadatos (Dígitos del Serial/ID)
             try:
                 # El formato PKCS12 requiere el PIN para abrirse
                 p12_data = pkcs12.load_key_and_certificates(raw_p12, pin)
                 cert = p12_data[1] # El certificado es el segundo elemento
                 if cert:
-                    # Extraemos el nÃºmero de serie como los "dÃ­gitos" representativos
+                    # Extraemos el número de serie como los "dígitos" representativos
                     p12_metadata = str(cert.serial_number)
             except Exception as crypto_err:
-                return jsonify({'message': 'Error al leer la Llave CriptogrÃ¡fica. Verifique el PIN.', 'error': str(crypto_err)}), 400
+                return jsonify({'message': 'Error al leer la Llave Criptográfica. Verifique el PIN.', 'error': str(crypto_err)}), 400
 
-            # 2. CompresiÃ³n agresiva (Mojo Style para ahorro de espacio)
+            # 2. Compresión agresiva (Mojo Style para ahorro de espacio)
             p12_bin_comprimido = zlib.compress(raw_p12, level=9)
 
-        # 1. Crear Empresa (Tenant) con todos los datos de Hacienda y CompresiÃ³n
+        # 1. Crear Empresa (Tenant) con todos los datos de Hacienda y Compresión
         nueva_empresa = Empresa(
             tipo_identificacion=data.get('tipo_id', '02'),
             cedula_juridica=data.get('identificacion'),
@@ -452,17 +452,17 @@ def registrar_empresa():
 
         db.session.commit()
         return jsonify({
-            'message': 'Empresa registrada exitosamente con compresiÃ³n.',
+            'message': 'Empresa registrada exitosamente con compresión.',
             'p12_digits': p12_metadata
         }), 201
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'message': 'Error crÃ­tico en el registro', 'error': str(e)}), 500
+        return jsonify({'message': 'Error crítico en el registro', 'error': str(e)}), 500
 
 @app.route('/api/hacienda/validar-llave', methods=['POST'])
 def validar_llave():
-    """Valida una llave .p12 y extrae sus metadatos (Serial/DÃ­gitos) sin guardarla"""
+    """Valida una llave .p12 y extrae sus metadatos (Serial/Dígitos) sin guardarla"""
     file_p12 = request.files.get('api_p12_file')
     pin = request.form.get('api_pin', '')
     
@@ -476,15 +476,15 @@ def validar_llave():
         
         if cert:
             metadata = str(cert.serial_number)
-            # Retornamos los dÃ­gitos para llenar el campo de texto en el frontend
+            # Retornamos los dígitos para llenar el campo de texto en el frontend
             return jsonify({
                 'valid': True,
                 'digits': metadata,
                 'subject': str(cert.subject)
             })
-        return jsonify({'message': 'No se encontrÃ³ certificado en el archivo.'}), 400
+        return jsonify({'message': 'No se encontró certificado en el archivo.'}), 400
     except Exception as e:
-        return jsonify({'message': 'PIN incorrecto o archivo invÃ¡lido.', 'error': str(e)}), 400
+        return jsonify({'message': 'PIN incorrecto o archivo inválido.', 'error': str(e)}), 400
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -492,7 +492,7 @@ def login():
     usuario = Usuario.query.filter_by(email=data.get('email')).first()
     
     if not usuario or not usuario.check_password(data.get('password')):
-        return jsonify({'message': 'Credenciales invÃ¡lidas.'}), 401
+        return jsonify({'message': 'Credenciales inválidas.'}), 401
         
     if not usuario.is_active:
         return jsonify({'message': 'Usuario inactivo. Contacte al administrador.'}), 403
@@ -533,7 +533,7 @@ def login():
 
 
 # ==========================================
-# GESTIÃ“N DE USUARIOS Y SUCURSALES (MULTI-TENANT)
+# GESTIÓN DE USUARIOS Y SUCURSALES (MULTI-TENANT)
 # ==========================================
 
 @app.route('/api/sucursales', methods=['GET', 'POST'])
@@ -641,7 +641,7 @@ def gestionar_usuarios(current_user):
 def mark_all_read_endpoint(current_user):
     Notificacion.query.filter_by(empresa_id=current_user.empresa_id, leida=False).update({Notificacion.leida: True})
     db.session.commit()
-    return jsonify({'message': 'Todas las notificaciones marcadas como leÃ­das'})
+    return jsonify({'message': 'Todas las notificaciones marcadas como leídas'})
 
 @app.route('/api/notificaciones/unread-count', methods=['GET'])
 @token_required
@@ -650,7 +650,7 @@ def get_unread_count(current_user):
     return jsonify({'count': count})
 
 # ==========================================
-# MÃ“DULO ADMINISTRATIVO (CONFIGURACIÃ“N)
+# MÓDULO ADMINISTRATIVO (CONFIGURACIÓN)
 # ==========================================
 
 @app.route('/api/config/empresa', methods=['GET', 'PUT'])
@@ -707,9 +707,9 @@ def config_facturacion(current_user):
             empresa.api_password = data.get('api_pass')
         
         db.session.commit()
-        return jsonify({'message': 'ConfiguraciÃ³n de facturaciÃ³n actualizada.'})
+        return jsonify({'message': 'Configuración de facturación actualizada.'})
 
-# (config_usuarios eliminado â€” se usa /api/usuarios que ya existe)
+# (config_usuarios eliminado — se usa /api/usuarios que ya existe)
 
 @app.route('/api/usuarios/<int:id>', methods=['PUT', 'DELETE'])
 @token_required
@@ -749,7 +749,7 @@ def get_roles(current_user):
 
 
 # ==========================================
-# RUTAS DE NEGOCIO (FACTURACIÃ“N E INVENTARIO)
+# RUTAS DE NEGOCIO (FACTURACIÓN E INVENTARIO)
 # ==========================================
 
 @app.route('/api/clientes', methods=['GET', 'POST'])
@@ -884,7 +884,7 @@ def productos(current_user):
         )
         db.session.add(nuevo)
         db.session.commit()
-        return jsonify({'message': 'Ãtem guardado exitosamente', 'id': nuevo.id}), 201
+        return jsonify({'message': 'Ítem guardado exitosamente', 'id': nuevo.id}), 201
 
 @app.route('/api/productos/<int:id>', methods=['PUT', 'DELETE'])
 @token_required
@@ -892,7 +892,7 @@ def modificar_producto(current_user, id):
     # Buscar el producto asegurando que pertenece a la empresa actual
     producto = Producto.query.filter_by(id=id, empresa_id=current_user.empresa_id).first()
     if not producto:
-        return jsonify({'message': 'Ãtem no encontrado o acceso denegado'}), 404
+        return jsonify({'message': 'Ítem no encontrado o acceso denegado'}), 404
 
     if request.method == 'PUT':
         data = request.get_json()
@@ -910,12 +910,12 @@ def modificar_producto(current_user, id):
         producto.stock = int(data.get('stock', producto.stock))
         producto.descuento_max = float(data.get('descuentoMax', producto.descuento_max))
         db.session.commit()
-        return jsonify({'message': 'Ãtem actualizado exitosamente'}), 200
+        return jsonify({'message': 'Ítem actualizado exitosamente'}), 200
 
     if request.method == 'DELETE':
         db.session.delete(producto)
         db.session.commit()
-        return jsonify({'message': 'Ãtem eliminado exitosamente'}), 200
+        return jsonify({'message': 'Ítem eliminado exitosamente'}), 200
 
 
 @app.route('/api/facturas', methods=['GET', 'POST'])
@@ -1046,7 +1046,7 @@ def facturas_endpoint(current_user):
 
         except Exception as e:
             db.session.rollback()
-            return jsonify({'message': 'Error al procesar emisiÃ³n', 'error': str(e)}), 500
+            return jsonify({'message': 'Error al procesar emisión', 'error': str(e)}), 500
 
 @app.route('/api/facturas/borrador', methods=['GET', 'POST'])
 @token_required
@@ -1243,7 +1243,7 @@ def factura_detalle(current_user, id):
         return jsonify({'message': 'Factura actualizada y emitida correctamente'}), 200
 
 # ==========================================
-# RUTAS DE AUDITORÃA (Trazabilidad 360)
+# RUTAS DE AUDITORÍA (Trazabilidad 360)
 # ==========================================
 @app.route('/api/auditoria/comprobantes', methods=['GET'])
 @token_required
@@ -1345,11 +1345,11 @@ def get_notificaciones(current_user):
 def mark_notificacion_read(current_user, id):
     notificacion = Notificacion.query.filter_by(id=id, empresa_id=current_user.empresa_id).first()
     if not notificacion:
-        return jsonify({'message': 'NotificaciÃ³n no encontrada'}), 404
+        return jsonify({'message': 'Notificación no encontrada'}), 404
         
     notificacion.leida = True
     db.session.commit()
-    return jsonify({'message': 'NotificaciÃ³n marcada como leÃ­da'})
+    return jsonify({'message': 'Notificación marcada como leída'})
 
 @app.route('/api/notificaciones/read_all', methods=['PUT'])
 @token_required
@@ -1365,10 +1365,10 @@ def mark_all_notificaciones_read(current_user):
         n.leida = True
         
     db.session.commit()
-    return jsonify({'message': 'Todas las notificaciones marcadas como leÃ­das'})
+    return jsonify({'message': 'Todas las notificaciones marcadas como leídas'})
 
 # ==========================================
-# MOTOR DE ENVÃO DE CORREOS (SaaS DELIVERY)
+# MOTOR DE ENVÍO DE CORREOS (SaaS DELIVERY)
 # ==========================================
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -1378,10 +1378,10 @@ from email import encoders
 
 def enviar_comprobante_email(destinatario, factura_data, xml_bin, pdf_bin):
     """
-    EnvÃ­a el comprobante electrÃ³nico (XML y PDF) al receptor.
-    DiseÃ±o premium HTML incluido.
+    Envía el comprobante electrónico (XML y PDF) al receptor.
+    Diseño premium HTML incluido.
     """
-    # ConfiguraciÃ³n SMTP (MUROTECH Default o por Empresa)
+    # Configuración SMTP (MUROTECH Default o por Empresa)
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
     SMTP_USER = "soporte@murotech.com" # Placeholder para el sistema
@@ -1389,9 +1389,9 @@ def enviar_comprobante_email(destinatario, factura_data, xml_bin, pdf_bin):
     
     try:
         msg = MIMEMultipart()
-        msg['From'] = f"MUROTECH FacturaciÃ³n <{SMTP_USER}>"
+        msg['From'] = f"MUROTECH Facturación <{SMTP_USER}>"
         msg['To'] = destinatario
-        msg['Subject'] = f"Comprobante ElectrÃ³nico: {factura_data['consecutivo']}"
+        msg['Subject'] = f"Comprobante Electrónico: {factura_data['consecutivo']}"
 
         # Cuerpo del Correo (HTML Premium)
         html = f"""
@@ -1400,17 +1400,17 @@ def enviar_comprobante_email(destinatario, factura_data, xml_bin, pdf_bin):
             <div style="max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                 <div style="background: #1e40af; padding: 40px; text-align: center; color: white;">
                     <h1 style="margin: 0; font-size: 24px; letter-spacing: -1px;">MUROTECH</h1>
-                    <p style="opacity: 0.8; margin-top: 5px;">Sistema de FacturaciÃ³n ElectrÃ³nica</p>
+                    <p style="opacity: 0.8; margin-top: 5px;">Sistema de Facturación Electrónica</p>
                 </div>
                 <div style="padding: 40px;">
-                    <h2 style="color: #0f172a; font-size: 20px;">Â¡Hola! Has recibido un comprobante electrÃ³nico.</h2>
-                    <p>Le informamos que se ha generado un nuevo documento electrÃ³nico a su nombre con los siguientes detalles:</p>
+                    <h2 style="color: #0f172a; font-size: 20px;">¡Hola! Has recibido un comprobante electrónico.</h2>
+                    <p>Le informamos que se ha generado un nuevo documento electrónico a su nombre con los siguientes detalles:</p>
                     <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin: 20px 0; border-left: 4px solid #1e40af;">
                         <p style="margin: 5px 0;"><strong>Consecutivo:</strong> {factura_data['consecutivo']}</p>
                         <p style="margin: 5px 0;"><strong>Fecha:</strong> {factura_data['fecha']}</p>
                         <p style="margin: 5px 0;"><strong>Monto Total:</strong> {factura_data['moneda']} {factura_data['monto']}</p>
                     </div>
-                    <p style="font-size: 14px; color: #64748b;">Encuentre adjunto el archivo XML (Validez Legal) y el PDF (RepresentaciÃ³n GrÃ¡fica).</p>
+                    <p style="font-size: 14px; color: #64748b;">Encuentre adjunto el archivo XML (Validez Legal) y el PDF (Representación Gráfica).</p>
                 </div>
                 <div style="background: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
                     Este es un correo automÃ¡tico generado por MUROTECH SaaS. Por favor no responda a este mensaje.
@@ -2102,7 +2102,9 @@ def seed_endpoint():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Inicializar DB al cargar el módulo (para Render/Gunicorn)
+init_db()
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
-    init_db()
     app.run(debug=True, host='0.0.0.0', port=port)

@@ -161,22 +161,14 @@
                 if (!matches || !matches.length) {
                     dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No se encontraron clientes</div>';
                 } else {
-                    const filtered = matches.filter(c => 
-                        (c.nombre || '').toLowerCase().includes(q) || 
-                        (c.identificacion || '').toLowerCase().includes(q) ||
-                        (c.correo || '').toLowerCase().includes(q)
-                    );
-                    if (filtered.length === 0) {
-                        dropdown.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No hay coincidencias exactas</div>';
-                    } else {
-                        filtered.slice(0, 8).forEach(cliente => {
-                            const item = document.createElement('div');
-                            item.className = 'autocomplete-item';
-                            item.innerHTML = `<div><strong>${cliente.nombre}</strong><br><small>${cliente.identificacion}</small></div>`;
-                            item.onclick = () => { window.seleccionarCliente(cliente); closeDropdown(); };
-                            dropdown.appendChild(item);
-                        });
-                    }
+                    // Usar resultados directos del backend
+                    matches.slice(0, 8).forEach(cliente => {
+                        const item = document.createElement('div');
+                        item.className = 'autocomplete-item';
+                        item.innerHTML = `<div><strong>${cliente.nombre}</strong><br><small>${cliente.identificacion}</small></div>`;
+                        item.onclick = () => { window.seleccionarCliente(cliente); closeDropdown(); };
+                        dropdown.appendChild(item);
+                    });
                 }
                 dropdown.style.display = 'block';
             } catch (err) { console.error(err); }
