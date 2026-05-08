@@ -571,7 +571,17 @@
         const display = document.getElementById('mh-consecutivo');
         if (!selectTipo || !display) return null;
         try {
-            const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/facturas/consecutivo?tipo=${selectTipo.value}`);
+            // Obtener sucursal_id del primer acceso disponible si no hay uno activo
+            const accesos = JSON.parse(localStorage.getItem('accesos') || '[]');
+            const sucursalId = accesos.length > 0 ? accesos[0].sucursal_id : null;
+            
+            if (!sucursalId) {
+                console.error('No se encontró sucursal_id en el almacenamiento local');
+                display.innerText = 'Error: No Sucursal';
+                return null;
+            }
+
+            const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/facturas/consecutivo?tipo=${selectTipo.value}&sucursal_id=${sucursalId}`);
             if (res && res.consecutivo) {
                 display.innerText = res.consecutivo;
                 return res.consecutivo;

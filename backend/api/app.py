@@ -158,23 +158,20 @@ def validate_sucursal(current_user, sucursal_id):
 # ==========================================
 
 def get_tipo_cambio():
-    """Obtiene el tipo de cambio base para la facturación electrónica.
-    En producción recomendamos configurar una URL real o llamar al endpoint del BCCR.
-    """
-    api_url = os.environ.get('TIPO_CAMBIO_API_URL')
-    if api_url:
-        try:
-            response = requests.get(api_url, timeout=6)
-            if response.ok:
-                data = response.json()
-                return {
-                    'venta': float(data.get('venta', 0.0)),
-                    'compra': float(data.get('compra', 0.0))
-                }
-        except Exception as e:
-            app.logger.warning(f"Error obteniendo tipo de cambio desde API externa: {e}")
+    """Obtiene el tipo de cambio real desde la API de Hacienda."""
+    try:
+        # Intentar obtener datos reales de Hacienda
+        res = requests.get("https://api.hacienda.go.cr/indicadores/tc", timeout=5)
+        if res.ok:
+            data = res.json()
+            return {
+                'venta': float(data['dolar']['venta']['valor']),
+                'compra': float(data['dolar']['compra']['valor'])
+            }
+    except Exception as e:
+        print(f"Error consultando API Hacienda: {e}")
 
-    # Fallback local para entornos de desarrollo
+    # Fallback local solo si la API de Hacienda falla
     return {'venta': 525.50, 'compra': 515.20}
 
 
@@ -1977,7 +1974,7 @@ def get_external_time():
         if res.ok: return jsonify(res.json())
         return jsonify({"message": "Error externo"}), 502
     except Exception:
-        return jsonify({"message": "Fallo de conexiÃ³n"}), 503
+        return jsonify({"message": "Fallo de conexión"}), 503
 
 @app.route('/api/seed', methods=['GET'])
 def seed_endpoint():
