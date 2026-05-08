@@ -484,16 +484,22 @@
         e.preventDefault();
         try {
             const panel = document.getElementById('cliente-info-panel');
-            const clientId = window.selectedClientId || (panel ? panel.dataset.clientId : null);
+            const cliId = window.selectedClientId || (panel ? panel.dataset.clientId : null);
+            const cliNum = document.getElementById('cli-num-id')?.textContent;
+
+            // Fallback: Si no hay ID interno, intentamos usar el número de identificación
+            const finalClientId = cliId || cliNum;
             
-            if (!clientId) {
+            if (!finalClientId || finalClientId === '–') {
                 return Swal.fire({
                     icon: 'error',
-                    title: 'Cliente no detectado',
-                    text: 'Por favor, vuelve a seleccionar el cliente del buscador (haz clic en el resultado que aparece al escribir).',
+                    title: 'VERSIÓN NUEVA - Cliente no detectado',
+                    text: 'Por favor, escribe el nombre del cliente y selecciónalo de la lista que aparece abajo.',
                     confirmButtonText: 'Entendido'
                 });
             }
+            
+            const clientId = finalClientId;
             const lines = document.querySelectorAll('.item-card');
             if (lines.length === 0) return Swal.fire('Error', 'El detalle está vacío', 'error');
             const consecutivo = document.getElementById('mh-consecutivo')?.innerText || "";
