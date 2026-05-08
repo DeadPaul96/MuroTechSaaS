@@ -236,14 +236,24 @@ async function fetchAPI(url, options = {}) {
             headers: headers
         });
 
+        // Manejo robusto de errores
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Error en la petición');
+            let errorMessage = `Error ${response.status}: ${response.statusText}`;
+            try {
+                // Intentar leer error como JSON
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (jsonErr) {
+                // Si no es JSON, capturar texto (podría ser HTML de error)
+                const textError = await response.text();
+                console.error('Error del servidor (No-JSON):', textError);
+            }
+            throw new Error(errorMessage);
         }
 
         return await response.json();
     } catch (error) {
-        console.error('Error en fetchAPI:', error);
+        console.error('Fetch Error:', error);
         throw error;
     }
 }
