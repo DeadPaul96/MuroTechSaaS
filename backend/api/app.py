@@ -123,6 +123,30 @@ def _parse_int(value, default=0):
         return default
 
 
+def _parse_date(value, end_of_day=False):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        if end_of_day:
+            return value.replace(hour=23, minute=59, second=59, microsecond=999999)
+        return value
+    try:
+        parsed = datetime.fromisoformat(value)
+        if end_of_day:
+            return parsed.replace(hour=23, minute=59, second=59, microsecond=999999)
+        return parsed
+    except ValueError:
+        for fmt in ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]:
+            try:
+                parsed = datetime.strptime(value, fmt)
+                if end_of_day:
+                    return parsed.replace(hour=23, minute=59, second=59, microsecond=999999)
+                return parsed
+            except ValueError:
+                continue
+    return None
+
+
 def validate_sucursal(current_user, sucursal_id):
     if not sucursal_id:
         return None
@@ -1446,8 +1470,10 @@ def get_reportes_data(current_user):
         Factura.is_draft == False
     )
     
-    if desde: query_facturas = query_facturas.filter(Factura.fecha_emision >= desde)
-    if hasta: query_facturas = query_facturas.filter(Factura.fecha_emision <= hasta)
+    desde_dt = _parse_date(desde)
+    hasta_dt = _parse_date(hasta, end_of_day=True)
+    if desde_dt: query_facturas = query_facturas.filter(Factura.fecha_emision >= desde_dt)
+    if hasta_dt: query_facturas = query_facturas.filter(Factura.fecha_emision <= hasta_dt)
     if cliente_id and cliente_id != 'all': 
         query_facturas = query_facturas.filter(Factura.cliente_id == cliente_id)
 
@@ -1526,8 +1552,10 @@ def get_auditoria_data(current_user):
 
         # 1. Comprobantes (Facturas)
         f_query = Factura.query.filter(Factura.sucursal_id.in_(sucursales_ids))
-        if desde: f_query = f_query.filter(Factura.fecha_emision >= desde)
-        if hasta: f_query = f_query.filter(Factura.fecha_emision <= hasta + " 23:59:59")
+        desde_dt = _parse_date(desde)
+        hasta_dt = _parse_date(hasta, end_of_day=True)
+        if desde_dt: f_query = f_query.filter(Factura.fecha_emision >= desde_dt)
+        if hasta_dt: f_query = f_query.filter(Factura.fecha_emision <= hasta_dt)
         if estado != 'todos': f_query = f_query.filter(Factura.estado.ilike(f"%{estado}%"))
         if vendedor_id != 'todos': f_query = f_query.filter(Factura.usuario_id == vendedor_id)
         if medio_pago != 'todos': f_query = f_query.filter(Factura.medio_pago == medio_pago)
@@ -1560,8 +1588,10 @@ def get_auditoria_data(current_user):
 
         # 2. Movimientos de Inventario
         m_query = InventarioMovimiento.query.filter(InventarioMovimiento.sucursal_id.in_(sucursales_ids))
-        if desde: m_query = m_query.filter(InventarioMovimiento.fecha >= desde)
-        if hasta: m_query = m_query.filter(InventarioMovimiento.fecha <= hasta + " 23:59:59")
+        desde_dt = _parse_date(desde)
+        hasta_dt = _parse_date(hasta, end_of_day=True)
+        if desde_dt: m_query = m_query.filter(InventarioMovimiento.fecha >= desde_dt)
+        if hasta_dt: m_query = m_query.filter(InventarioMovimiento.fecha <= hasta_dt)
         
         movimientos = m_query.order_by(InventarioMovimiento.fecha.desc()).limit(100).all()
         movs_list = [{
@@ -1611,8 +1641,10 @@ def get_reportes_summary(current_user):
 
         # Filtros de base
         f_query = Factura.query.filter(Factura.sucursal_id.in_(sucursales_ids))
-        if desde: f_query = f_query.filter(Factura.fecha_emision >= desde)
-        if hasta: f_query = f_query.filter(Factura.fecha_emision <= hasta + " 23:59:59")
+        desde_dt = _parse_date(desde)
+        hasta_dt = _parse_date(hasta, end_of_day=True)
+        if desde_dt: f_query = f_query.filter(Factura.fecha_emision >= desde_dt)
+        if hasta_dt: f_query = f_query.filter(Factura.fecha_emision <= hasta_dt)
 
         facturas = f_query.all()
 
