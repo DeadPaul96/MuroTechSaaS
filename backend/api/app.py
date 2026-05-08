@@ -166,13 +166,15 @@ def get_tipo_cambio():
             data = res.json()
             return {
                 'venta': float(data['dolar']['venta']['valor']),
-                'compra': float(data['dolar']['compra']['valor'])
+                'compra': float(data['dolar']['compra']['valor']),
+                'euro_colones': float(data['euro']['colones']),
+                'euro_dolares': float(data['euro']['dolares'])
             }
     except Exception as e:
         print(f"Error consultando API Hacienda: {e}")
 
     # Fallback local solo si la API de Hacienda falla
-    return {'venta': 525.50, 'compra': 515.20}
+    return {'venta': 525.50, 'compra': 515.20, 'euro_colones': 542.11, 'euro_dolares': 1.1772}
 
 
 def generar_consecutivo(sucursal, tipo_doc, contador):
@@ -1950,22 +1952,23 @@ def get_dashboard_metrics(current_user):
 
 @app.route('/api/tipo-cambio', methods=['GET'])
 def get_exchange_rates():
-    """Retorna tipos de cambio oficiales (BCCR/Referencia)"""
+    """Retorna tipos de cambio oficiales (Hacienda) para USD y EUR"""
     try:
-        usd_rates = get_tipo_cambio()
+        rates = get_tipo_cambio()
         return jsonify({
             "usd": {
-                "venta": usd_rates.get('venta', 0.0),
-                "compra": usd_rates.get('compra', 0.0),
+                "venta": rates.get('venta', 0.0),
+                "compra": rates.get('compra', 0.0),
                 "fecha": datetime.now().strftime("%d/%m/%Y")
             },
             "eur": {
-                "valor": 541.64,
+                "valor": rates.get('euro_colones', 542.11),
+                "dolares": rates.get('euro_dolares', 1.1772),
                 "fecha": datetime.now().strftime("%d/%m/%Y")
             }
         }), 200
     except Exception as e:
-        return jsonify({"message": "Error al obtener tipo de cambio"}), 500
+        return jsonify({"message": "Error al obtener tipo de cambio", "error": str(e)}), 500
 
 @app.route('/api/time', methods=['GET'])
 def get_external_time():
