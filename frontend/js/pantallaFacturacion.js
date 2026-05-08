@@ -9,6 +9,7 @@
     let currentRates = { usd: 1, eur: 1 };
     const monedaSymbols = { 'CRC': '₡', 'USD': '$', 'EUR': '€' };
     window.isDirty = false;
+    window.selectedClientId = null; // Variable global de respaldo
 
     // Alerta nativa solo para cierre de pestaña/refresh
     window.addEventListener('beforeunload', function (e) {
@@ -77,7 +78,9 @@
         const panel = document.getElementById('cliente-info-panel');
         if (panel) {
             panel.style.display = 'flex';
-            panel.dataset.clientId = data.id; // Guardamos el ID para la facturación
+            panel.dataset.clientId = data.id; 
+            window.selectedClientId = data.id; // Doble seguridad
+            console.log("Cliente seleccionado:", data.id);
         }
 
         const setSafeText = (id, val) => {
@@ -480,8 +483,17 @@
     document.getElementById('factura-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         try {
-            const clientId = document.getElementById('cliente-info-panel').dataset.clientId;
-            if (!clientId) return Swal.fire('Error', 'Debe seleccionar un cliente del catálogo', 'error');
+            const panel = document.getElementById('cliente-info-panel');
+            const clientId = window.selectedClientId || (panel ? panel.dataset.clientId : null);
+            
+            if (!clientId) {
+                return Swal.fire({
+                    icon: 'error',
+                    title: 'Cliente no detectado',
+                    text: 'Por favor, vuelve a seleccionar el cliente del buscador (haz clic en el resultado que aparece al escribir).',
+                    confirmButtonText: 'Entendido'
+                });
+            }
             const lines = document.querySelectorAll('.item-card');
             if (lines.length === 0) return Swal.fire('Error', 'El detalle está vacío', 'error');
             const consecutivo = document.getElementById('mh-consecutivo')?.innerText || "";
