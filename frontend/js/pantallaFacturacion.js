@@ -74,6 +74,12 @@
     }
 
     window.mostrarCliente = function(data) {
+        const panel = document.getElementById('cliente-info-panel');
+        if (panel) {
+            panel.style.display = 'flex';
+            panel.dataset.clientId = data.id; // Guardamos el ID para la facturación
+        }
+
         const setSafeText = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.textContent = val || '–';
@@ -137,7 +143,11 @@
         ids.forEach(id => { const el = document.getElementById(id); if(el) el.textContent='–'; });
         const container = document.getElementById('cli-actividad-container');
         if (container) container.innerHTML = '<span id="cli-actividad">–</span>';
-        document.getElementById('cliente-info-panel').style.display = 'none';
+        const panel = document.getElementById('cliente-info-panel');
+        if (panel) {
+            panel.style.display = 'none';
+            panel.dataset.clientId = ''; // Limpiamos el ID
+        }
         document.getElementById('buscar-cliente-id').value = '';
         toggleVentaSection(false);
         saveDraft();
@@ -183,6 +193,7 @@
         window.seleccionarCliente = function(cliente) {
             const tiposTexto = {'01':'FÍSICA', '02':'JURÍDICA', '03':'DIMEX', '04':'NITE'};
             mostrarCliente({
+                id: cliente.id, // Pasamos el ID real
                 tipo_id: tiposTexto[cliente.tipo_id] || cliente.tipo_id,
                 num_id: cliente.identificacion,
                 nombre: cliente.nombre,
