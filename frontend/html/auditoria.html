@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../css/shared/base.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
+    <script src="../js/shared/config.js"></script>
     <script src="../js/shared/utils.js"></script>
     <script src="../js/shared/mockDB.js"></script>
     <script src="../js/shared/sidebar.js"></script>
@@ -55,7 +56,7 @@
 
                 <!-- ─── FILTROS ─── -->
                 <div class="filter-section">
-                    <div class="filter-grid">
+                    <div class="filter-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
                         <div>
                             <label class="label-sm">Rango de Fechas</label>
                             <div class="date-inputs">
@@ -73,8 +74,25 @@
                             </select>
                         </div>
                         <div>
+                            <label class="label-sm">Vendedor / Emisor</label>
+                            <select id="aud-vendedor" class="fi">
+                                <option value="todos">Todos los vendedores</option>
+                                <!-- JS -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label-sm">Método de Pago</label>
+                            <select id="aud-pago" class="fi">
+                                <option value="todos">Todos los métodos</option>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Tarjeta">Tarjeta</option>
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Sinpe Móvil">Sinpe Móvil</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: span 1;">
                             <label class="label-sm">Búsqueda Inteligente</label>
-                            <input type="text" id="aud-search" class="fi" placeholder="Filtrar por consecutivo, cliente o descripción...">
+                            <input type="text" id="aud-search" class="fi" placeholder="Consecutivo, cliente...">
                         </div>
                         <div>
                             <button class="btn-p btn-p-primary" id="btn-do-filter" style="width:100%;">

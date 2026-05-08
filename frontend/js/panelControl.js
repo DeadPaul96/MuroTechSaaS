@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Cargar datos reales del API
+    // Cargar datos reales del API
     async function cargarDashboard() {
         try {
             const res = await fetch(`${CONFIG.API_BASE_URL}/api/dashboard`, {
@@ -28,35 +29,59 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (res.ok) {
                 // Actualizar contadores
-                if (document.getElementById('dash-facturas')) document.getElementById('dash-facturas').textContent = data.facturasEmitidas || 0;
-                if (document.getElementById('dash-ingresos')) document.getElementById('dash-ingresos').textContent = '₡' + (data.ingresosTotales || 0).toLocaleString();
-                if (document.getElementById('dash-clientes')) document.getElementById('dash-clientes').textContent = data.clientesActivos || 0;
-                if (document.getElementById('dash-conversion')) document.getElementById('dash-conversion').textContent = (data.tasaConversion || 0) + '%';
+                const updateVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = val;
+                };
+
+                const formatM = (num) => {
+                    if (num >= 1000000) return '₡' + (num / 1000000).toFixed(1) + 'M';
+                    return '₡' + num.toLocaleString();
+                };
+
+                updateVal('dash-facturas', data.facturasEmitidas || 0);
+                updateVal('dash-ingresos', formatM(data.ingresosTotales || 0));
+                updateVal('dash-clientes', data.clientesActivos || 0);
+                updateVal('dash-conversion', data.tasaConversion || '0.0%');
+
+                // Actualizar variaciones
+                const updateVar = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = `<i class="fas fa-arrow-up"></i> ${val}`;
+                };
+                updateVar('var-facturas', data.facturasVariacion || '0%');
+                updateVar('var-ingresos', data.ingresosVariacion || '0%');
+                updateVar('var-clientes', data.clientesVariacion || '0%');
+                updateVar('var-exito', data.tasaVariacion || '0%');
 
                 // Actualizar actividad reciente
                 const tbody = document.getElementById('activity-list');
                 if (tbody && data.actividadReciente) {
                     tbody.innerHTML = '';
-                    data.actividadReciente.forEach((fac, index) => {
+                    data.actividadReciente.forEach((item, index) => {
                         const tr = document.createElement('tr');
                         tr.style.setProperty('--row-index', index);
                         
                         let badgeClass = 'status-pendiente';
-                        const estado = fac.estado ? fac.estado.toLowerCase() : '';
-                        if(estado.includes('pagada') || estado.includes('aceptada')) badgeClass = 'status-aceptado';
+                        const estado = (item.estado || '').toLowerCase();
+                        if(estado.includes('pagada') || estado.includes('aceptada') || estado.includes('éxito')) badgeClass = 'status-aceptado';
                         if(estado.includes('vencida') || estado.includes('anulada') || estado.includes('rechazada')) badgeClass = 'status-rechazado';
                         
-                        const dateObj = new Date(fac.fecha);
-                        const fecha = dateObj.toLocaleDateString('es-CR', {day:'2-digit', month:'short', year:'numeric'});
+                        const fecha = new Date(item.fecha).toLocaleDateString('es-CR', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
                         
                         tr.innerHTML = `
-                            <td class="activity-client">${fac.clienteNombre || 'Consumidor Final'}</td>
-                            <td>${fac.id}</td>
-                            <td class="activity-amount">₡${(fac.monto || 0).toLocaleString('es-CR')}</td>
-                            <td><span class="stat-badge ${badgeClass}">${fac.estado || 'Procesando'}</span></td>
-                            <td>${fecha}</td>
+                            <td class="activity-client">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#1e3a8a; font-weight:900; font-size:0.7rem;">${item.clienteNombre.charAt(0)}</div>
+                                    <span>${item.clienteNombre}</span>
+                                </div>
+                            </td>
+                            <td style="font-family:monospace; font-weight:700; color:#64748b;">${item.id}</td>
+                            <td class="activity-amount" style="font-weight:900; color:#0f172a;">₡${(item.monto || 0).toLocaleString('es-CR')}</td>
+                            <td><span class="stat-badge ${badgeClass}">${item.estado || 'Procesando'}</span></td>
+                            <td style="color:#64748b; font-size:0.85rem;">${fecha}</td>
                             <td>
-                                <button class="btn-action" title="Ver Detalle" onclick="verDetalleFactura(${fac.id})">
+                                <button class="btn-action" title="Ver Detalle" onclick="Swal.fire('Info', 'Visualización de documento: ' + '${item.id}', 'info')">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </td>

@@ -11,7 +11,8 @@
     <link rel="stylesheet" href="../css/billing/billing.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <script src="../js/shared/utils.js"></script>
+    <script src="../js/shared/config.js?v=2"></script>
+    <script src="../js/shared/utils.js?v=2"></script>
     <script src="../js/shared/mockDB.js"></script>
     <script src="../js/shared/sidebar.js"></script>
 
@@ -226,21 +227,16 @@
                             <div style="background: var(--grad-premium); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; font-size: 0.8rem;">
                                 <i class="fas fa-search"></i>
                             </div>
-                            <div style="flex: 1; display: flex; gap: 8px;">
-                                <select id="tipo-id-cliente" class="premium-select" style="width: 150px; height: 38px; margin: 0; font-size: 0.8rem;">
-                                    <option value="01">01 – Física</option>
-                                    <option value="02">02 – Jurídica</option>
-                                    <option value="03">03 – DIMEX</option>
-                                    <option value="04">04 – NITE</option>
-                                </select>
+                            <div style="flex: 1; display: flex; gap: 10px;">
                                 <div class="autocomplete-wrapper" style="flex: 1; position: relative;">
-                                    <input type="text" id="buscar-cliente-id" class="fi" style="height: 38px; font-size: 0.9rem; border-radius: 8px;" placeholder="Buscar por nombre, ID o correo..." autocomplete="off">
-                                    <div id="cliente-dropdown" class="autocomplete-dropdown"></div>
+                                    <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.9rem; z-index: 5;"></i>
+                                    <input type="text" id="buscar-cliente-id" class="fi" style="height: 46px; font-size: 0.95rem; border-radius: 12px; padding-left: 45px; border: 2px solid #e2e8f0; transition: all 0.2s;" placeholder="Buscar cliente por nombre, identificación o correo..." autocomplete="off">
+                                    <div id="cliente-dropdown" class="autocomplete-dropdown" style="border-radius: 14px; box-shadow: 0 15px 35px rgba(0,0,0,0.1);"></div>
                                 </div>
-                                <button type="button" id="btn-buscar-cliente" class="btn-primary" style="height: 38px; width: 44px; border-radius: 8px; padding: 0;">
+                                <button type="button" id="btn-buscar-cliente" class="btn-primary" style="height: 46px; width: 50px; border-radius: 12px; padding: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e40af, #3b82f6); border: none; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.2);">
                                     <i class="fas fa-arrow-right"></i>
                                 </button>
-                                <button type="button" id="btn-limpiar-cliente" class="btn-secondary" style="height: 38px; width: 44px; border-radius: 8px; padding: 0; background: #f1f5f9; color: #64748b;">
+                                <button type="button" id="btn-limpiar-cliente" class="btn-secondary" style="height: 46px; width: 50px; border-radius: 12px; padding: 0; background: #f1f5f9; color: #64748b; border: 1.5px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>

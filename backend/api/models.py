@@ -205,6 +205,10 @@ class Factura(db.Model):
     is_draft = db.Column(db.Boolean, default=False)
     observaciones = db.Column(db.Text)
     
+    # Trazabilidad
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    usuario = db.relationship('Usuario', backref='facturas_emitidas', lazy=True)
+
     # Conversión de Moneda
     tipo_cambio = db.Column(db.Float, default=1.0)
     is_quotation = db.Column(db.Boolean, default=False)

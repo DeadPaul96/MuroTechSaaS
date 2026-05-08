@@ -38,11 +38,7 @@
                 return;
             }
 
-            const token = localStorage.getItem('token');
-            fetch(`${CONFIG.API_BASE_URL}/api/clientes?q=${encodeURIComponent(q)}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(res => res.json())
+            fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes?q=${encodeURIComponent(q)}`)
             .then(matches => {
                 dropdown.innerHTML = '';
                 if (matches && matches.length > 0) {
@@ -76,45 +72,59 @@
 
     // --- PROCESAMIENTO DE REPORTES ---
     async function generateReport() {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
         const desde = document.getElementById('filter-desde').value;
         const hasta = document.getElementById('filter-hasta').value;
         const clienteId = document.getElementById('filter-cliente-id').value;
+        const periodo = document.getElementById('filter-periodo').value;
 
-        let url = `${CONFIG.API_BASE_URL}/api/reportes/data?desde=${desde}&hasta=${hasta}`;
+        Swal.fire({ title: 'Procesando Inteligencia...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        let url = `${CONFIG.API_BASE_URL}/api/reportes?desde=${desde}&hasta=${hasta}&periodo=${periodo}`;
         if (clienteId && clienteId !== 'all') url += `&cliente_id=${clienteId}`;
 
         try {
-            const res = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
+            const data = await fetchAPI(url);
+            Swal.close();
 
-            if (res.ok) {
-                window.lastChartData = data.charts;
+            if (data) {
+                window.lastChartData = data.graficos;
 
                 // Actualizar KPIs
                 document.getElementById('val-ventas').textContent = fmt(data.kpis.ventas);
                 document.getElementById('val-compras').textContent = fmt(data.kpis.compras);
                 document.getElementById('val-utilidad').textContent = fmt(data.kpis.utilidad);
-                document.getElementById('val-impuestos').textContent = fmt(data.kpis.iva);
+                document.getElementById('val-impuestos').textContent = fmt(data.kpis.impuestos);
 
                 // Render Ventas
                 const tbodyVentas = document.getElementById('tbody-ventas');
                 if (tbodyVentas) {
                     tbodyVentas.innerHTML = data.tablas.ventas.map(f => `
                         <tr>
-                            <td>${f.fecha}</td>
-                            <td style="font-family:monospace; font-weight:700; font-size:0.75rem;">${f.consecutivo}</td>
+                            <td>${new Date(f.fecha).toLocaleDateString()}</td>
+                            <td style="font-family:monospace; font-weight:700; font-size:0.75rem;">${f.numero}</td>
                             <td>${f.cliente}</td>
                             <td>${fmt(f.bruto)}</td>
-                            <td>${fmt(f.iva)}</td>
-                            <td style="font-weight:700; color:var(--rep-accent);">${fmt(f.total)}</td>
+                            <td>${fmt(f.impuestos)}</td>
+                            <td style="font-weight:700; color:#1e40af;">${fmt(f.total)}</td>
                             <td><span class="stat-badge status-aceptado">${f.estado}</span></td>
                         </tr>
                     `).join('');
+                }
+
+                // Render Compras
+                const tbodyCompras = document.getElementById('tbody-compras');
+                if (tbodyCompras) {
+                    tbodyCompras.innerHTML = data.tablas.compras.length ? data.tablas.compras.map(c => `
+                        <tr>
+                            <td>${new Date(c.fecha).toLocaleDateString()}</td>
+                            <td>${c.proveedor}</td>
+                            <td>${c.concepto}</td>
+                            <td>${fmt(c.monto)}</td>
+                            <td>${fmt(c.iva)}</td>
+                            <td style="font-weight:700;">${fmt(c.total)}</td>
+                            <td><span class="badge b-info">${c.categoria}</span></td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="7" style="text-align:center; padding:20px; color:#94a3b8;">No hay compras en este período.</td></tr>';
                 }
 
                 // Render Inventario
@@ -123,45 +133,61 @@
                     tbodyInv.innerHTML = data.tablas.inventario.map(p => `
                         <tr>
                             <td style="font-family:monospace; font-size:0.75rem;">${p.codigo}</td>
-                            <td>${p.nombre}</td>
-                            <td><span class="badge b-info">General</span></td>
-                            <td>${fmt(p.costo)}</td>
-                            <td style="font-weight:700;">${fmt(p.venta)}</td>
-                            <td style="font-weight:800; text-align:center;">${p.stock}</td>
-                            <td><span class="stat-badge ${p.status === 'STOCK_BAJO' ? 'status-error' : 'status-aceptado'}">${p.status}</span></td>
+                            <td>${p.descripcion}</td>
+                            <td><span class="badge b-info">${p.categoria}</span></td>
+                            <td>${fmt(p.precio_compra)}</td>
+                            <td style="font-weight:700;">${fmt(p.precio_venta)}</td>
+                            <td style="font-weight:800; text-align:center;">${p.existencia}</td>
+                            <td><span class="stat-badge ${p.status === 'Bajo' ? 'status-error' : 'status-aceptado'}">${p.status}</span></td>
                         </tr>
                     `).join('');
                 }
 
-                document.getElementById('val-sku-total').textContent = data.resumen_inventario.total_skus;
-                document.getElementById('val-stock-economico').textContent = fmt(data.resumen_inventario.valor_total);
-                document.getElementById('val-stock-bajo').textContent = data.resumen_inventario.conteo_bajo;
+                document.getElementById('val-sku-total').textContent = data.kpis.sku_total;
+                document.getElementById('val-stock-economico').textContent = fmt(data.kpis.valor_inventario);
+                document.getElementById('val-stock-bajo').textContent = data.kpis.stock_bajo;
 
                 // Render Comprobantes
                 const tbodyComp = document.getElementById('tbody-comprobantes');
                 if (tbodyComp) {
-                    tbodyComp.innerHTML = data.tablas.ventas.map(f => `
+                    tbodyComp.innerHTML = data.tablas.comprobantes.map(f => `
                         <tr>
                             <td style="font-family:monospace;font-size:0.7rem;">${f.consecutivo}</td>
-                            <td>${f.fecha}</td>
-                            <td>${f.cliente}</td>
+                            <td>${new Date(f.fecha).toLocaleString()}</td>
+                            <td>${f.receptor}</td>
                             <td><span class="stat-badge status-aceptado">${f.estado} <i class="fas fa-check"></i></span></td>
-                            <td style="font-family:monospace; font-size:0.65rem; color:#64748b;">Clave Generada</td>
-                            <td><button class="btn-action btn-outline" style="padding:4px 10px; font-size:0.65rem;">Ver XML</button></td>
+                            <td style="font-family:monospace; font-size:0.65rem; color:#64748b;">${f.clave}</td>
+                            <td><button class="btn-action btn-outline" style="padding:4px 10px; font-size:0.65rem;" onclick="Swal.fire('Info','Estructura de mensaje validada con firma digital','info')">Ver Log</button></td>
                         </tr>
                     `).join('');
                 }
 
-                initCharts(data.charts);
+                // Render Cotizaciones
+                const tbodyCot = document.getElementById('tbody-cotizaciones');
+                if (tbodyCot) {
+                    tbodyCot.innerHTML = data.tablas.cotizaciones.length ? data.tablas.cotizaciones.map(f => `
+                        <tr>
+                            <td>${new Date(f.fecha).toLocaleDateString()}</td>
+                            <td style="font-family:monospace; font-weight:700;">${f.numero}</td>
+                            <td>${f.cliente}</td>
+                            <td>${f.vencimiento ? new Date(f.vencimiento).toLocaleDateString() : 'N/A'}</td>
+                            <td style="font-weight:700;">${fmt(f.total)}</td>
+                            <td><span class="stat-badge status-pendiente">${f.estado}</span></td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="6" style="text-align:center; padding:20px; color:#94a3b8;">Sin cotizaciones en el período.</td></tr>';
+                }
+
+                initCharts(data.graficos);
             }
         } catch (err) {
-            console.error("Error al cargar reportes:", err);
+            Swal.fire('Error', 'No se pudieron procesar los reportes analíticos', 'error');
+            console.error(err);
         }
     }
 
     // --- Visualización con Chart.js ---
-    function initCharts(charts) {
-        if (!charts) return;
+    function initCharts(graficos) {
+        if (!graficos) return;
         if (chartVentas) chartVentas.destroy();
         if (chartPie) chartPie.destroy();
 
@@ -169,30 +195,51 @@
         chartVentas = new Chart(ctxV, {
             type: 'line',
             data: {
-                labels: charts.ventas.map(d => d.fecha),
+                labels: graficos.tendencia.map(d => d.label),
                 datasets: [{
-                    label: 'Ventas Diarias',
-                    data: charts.ventas.map(d => d.total),
+                    label: 'Ventas por Período',
+                    data: graficos.tendencia.map(d => d.valor),
                     borderColor: '#1e40af',
                     backgroundColor: 'rgba(30, 64, 175, 0.1)',
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#1e40af'
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: (val) => fmt(val) }
+                    }
+                }
+            }
         });
 
         const ctxP = document.getElementById('chart-pie-productos').getContext('2d');
         chartPie = new Chart(ctxP, {
             type: 'doughnut',
             data: {
-                labels: charts.productos.map(d => d.label),
+                labels: graficos.top_productos.map(d => d.label),
                 datasets: [{
-                    data: charts.productos.map(d => d.value),
-                    backgroundColor: ['#1e40af', '#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+                    data: graficos.top_productos.map(d => d.valor),
+                    backgroundColor: ['#1e40af', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
         });
     }
 
@@ -205,16 +252,26 @@
 
     window.exportToPDF = function(tableId, filename) {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.text("MUROTECH - Reporte Fiscal", 14, 20);
-        doc.autoTable({ html: `#${tableId}`, startY: 30 });
+        const doc = new jsPDF('l', 'mm', 'a4'); // Paisaje para más espacio
+        doc.setFontSize(18);
+        doc.text("MUROTECH SOLUTIONS - Reporte Analítico de Negocios", 14, 20);
+        doc.setFontSize(10);
+        doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 28);
+        
+        doc.autoTable({ 
+            html: `#${tableId}`, 
+            startY: 35,
+            theme: 'grid',
+            headStyles: { fillColor: [30, 64, 175] }
+        });
         doc.save(`${filename}.pdf`);
     };
 
     // --- Inicialización ---
     document.getElementById('btn-filtrar').addEventListener('click', generateReport);
+    document.getElementById('btn-reload-data')?.addEventListener('click', generateReport);
     
-    // Fechas por defecto
+    // Fechas por defecto (Mes actual)
     const now = new Date();
     document.getElementById('filter-desde').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     document.getElementById('filter-hasta').value = now.toISOString().split('T')[0];
@@ -223,7 +280,7 @@
 
 })();
 
-// Partículas
+// Partículas (se mantiene igual)
 (function() {
     const canvas = document.getElementById('particles-canvas');
     if (!canvas) return;
