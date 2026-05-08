@@ -1972,9 +1972,17 @@ def get_external_time():
     try:
         res = requests.get('https://worldtimeapi.org/api/timezone/America/Costa_Rica', timeout=3)
         if res.ok: return jsonify(res.json())
-        return jsonify({"message": "Error externo"}), 502
     except Exception:
-        return jsonify({"message": "Fallo de conexión"}), 503
+        pass
+    
+    # Fallback: Usar la hora local del servidor si falla la API externa
+    from datetime import datetime
+    now = datetime.now()
+    return jsonify({
+        "datetime": now.isoformat(),
+        "timezone": "America/Costa_Rica",
+        "day_of_week": now.weekday()
+    })
 
 @app.route('/api/seed', methods=['GET'])
 def seed_endpoint():
