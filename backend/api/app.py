@@ -711,7 +711,7 @@ def config_facturacion(current_user):
 
 # (config_usuarios eliminado — se usa /api/usuarios que ya existe)
 
-@app.route('/api/usuarios/<int:id>', methods=['PUT', 'DELETE'])
+@app.route('/api/usuarios/<id>', methods=['PUT', 'DELETE'])
 @token_required
 def modificar_usuario(current_user, id):
     if not current_user.is_superadmin:
@@ -775,8 +775,7 @@ def clientes(current_user):
             'tipo_id': c.tipo_id, 'correo': c.email, 'telefono': c.telefono,
             'movil': c.movil, 'actividad_economica': c.actividad_economica, 'regimen': c.regimen,
             'provincia': c.provincia, 'canton': c.canton, 'distrito': c.distrito, 
-            'barrio': c.barrio, 'direccion': c.direccion,
-            'nombre_comercial': c.nombre_comercial
+            'barrio': c.barrio, 'direccion': c.direccion
         } for c in clientes])
         
     if request.method == 'POST':
@@ -801,7 +800,7 @@ def clientes(current_user):
         db.session.commit()
         return jsonify({'message': 'Cliente creado exitosamente', 'id': nuevo.id}), 201
 
-@app.route('/api/clientes/<int:id>', methods=['PUT', 'DELETE'])
+@app.route('/api/clientes/<id>', methods=['PUT', 'DELETE'])
 @token_required
 def modificar_cliente(current_user, id):
     # Buscar el cliente pero SOLAMENTE si pertenece a la misma empresa (Multi-Tenant)
@@ -886,7 +885,7 @@ def productos(current_user):
         db.session.commit()
         return jsonify({'message': 'Ítem guardado exitosamente', 'id': nuevo.id}), 201
 
-@app.route('/api/productos/<int:id>', methods=['PUT', 'DELETE'])
+@app.route('/api/productos/<id>', methods=['PUT', 'DELETE'])
 @token_required
 def modificar_producto(current_user, id):
     # Buscar el producto asegurando que pertenece a la empresa actual
