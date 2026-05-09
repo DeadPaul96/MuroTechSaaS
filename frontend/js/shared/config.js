@@ -14,8 +14,7 @@ const CONFIG = {
         if (isLocal) {
             return 'http://localhost:5001';
         } else {
-            // URL de producción (Render)
-            // IMPORTANTE: Cambiar esta URL cuando tengas el link de Render definitivo
+            // URL de producción (Render) - ACTUALIZADA 08/05
             return 'https://murotechsaas-95ru.onrender.com';
         }
     },
