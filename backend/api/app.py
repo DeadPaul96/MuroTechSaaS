@@ -19,32 +19,7 @@ app = Flask(__name__)
 # Configuración de CORS ultra-permisiva para desarrollo y migración
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-@app.route('/')
-def home():
-    return jsonify({"message": "MUROTECH API is running", "status": "online"}), 200
 
-@app.route('/api/health')
-def health():
-    return jsonify({"status": "healthy"}), 200
-
-@app.route('/api/time')
-def get_server_time():
-    now = datetime.now()
-    return jsonify({
-        "datetime": now.isoformat(),
-        "date": now.strftime("%Y-%m-%d"),
-        "time": now.strftime("%H:%M:%S")
-    }), 200
-
-@app.route('/api/tipo-cambio')
-@token_required
-def get_tipo_cambio(current_user):
-    # Valores simulados de Hacienda Costa Rica
-    return jsonify({
-        "compra": 515.20,
-        "venta": 528.45,
-        "fecha": datetime.now().strftime("%d/%m/%Y")
-    }), 200
 
 # ==========================================
 # CONFIGURACIÃ“N DE LA BASE DE DATOS
@@ -130,6 +105,37 @@ def require_role(allowed_roles):
             return f(current_user, *args, **kwargs)
         return decorated
     return decorator
+
+# ==========================================
+# RUTAS DE ESTADO Y UTILIDADES
+# ==========================================
+
+@app.route('/')
+def home():
+    return jsonify({"message": "MUROTECH API is running", "status": "online"}), 200
+
+@app.route('/api/health')
+def health():
+    return jsonify({"status": "healthy"}), 200
+
+@app.route('/api/time')
+def get_server_time():
+    now = datetime.now()
+    return jsonify({
+        "datetime": now.isoformat(),
+        "date": now.strftime("%Y-%m-%d"),
+        "time": now.strftime("%H:%M:%S")
+    }), 200
+
+@app.route('/api/tipo-cambio')
+@token_required
+def api_get_tipo_cambio(current_user):
+    # Valores simulados de Hacienda Costa Rica
+    return jsonify({
+        "compra": 515.20,
+        "venta": 528.45,
+        "fecha": datetime.now().strftime("%d/%m/%Y")
+    }), 200
 
 
 def _parse_float(value, default=0.0):
