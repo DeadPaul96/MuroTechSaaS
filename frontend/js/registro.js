@@ -203,8 +203,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const resData = await res.json();
 
                 if (res.ok) {
-                    Swal.fire('¡Éxito!', 'Registro completado. Bienvenido a MUROTECH.', 'success')
-                        .then(() => window.location.href = 'inicioSesion.html');
+                    // Guardar datos de registro temporal para la pantalla de planes
+                    const pending = {
+                        nombre: document.getElementById('cli-nombre').value,
+                        email: document.getElementById('u-email').value,
+                        tipo_id: tipoIdSel.value,
+                        identificacion: cedulaInput.value,
+                        empresa_id: resData.empresa_id,
+                        payment_id: resData.payment?.id || null,
+                        plan_tipo: resData.payment?.plan_tipo || 'start'
+                    };
+                    localStorage.setItem('pending_registration', JSON.stringify(pending));
+
+                    Swal.fire('¡Éxito!', 'Registro completado. Elige un plan para continuar.', 'success')
+                        .then(() => window.location.href = 'planes.html');
                 } else {
                     Swal.fire('Error', resData.message || 'No se pudo completar el registro.', 'error');
                 }

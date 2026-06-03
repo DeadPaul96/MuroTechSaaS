@@ -1,4 +1,8 @@
-# Python
+# ==========================================
+# .gitignore — MUROTECH SaaS
+# ==========================================
+
+# ── Python ──────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -6,6 +10,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -23,7 +28,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# IDEs
+# ── IDEs ───────────────────────────────────
 .vscode/
 .idea/
 *.swp
@@ -31,34 +36,55 @@ wheels/
 *~
 .DS_Store
 
-# Logs
+# ── Logs ───────────────────────────────────
 *.log
 logs/
 
-# Base de datos
+# ── Base de datos local ────────────────────
+*.db
+*.sqlite3
 *.mdf
 *.ldf
 *.bak
+instance/
 
-# Configuración local
-backend/config/local.py
+# ── Configuración sensible ─────────────────
 .env
 .env.local
+.env.production
+backend/config/local.py
 
-# Archivos temporales
-tmp/
-temp/
-*.tmp
-
-# Certificados
+# ── Certificados ───────────────────────────
 *.p12
 *.pfx
 *.key
 *.pem
 
-# Node modules (si se usa)
+# ── Archivos temporales ────────────────────
+tmp/
+temp/
+*.tmp
+scratch/
+
+# ── Node modules ───────────────────────────
 node_modules/
 
-# Archivos de sistema
+# ── Archivos de sistema ────────────────────
 Thumbs.db
 desktop.ini
+
+# ── Codely CLI ─────────────────────────────
+.codely/
+.codely-cli/
+
+# ── Migraciones (se regeneran) ────────────
+# Descomenta si prefieres no versionar migraciones:
+# backend/migrations/
+
+# ── Coverage / tests ───────────────────────
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.pytest_cache/

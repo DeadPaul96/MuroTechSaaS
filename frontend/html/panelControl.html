@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>MUROTECH SaaS - Panel de Control</title>
     
     <!-- Estilos Core MUROTECH -->
@@ -19,6 +19,9 @@
     <script src="../js/dashboard/main.js" defer></script>
 
     <link rel="stylesheet" href="../css/panelControl.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body class="reg-body">
     <!-- Canvas para Partículas Animadas -->
@@ -58,6 +61,7 @@
 
     <!-- Contenido Principal -->
     <main class="module-content dashboard-full-width">
+        <section id="planSummary" class="plan-summary-card"></section>
         <!-- BIENVENIDA -->
         <div style="background: linear-gradient(135deg, #f97316 0%, #4f46e5 100%); padding: 45px 30px; border-radius: 28px; text-align: center; margin-bottom: 30px; margin-top: 10px; box-shadow: 0 15px 35px -5px rgba(0,0,0,0.2); position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
             <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%); pointer-events: none;"></div>
@@ -72,7 +76,7 @@
             <div class="metric-item modern-card" style="background:#ffffff; border-radius:24px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.04); border:1px solid #f1f5f9; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:12px;">
                 <div style="background:#1e3a8a; color:white; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:4px;"><i class="fas fa-file-invoice"></i></div>
                 <div>
-                    <div id="dash-facturas" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">7</div>
+                    <div id="dash-facturas" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">0</div>
                     <div style="color:#64748b; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:4px 0;">Facturas</div>
                     <div id="var-facturas" style="color:#16a34a; font-size:0.75rem; font-weight:700;"><i class="fas fa-arrow-up"></i> 0%</div>
                 </div>
@@ -82,7 +86,7 @@
             <div class="metric-item modern-card" style="background:#ffffff; border-radius:24px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.04); border:1px solid #f1f5f9; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:12px;">
                 <div style="background:#f97316; color:white; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:4px;"><i class="fas fa-wallet"></i></div>
                 <div>
-                    <div id="dash-ingresos" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">₡1.1M</div>
+                    <div id="dash-ingresos" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">₡0</div>
                     <div style="color:#64748b; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:4px 0;">Ingresos</div>
                     <div id="var-ingresos" style="color:#16a34a; font-size:0.75rem; font-weight:700;"><i class="fas fa-arrow-up"></i> 0%</div>
                 </div>
@@ -153,7 +157,7 @@
             <div class="metric-item modern-card" style="background:#ffffff; border-radius:24px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.04); border:1px solid #f1f5f9; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:12px;">
                 <div style="background:#10b981; color:white; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:4px;"><i class="fas fa-users"></i></div>
                 <div>
-                    <div id="dash-clientes" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">5</div>
+                    <div id="dash-clientes" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">0</div>
                     <div style="color:#64748b; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:4px 0;">Clientes</div>
                     <div id="var-clientes" style="color:#16a34a; font-size:0.75rem; font-weight:700;"><i class="fas fa-arrow-up"></i> 0%</div>
                 </div>
@@ -163,7 +167,7 @@
             <div class="metric-item modern-card" style="background:#ffffff; border-radius:24px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.04); border:1px solid #f1f5f9; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:12px;">
                 <div style="background:#8b5cf6; color:white; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:4px;"><i class="fas fa-chart-line"></i></div>
                 <div>
-                    <div id="dash-conversion" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">94.2%</div>
+                    <div id="dash-conversion" style="font-size:1.8rem; font-weight:900; color:#0f172a; line-height:1;">0%</div>
                     <div style="color:#64748b; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin:4px 0;">Éxito</div>
                     <div id="var-exito" style="color:#16a34a; font-size:0.75rem; font-weight:700;"><i class="fas fa-arrow-up"></i> 0%</div>
                 </div>
@@ -418,6 +422,12 @@
 
     <script src="../js/panelControl.js"></script>
     <!-- Script para Partículas Animadas (Style Yesterday) -->
-    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+            });
+        }
+    </script>
 </body>
 </html>

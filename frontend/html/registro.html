@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="../css/shared/tokens.css">
     <link rel="stylesheet" href="../css/shared/base.css">
     <link rel="stylesheet" href="../css/registro.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
     <canvas id="particles-canvas"></canvas>
@@ -210,5 +213,12 @@
     <script src="../js/shared/ubicacion_data.js"></script>
 
     <script src="../js/registro.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+            });
+        }
+    </script>
 </body>
 </html>

@@ -2,11 +2,40 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="MUROTECH - Facturación Electrónica para Costa Rica">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta http-equiv="refresh" content="0; url=html/inicioSesion.html">
-    <title>MUROTECH SaaS</title>
+    
+    <title>MUROTECH - Facturación</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/imagenes/logo.svg">
+    <link rel="apple-touch-icon" href="/imagenes/logo-192.png">
 </head>
 <body>
     <script>
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('[App] Service Worker registrado:', registration);
+                        
+                        // Verificar actualizaciones cada 1 hora
+                        setInterval(() => {
+                            registration.update();
+                        }, 3600000);
+                    })
+                    .catch(error => {
+                        console.error('[App] Error registrando Service Worker:', error);
+                    });
+            });
+        }
+        
+        // Redirigir a inicioSesion
         window.location.replace("html/inicioSesion.html");
     </script>
 </body>

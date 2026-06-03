@@ -1,5 +1,6 @@
 /* --- Estructura Global Premium SaaS (Glassmorphism) --- */
 @import url("./tokens.css");
+@import url("./mobile.css");
 
 * {
     margin: 0;

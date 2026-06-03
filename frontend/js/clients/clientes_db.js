@@ -6,8 +6,7 @@ const TIPOS_ID_API_URL = `${CONFIG.API_BASE_URL}/api/tipos-identificacion`;
  */
 async function cargarTiposIdentificacion() {
     try {
-        const response = await fetch(TIPOS_ID_API_URL);
-        const data = await response.json();
+        const data = await fetchAPI(TIPOS_ID_API_URL);
         
         if (data.success) {
             const select = document.getElementById('cliente-tipo-cedula');
@@ -68,17 +67,12 @@ async function guardarClienteEnBD() {
         console.log('✅ Validación exitosa, enviando a la API...');
         
         // Enviar a la API
-        const response = await fetch(CLIENTES_API_URL, {
+        const data = await fetchAPI(CLIENTES_API_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(cliente)
         });
         
-        console.log('📡 Respuesta recibida, status:', response.status);
-        
-        const data = await response.json();
+        console.log('📡 Respuesta recibida, status: OK');
         console.log('📄 Datos de respuesta:', data);
         
         if (data.success) {
@@ -106,8 +100,7 @@ async function guardarClienteEnBD() {
  */
 async function cargarListaClientes() {
     try {
-        const response = await fetch(CLIENTES_API_URL);
-        const data = await response.json();
+        const data = await fetchAPI(CLIENTES_API_URL);
         
         if (data.success) {
             mostrarClientesEnLista(data.clientes);
@@ -165,8 +158,7 @@ function mostrarClientesEnLista(clientes) {
  */
 async function editarCliente(clienteId) {
     try {
-        const response = await fetch(`${CLIENTES_API_URL}/${clienteId}`);
-        const data = await response.json();
+        const data = await fetchAPI(`${CLIENTES_API_URL}/${clienteId}`);
         
         if (data.success) {
             const cliente = data.cliente;
@@ -200,11 +192,9 @@ async function eliminarCliente(clienteId) {
     }
     
     try {
-        const response = await fetch(`${CLIENTES_API_URL}/${clienteId}`, {
+        const data = await fetchAPI(`${CLIENTES_API_URL}/${clienteId}`, {
             method: 'DELETE'
         });
-        
-        const data = await response.json();
         
         if (data.success) {
             mostrarNotificacion('✅ Cliente eliminado exitosamente', 'success');
@@ -226,8 +216,7 @@ async function buscarClientesEnBD(query) {
     try {
         mostrarCargandoLista();
         
-        const response = await fetch(`${CLIENTES_API_URL}/buscar?q=${encodeURIComponent(query)}`);
-        const data = await response.json();
+        const data = await fetchAPI(`${CLIENTES_API_URL}/buscar?q=${encodeURIComponent(query)}`);
         
         if (data.success) {
             mostrarClientesEnLista(data.clientes);
@@ -295,10 +284,9 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
  */
 async function verificarConexionClientesAPI() {
     try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.HEALTH}`);
-        const data = await response.json();
+        const data = await fetchAPI(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.HEALTH}`);
         
-        if (data.status === 'ok' && data.database === 'connected') {
+        if (data.status === 'healthy') {
             console.log('✅ Conexión con API de Clientes OK');
             return true;
         } else {

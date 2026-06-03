@@ -2,13 +2,23 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="MUROTECH - Facturación Electrónica para Costa Rica">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <title>MUROTECH SaaS - Acceso Profesional</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/imagenes/logo.svg">
+    <link rel="apple-touch-icon" href="/imagenes/logo-192.png">
     
     <!-- Estilos Core MUROTECH -->
     <link rel="stylesheet" href="../css/shared/tokens.css">
     <link rel="stylesheet" href="../css/shared/base.css">
-    
+    <link rel="stylesheet" href="../css/base-responsive.css">
+
     <!-- Iconografía FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
@@ -102,5 +112,40 @@
 
     <!-- Script para Partículas Animadas -->
     <script src="../js/inicioSesion.js"></script>
+    
+    <!-- Service Worker Registration para PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('[App] Service Worker registrado:', registration);
+                        
+                        // Detectar actualizaciones
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('[App] Actualización disponible');
+                                    // Mostrar notificación de actualización si lo deseas
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.error('[App] Error registrando Service Worker:', error);
+                    });
+            });
+        }
+        
+        // Monitorear estado de conexión
+        window.addEventListener('online', () => {
+            console.log('[App] Conexión restaurada');
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('[App] Conexión perdida');
+        });
+    </script>
 </body>
 </html>

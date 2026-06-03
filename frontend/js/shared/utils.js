@@ -1,6 +1,89 @@
 // Utilidades compartidas para todo el sistema
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Viewport móvil si falta (páginas legacy)
+    if (!document.querySelector('meta[name="viewport"]')) {
+        const vp = document.createElement('meta');
+        vp.name = 'viewport';
+        vp.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
+        document.head.appendChild(vp);
+    }
+
+    // Meta PWA / móvil (sin editar cada HTML)
+    const headMeta = [
+        ['name', 'theme-color', '#2c3e50'],
+        ['name', 'apple-mobile-web-app-capable', 'yes'],
+        ['name', 'apple-mobile-web-app-status-bar-style', 'black-translucent'],
+        ['name', 'mobile-web-app-capable', 'yes'],
+        ['name', 'apple-mobile-web-app-title', 'MUROTECH'],
+    ];
+    headMeta.forEach(([attr, key, val]) => {
+        if (!document.querySelector(`meta[${attr}="${key}"]`)) {
+            const m = document.createElement('meta');
+            m.setAttribute(attr, key);
+            m.content = val;
+            document.head.appendChild(m);
+        }
+    });
+    if (!document.querySelector('link[rel="manifest"]')) {
+        const base = window.location.pathname.includes('/html/') ? '../' : '';
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = `${base}manifest.json`;
+        document.head.appendChild(link);
+    }
+    if (!document.querySelector('link[rel="apple-touch-icon"]')) {
+        const base = window.location.pathname.includes('/html/') ? '../' : '';
+        const icon = document.createElement('link');
+        icon.rel = 'apple-touch-icon';
+        icon.href = `${base}imagenes/logo-192.png`;
+        document.head.appendChild(icon);
+    }
+
+    // Service Worker PWA
+    if ('serviceWorker' in navigator) {
+        const swBase = window.location.pathname.includes('/html/') ? '../' : '';
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register(`${swBase}service-worker.js`)
+                .then(registration => {
+                    console.log('[App] Service Worker registrado:', registration);
+                    setInterval(() => {
+                        registration.update();
+                    }, 3600000);
+                })
+                .catch(() => {
+                    console.warn('[App] No se pudo registrar el Service Worker');
+                });
+        });
+    }
+
+    // Load mobile-first CSS across pages if not already present
+    if (!document.querySelector('link[rel="stylesheet"][href*="base-responsive.css"]')) {
+        const cssBase = document.createElement('link');
+        cssBase.rel = 'stylesheet';
+        const base = window.location.pathname.includes('/html/') ? '../' : '';
+        cssBase.href = `${base}css/base-responsive.css`;
+        document.head.appendChild(cssBase);
+    }
+
+    // Lazy loading imágenes
+    document.querySelectorAll('img[data-src]').forEach(img => {
+        img.loading = 'lazy';
+        if ('IntersectionObserver' in window) {
+            const obs = new IntersectionObserver(entries => {
+                entries.forEach(e => {
+                    if (e.isIntersecting) {
+                        e.target.src = e.target.dataset.src;
+                        obs.unobserve(e.target);
+                    }
+                });
+            });
+            obs.observe(img);
+        } else {
+            img.src = img.dataset.src;
+        }
+    });
+
     // Inyectar blobs de fondo animados automáticamente si no existen
     if (!document.querySelector('.bg-blobs')) {
         const blobContainer = document.createElement('div');
@@ -229,6 +312,12 @@ async function fetchAPI(url, options = {}) {
         const token = localStorage.getItem('token');
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Inyectar X-Sucursal-ID si existe en accesos
+        const accesos = JSON.parse(localStorage.getItem('accesos') || '[]');
+        if (accesos.length > 0 && accesos[0].sucursal_id) {
+            headers['X-Sucursal-ID'] = accesos[0].sucursal_id.toString();
         }
 
         const response = await fetch(url, {

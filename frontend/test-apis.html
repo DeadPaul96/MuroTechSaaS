@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test APIs</title>
+    <script src="js/shared/config.js"></script>
+    <script src="js/shared/utils.js"></script>
+</head>
+<body>
+    <h1>Prueba de APIs</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        async function testAPIs() {
+            results.innerHTML = '<p>Probando APIs...</p>';
+            
+            // Test 1: API Time
+            try {
+                const timeData = await fetchAPI(`${CONFIG.API_BASE_URL}/api/time`);
+                results.innerHTML += `<p>✅ API Time: ${JSON.stringify(timeData)}</p>`;
+            } catch (e) {
+                results.innerHTML += `<p>❌ API Time Error: ${e.message}</p>`;
+            }
+            
+            // Test 2: API Tipo Cambio
+            try {
+                const tcData = await fetchAPI(`${CONFIG.API_BASE_URL}/api/tipo-cambio`);
+                results.innerHTML += `<p>✅ API Tipo Cambio: ${JSON.stringify(tcData)}</p>`;
+            } catch (e) {
+                results.innerHTML += `<p>❌ API Tipo Cambio Error: ${e.message}</p>`;
+            }
+            
+            // Test 3: API Consecutivo
+            try {
+                const accesos = JSON.parse(localStorage.getItem('accesos') || '[]');
+                const sucursalId = accesos.length > 0 ? accesos[0].sucursal_id : 1;
+                const consData = await fetchAPI(`${CONFIG.API_BASE_URL}/api/facturas/consecutivo?tipo=01&sucursal_id=${sucursalId}`);
+                results.innerHTML += `<p>✅ API Consecutivo: ${JSON.stringify(consData)}</p>`;
+            } catch (e) {
+                results.innerHTML += `<p>❌ API Consecutivo Error: ${e.message}</p>`;
+            }
+        }
+        
+        testAPIs();
+    </script>
+</body>
+</html>

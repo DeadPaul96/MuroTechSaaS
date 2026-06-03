@@ -37,6 +37,13 @@ class Empresa(db.Model):
     rep_apellidos = db.Column(db.String(100))
     rep_telefono = db.Column(db.String(50))
     rep_email = db.Column(db.String(150))
+    is_active = db.Column(db.Boolean, default=True)
+    plan_tipo = db.Column(db.String(20), default='mensual')
+    plan_cuota = db.Column(db.Integer, default=0)
+    plan_inicio = db.Column(db.DateTime, default=datetime.utcnow)
+    plan_vencimiento = db.Column(db.DateTime, nullable=True)
+    plan_estado = db.Column(db.String(20), default='activo')
+    ambiente_hacienda = db.Column(db.String(10), default='stag')
     
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -54,6 +61,14 @@ class Sucursal(db.Model):
     terminal = db.Column(db.String(10), default="00001")
     nombre = db.Column(db.String(100), nullable=False)
     direccion = db.Column(db.Text)
+    
+    # Ubicación estructurada según API 4.4 de Hacienda Costa Rica
+    provincia = db.Column(db.String(10), default="1")
+    canton = db.Column(db.String(10), default="01")
+    distrito = db.Column(db.String(10), default="01")
+    barrio = db.Column(db.String(10), default="01")
+    otras_senas = db.Column(db.String(250))
+    
     # Consecutivos por tipo (v4.4)
     c_factura = db.Column(db.Integer, default=0)
     c_tiquete = db.Column(db.Integer, default=0)
@@ -90,6 +105,12 @@ class Usuario(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+class RevokedToken(db.Model):
+    __tablename__ = 'revoked_tokens'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    token = db.Column(db.Text, unique=True, nullable=False)
+    fecha_revocado = db.Column(db.DateTime, default=datetime.utcnow)
+
 class AccesoSucursal(db.Model):
     """Tabla pivote que asigna a un Usuario un Rol dentro de una Sucursal específica."""
     __tablename__ = 'accesos_sucursal'
@@ -97,6 +118,8 @@ class AccesoSucursal(db.Model):
     usuario_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'), nullable=False)
     sucursal_id = db.Column(db.String(36), db.ForeignKey('sucursales.id'), nullable=False)
     rol_id = db.Column(db.String(36), db.ForeignKey('roles.id'), nullable=False)
+
+    rol = db.relationship('Rol', backref='accesos', lazy=True)
 
 # ==========================================
 # MODELOS DE NEGOCIO (FACTURACIÓN E INVENTARIO)
@@ -143,13 +166,13 @@ class Producto(db.Model):
     detalle_servicio = db.Column(db.Text)
     
     # Precios y Finanzas
-    costo = db.Column(db.Float, default=0.0) # precio_linea
-    margen = db.Column(db.Float, default=0.0) # ganancia %
-    precio_venta = db.Column(db.Float, nullable=False)
-    descuento_max = db.Column(db.Float, default=0.0)
+    costo = db.Column(db.Numeric(14, 2), default=0.00) # precio_linea
+    margen = db.Column(db.Numeric(5, 2), default=0.00) # ganancia %
+    precio_venta = db.Column(db.Numeric(14, 2), nullable=False)
+    descuento_max = db.Column(db.Numeric(5, 2), default=0.00)
     
     # Impuestos
-    impuesto = db.Column(db.Float, default=13.0) # IVA %
+    impuesto = db.Column(db.Numeric(5, 2), default=13.00) # IVA %
     tipo_impuesto = db.Column(db.String(10), default="01") # 01=IVA
     
     # Operación
@@ -164,6 +187,7 @@ class InventarioMovimiento(db.Model):
     producto_id = db.Column(db.String(36), db.ForeignKey('productos.id'), nullable=False)
     sucursal_id = db.Column(db.String(36), db.ForeignKey('sucursales.id'), nullable=False)
     usuario_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'), nullable=False)
+    usuario = db.relationship('Usuario', backref='movimientos_inventario', lazy=True)
     
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     tipo_movimiento = db.Column(db.String(50)) # Venta, Ajuste, Devolución, Ingreso
@@ -180,9 +204,9 @@ class Compra(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     proveedor = db.Column(db.String(150), nullable=False)
     concepto = db.Column(db.String(200), nullable=False)
-    monto_neto = db.Column(db.Float, nullable=False)
-    iva = db.Column(db.Float, default=0.0)
-    total = db.Column(db.Float, nullable=False)
+    monto_neto = db.Column(db.Numeric(14, 2), nullable=False)
+    iva = db.Column(db.Numeric(14, 2), default=0.00)
+    total = db.Column(db.Numeric(14, 2), nullable=False)
     categoria = db.Column(db.String(50), default="Operativo")
 
 class Factura(db.Model):
@@ -198,10 +222,10 @@ class Factura(db.Model):
     fecha_emision = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_vencimiento = db.Column(db.DateTime, nullable=True) # Específico para Cotizaciones/Proformas
     moneda = db.Column(db.String(10), default="CRC")
-    subtotal = db.Column(db.Float, default=0.0)
-    descuentos = db.Column(db.Float, default=0.0)
-    impuestos = db.Column(db.Float, default=0.0)
-    total = db.Column(db.Float, default=0.0)
+    subtotal = db.Column(db.Numeric(14, 2), default=0.00)
+    descuentos = db.Column(db.Numeric(14, 2), default=0.00)
+    impuestos = db.Column(db.Numeric(14, 2), default=0.00)
+    total = db.Column(db.Numeric(14, 2), default=0.00)
     estado = db.Column(db.String(50), default="Borrador") # Borrador, Emitida, Pendiente, Aceptada MH, Rechazada
     is_draft = db.Column(db.Boolean, default=False)
     observaciones = db.Column(db.Text)
@@ -230,11 +254,12 @@ class FacturaDetalle(db.Model):
     factura_id = db.Column(db.String(36), db.ForeignKey('facturas.id'), nullable=False)
     producto_id = db.Column(db.String(36), db.ForeignKey('productos.id'))
     descripcion = db.Column(db.String(200), nullable=False)
-    cantidad = db.Column(db.Float, nullable=False)
-    precio_unitario = db.Column(db.Float, nullable=False)
-    porcentaje_descuento = db.Column(db.Float, default=0.0)
-    porcentaje_impuesto = db.Column(db.Float, default=13.0)
-    total_linea = db.Column(db.Float, nullable=False)
+    cantidad = db.Column(db.Numeric(14, 4), nullable=False)
+    precio_unitario = db.Column(db.Numeric(14, 2), nullable=False)
+    porcentaje_descuento = db.Column(db.Numeric(5, 2), default=0.00)
+    porcentaje_impuesto = db.Column(db.Numeric(5, 2), default=13.00)
+    tipo_impuesto = db.Column(db.String(10), default="01")  # 01=IVA, etc.
+    total_linea = db.Column(db.Numeric(14, 2), nullable=False)
 
 class Notificacion(db.Model):
     __tablename__ = 'notificaciones'
@@ -249,3 +274,166 @@ class Notificacion(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     leida = db.Column(db.Boolean, default=False)
     link = db.Column(db.String(200), nullable=True)
+
+class Pago(db.Model):
+    __tablename__ = 'pagos'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
+    usuario_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'), nullable=True)
+    plan_tipo = db.Column(db.String(50), nullable=False)
+    plan_cuota = db.Column(db.Integer, nullable=False, default=0)
+    amount = db.Column(db.Numeric(14, 2), nullable=False)
+    currency = db.Column(db.String(10), default='CRC')
+    status = db.Column(db.String(50), default='pending')
+    provider = db.Column(db.String(50), default='manual')
+    transaction_id = db.Column(db.String(100), nullable=True)
+    description = db.Column(db.String(250), nullable=True)
+    checkout_url = db.Column(db.String(250), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Cotizacion(db.Model):
+    __tablename__ = 'cotizaciones'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    sucursal_id = db.Column(db.String(36), db.ForeignKey('sucursales.id'), nullable=False)
+    cliente_nombre = db.Column(db.String(200), nullable=False)
+    cliente_cedula = db.Column(db.String(50), nullable=False)
+    fecha_emision = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_vencimiento = db.Column(db.DateTime, nullable=True)
+    moneda = db.Column(db.String(10), default="CRC")
+    subtotal = db.Column(db.Numeric(14, 2), default=0.00)
+    descuentos = db.Column(db.Numeric(14, 2), default=0.00)
+    impuestos = db.Column(db.Numeric(14, 2), default=0.00)
+    total = db.Column(db.Numeric(14, 2), default=0.00)
+    estado = db.Column(db.String(50), default="Borrador") # Borrador, Enviada, Aceptada, Rechazada
+    observaciones = db.Column(db.Text)
+    
+    # Trazabilidad
+    usuario_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'), nullable=True)
+    usuario = db.relationship('Usuario', backref='cotizaciones_emitidas', lazy=True)
+    
+    # Conversión de Moneda
+    tipo_cambio = db.Column(db.Float, default=1.0)
+    pdf_comprobante = db.Column(db.LargeBinary)
+    
+    detalles = db.relationship('CotizacionDetalle', backref='cotizacion', lazy=True, cascade='all, delete-orphan')
+
+class CotizacionDetalle(db.Model):
+    __tablename__ = 'cotizaciones_detalle'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    cotizacion_id = db.Column(db.String(36), db.ForeignKey('cotizaciones.id'), nullable=False)
+    producto_id = db.Column(db.String(36), db.ForeignKey('productos.id'))
+    descripcion = db.Column(db.String(200), nullable=False)
+    cantidad = db.Column(db.Numeric(14, 4), nullable=False)
+    precio_unitario = db.Column(db.Numeric(14, 2), nullable=False)
+    porcentaje_descuento = db.Column(db.Numeric(5, 2), default=0.00)
+    porcentaje_impuesto = db.Column(db.Numeric(5, 2), default=13.00)
+    tipo_impuesto = db.Column(db.String(10), default="01")  # 01=IVA, etc.
+    total_linea = db.Column(db.Numeric(14, 2), nullable=False)
+
+# ==========================================
+# MODELOS DE PLANES Y SUSCRIPCIONES
+# ==========================================
+
+class Plan(db.Model):
+    """Planes de suscripción disponibles"""
+    __tablename__ = 'planes'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    nombre = db.Column(db.String(50), nullable=False)  # Básico, Profesional, Enterprise, Corporativo
+    descripcion = db.Column(db.Text)
+    precio_mensual = db.Column(db.Numeric(10, 2), nullable=False)
+    precio_anual = db.Column(db.Numeric(10, 2), nullable=False)
+    cuota_facturas = db.Column(db.Integer, nullable=False)  # Límite de facturas mensuales
+    usuarios_incluidos = db.Column(db.Integer, default=1)
+    sucursales_incluidas = db.Column(db.Integer, default=1)
+    tiene_api_hacienda = db.Column(db.Boolean, default=True)
+    tiene_firma_digital = db.Column(db.Boolean, default=False)
+    tiene_soporte = db.Column(db.Boolean, default=False)
+    tiene_reportes_avanzados = db.Column(db.Boolean, default=False)
+    tiene_multi_moneda = db.Column(db.Boolean, default=False)
+    orden = db.Column(db.Integer, default=0)  # Para mostrar en orden
+    is_active = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Suscripcion(db.Model):
+    """Suscripciones activas de empresas a planes"""
+    __tablename__ = 'suscribciones'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
+    plan_id = db.Column(db.String(36), db.ForeignKey('planes.id'), nullable=False)
+    
+    estado = db.Column(db.String(20), default='activa')  # activa, suspendida, cancelada, trial
+    tipo_cobro = db.Column(db.String(10), default='mensual')  # mensual, anual
+    
+    fecha_inicio = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_vencimiento = db.Column(db.DateTime, nullable=False)
+    fecha_cancelacion = db.Column(db.DateTime, nullable=True)
+    
+    # Contador de uso
+    facturas_usadas_mes = db.Column(db.Integer, default=0)
+    periodo_facturacion = db.Column(db.DateTime, nullable=True)
+    
+    # Datos de pago
+    provider_pago = db.Column(db.String(50))  # stripe, paypal
+    subscription_id_externo = db.Column(db.String(100))
+    ultimo_pago_id = db.Column(db.String(100))
+    ultimo_pago_estado = db.Column(db.String(50))
+    fecha_ultimo_pago = db.Column(db.DateTime, nullable=True)
+    
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    empresa = db.relationship('Empresa', backref='suscripcion_actual', lazy=True)
+    plan = db.relationship('Plan', backref='suscribciones', lazy=True)
+
+class PagoSuscripcion(db.Model):
+    """Historial de pagos de suscripciones"""
+    __tablename__ = 'pagos_suscripciones'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    suscripcion_id = db.Column(db.String(36), db.ForeignKey('suscribciones.id'), nullable=False)
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
+    
+    monto = db.Column(db.Numeric(10, 2), nullable=False)
+    moneda = db.Column(db.String(3), default='CRC')
+    tipo_cobro = db.Column(db.String(10))  # mensual, anual
+    
+    provider = db.Column(db.String(50))  # stripe, paypal
+    payment_id_externo = db.Column(db.String(100))
+    payment_method = db.Column(db.String(50))  # card, paypal
+    
+    estado = db.Column(db.String(20), default='pendiente')  # pendiente, completado, fallido, reembolsado
+    descripcion = db.Column(db.Text)
+    
+    metadata_json = db.Column(db.Text)  # JSON con datos adicionales del provider
+    
+    fecha_pago = db.Column(db.DateTime, nullable=True)
+    fecha_procesado = db.Column(db.DateTime, nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    suscripcion = db.relationship('Suscripcion', backref='pagos', lazy=True)
+    empresa = db.relationship('Empresa', backref='pagos_suscripcion', lazy=True)
+
+class MensajeReceptor(db.Model):
+    __tablename__ = 'mensajes_receptor'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
+    clave_comprobante = db.Column(db.String(50), nullable=False)
+    tipo_mensaje = db.Column(db.String(2), nullable=False)
+    detalle_mensaje = db.Column(db.String(80))
+    consecutivo_receptor = db.Column(db.String(20))
+    estado = db.Column(db.String(30), default='generado')
+    xml_mensaje = db.Column(db.LargeBinary)
+    fecha_emision_doc = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    empresa = db.relationship('Empresa', backref=db.backref('mensajes_receptor', lazy=True))
+
+
+class SuperAdminEmpresa(db.Model):
+    """Mapeo de asignacion de empresas (emisores) a SuperAdministradores"""
+    __tablename__ = 'superadmin_empresas'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    superadmin_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'), nullable=False)
+    empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
+    
+    superadmin = db.relationship('Usuario', backref=db.backref('empresas_asignadas_rel', lazy=True, cascade='all, delete-orphan'))
+    empresa = db.relationship('Empresa', backref=db.backref('superadmins_asignados_rel', lazy=True, cascade='all, delete-orphan'))

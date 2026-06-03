@@ -15,7 +15,6 @@
             el.addEventListener('input', setDirty);
             el.addEventListener('change', setDirty);
         });
-        const cabysData = window.CABYS_DATA || [];
         const searchInput = document.getElementById('inv-buscar-cabys');
         const resultsDiv  = document.getElementById('cabys-results');
         const cabysInput  = document.getElementById('inv-cabys-numero');
@@ -24,87 +23,117 @@
         const statusTxt   = document.getElementById('cabys-status-txt');
         const statusEl    = document.getElementById('cabys-status');
 
-        if (cabysData.length) {
-            statusEl.style.color = '#10b981';
-            statusTxt.textContent = `Catálogo CAByS listo — ${cabysData.length.toLocaleString()} ítems`;
+        // Verificar disponibilidad de la API
+        verificarAPICABYS();
+
+        async function verificarAPICABYS() {
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.HEALTH}`);
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    statusEl.style.color = '#10b981';
+                    statusTxt.innerHTML = '<i class="fas fa-check-circle" style="margin-right:4px;"></i>API CABYS del Ministerio de Hacienda conectada';
+                }
+            } catch (error) {
+                statusEl.style.color = '#ef4444';
+                statusTxt.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>Error: API CABYS no disponible';
+            }
         }
 
-
+        let timeoutBusqueda = null;
         searchInput.addEventListener('input', function () {
-            const q = this.value.trim().toLowerCase();
+            const q = this.value.trim();
             resultsDiv.innerHTML = '';
+            
             if (q.length < 2) { 
                 resultsDiv.style.display = 'none'; 
                 return; 
             }
 
-            const matches = cabysData.filter(m => multiWordMatch(`${m.d} ${m.c}`, q)).slice(0, 30);
-            if (!matches.length) { 
-                resultsDiv.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No se encontraron resultados</div>';
-                resultsDiv.style.display = 'block';
-                return; 
-            }
+            // Debounce para evitar muchas peticiones
+            clearTimeout(timeoutBusqueda);
+            timeoutBusqueda = setTimeout(async () => {
+                try {
+                    resultsDiv.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
+                    resultsDiv.style.display = 'block';
 
-            matches.forEach(m => {
-                const div = document.createElement('div');
-                div.className = 'autocomplete-item';
-                div.innerHTML = `
-                    <div class="autocomplete-info">
-                        <div class="autocomplete-name">${m.d}</div>
-                        <div class="autocomplete-subinfo">
-                            <span class="autocomplete-badge">${m.c}</span>
-                            <span>IVA Sugerido: ${m.i}%</span>
-                        </div>
-                    </div>
-                    <div class="autocomplete-tax">${m.i}% IVA</div>
-                `;
-                div.addEventListener('click', () => {
-                    // ── Auto-completar TODOS los campos posibles ──
-                    cabysInput.value = m.c;
-                    nombreInput.value = m.d;
-                    searchInput.value = m.d;
-                    ivaSelect.value = String(m.i);
-                    const tipoImp = document.getElementById('inv-tipo-impuesto');
-                    if (tipoImp) tipoImp.value = '01';
+                    const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.CABYS}/search?q=${encodeURIComponent(q)}&limit=30`);
+                    const data = await response.json();
 
-                    // Unidad de medida inteligente
-                    const desc = m.d.toLowerCase();
-                    const unidadSel = document.getElementById('inv-unidad-medida');
-                    if (/servicio|consultor|asesor|mantenimiento|reparaci|instalaci|limpieza|capacitaci|transporte|diseño|desarrollo|auditor/i.test(desc)) {
-                        unidadSel.value = 'Svc';
-                    } else if (/kg|kilogram/i.test(desc)) {
-                        unidadSel.value = 'Kg';
-                    } else if (/litro|galon/i.test(desc)) {
-                        unidadSel.value = 'L';
-                    } else if (/metro|m²|m2/i.test(desc)) {
-                        unidadSel.value = 'm';
-                    } else if (/gramo/i.test(desc)) {
-                        unidadSel.value = 'g';
-                    } else if (/mililitro|ml/i.test(desc)) {
-                        unidadSel.value = 'ml';
-                    } else {
-                        unidadSel.value = 'Unid';
+                    resultsDiv.innerHTML = '';
+
+                    if (!data.success || !data.results || data.results.length === 0) { 
+                        resultsDiv.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:0.8rem;">No se encontraron resultados</div>';
+                        resultsDiv.style.display = 'block';
+                        return; 
                     }
 
-                    const prefix = m.d.replace(/[^A-Za-z]/g, '').substring(0, 3).toUpperCase();
-                    const suffix = m.c.slice(-4);
-                    document.getElementById('inv-codigo-interno').value = `${prefix}-${suffix}`;
+                    data.results.forEach(m => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-item';
+                        div.innerHTML = `
+                            <div class="autocomplete-info">
+                                <div class="autocomplete-name">${m.descripcion}</div>
+                                <div class="autocomplete-subinfo">
+                                    <span class="autocomplete-badge">${m.codigo}</span>
+                                    <span>IVA Sugerido: ${m.impuesto}%</span>
+                                </div>
+                            </div>
+                            <div class="autocomplete-tax">${m.impuesto}% IVA</div>
+                        `;
+                        div.addEventListener('click', () => {
+                            // ── Auto-completar TODOS los campos posibles ──
+                            cabysInput.value = m.codigo;
+                            nombreInput.value = m.descripcion;
+                            searchInput.value = m.descripcion;
+                            ivaSelect.value = String(m.impuesto);
+                            const tipoImp = document.getElementById('inv-tipo-impuesto');
+                            if (tipoImp) tipoImp.value = '01';
 
-                    resultsDiv.style.display = 'none';
-                    toggleCtxPanels();
+                            // Unidad de medida inteligente
+                            const desc = m.descripcion.toLowerCase();
+                            const unidadSel = document.getElementById('inv-unidad-medida');
+                            if (/servicio|consultor|asesor|mantenimiento|reparaci|instalaci|limpieza|capacitaci|transporte|diseño|desarrollo|auditor/i.test(desc)) {
+                                unidadSel.value = 'Svc';
+                            } else if (/kg|kilogram/i.test(desc)) {
+                                unidadSel.value = 'Kg';
+                            } else if (/litro|galon/i.test(desc)) {
+                                unidadSel.value = 'L';
+                            } else if (/metro|m²|m2/i.test(desc)) {
+                                unidadSel.value = 'm';
+                            } else if (/gramo/i.test(desc)) {
+                                unidadSel.value = 'g';
+                            } else if (/mililitro|ml/i.test(desc)) {
+                                unidadSel.value = 'ml';
+                            } else {
+                                unidadSel.value = 'Unid';
+                            }
 
-                    ['inv-cabys-numero','inv-nombre','inv-iva','inv-unidad-medida','inv-tipo-impuesto','inv-codigo-interno'].forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) {
-                            el.style.transition = 'box-shadow 0.3s';
-                            el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.25)';
-                            setTimeout(() => el.style.boxShadow = '', 1500);
-                        }
+                            const prefix = m.descripcion.replace(/[^A-Za-z]/g, '').substring(0, 3).toUpperCase();
+                            const suffix = m.codigo.slice(-4);
+                            document.getElementById('inv-codigo-interno').value = `${prefix}-${suffix}`;
+
+                            resultsDiv.style.display = 'none';
+                            toggleCtxPanels();
+
+                            ['inv-cabys-numero','inv-nombre','inv-iva','inv-unidad-medida','inv-tipo-impuesto','inv-codigo-interno'].forEach(id => {
+                                const el = document.getElementById(id);
+                                if (el) {
+                                    el.style.transition = 'box-shadow 0.3s';
+                                    el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.25)';
+                                    setTimeout(() => el.style.boxShadow = '', 1500);
+                                }
+                            });
+                        });
+                        resultsDiv.appendChild(div);
                     });
-                });
-                resultsDiv.appendChild(div);
-            });
-            resultsDiv.style.display = 'block';
+                    resultsDiv.style.display = 'block';
+                } catch (error) {
+                    console.error('Error al buscar CABYS:', error);
+                    resultsDiv.innerHTML = '<div style="padding:15px; text-align:center; color:#ef4444; font-size:0.8rem;"><i class="fas fa-exclamation-triangle"></i> Error al conectar con la API</div>';
+                    resultsDiv.style.display = 'block';
+                }
+            }, 400);
         });
 
         // Cerrar al click afuera
@@ -225,10 +254,10 @@
                     </td>
                     <td style="padding:12px 15px; text-align:center;">
                         <div style="display:flex; gap:8px; justify-content:center;">
-                            <button class="btn-action edit" onclick="editarItem(${item.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
+                            <button class="btn-action edit" onclick="editarItem('${item.id}')" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
                                 <i class="fas fa-edit" style="font-size:1rem;"></i>
                             </button>
-                            <button class="btn-action del" onclick="eliminarItem(${item.id})" style="width:34px; height:34px; border-radius:10px; border:none; background:#fff1f2; color:#ef4444; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
+                            <button class="btn-action del" onclick="eliminarItem('${item.id}')" style="width:34px; height:34px; border-radius:10px; border:none; background:#fff1f2; color:#ef4444; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
                                 <i class="fas fa-trash-alt" style="font-size:1rem;"></i>
                             </button>
                         </div>

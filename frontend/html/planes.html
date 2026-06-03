@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Planes - MUROTECH</title>
+    <link rel="stylesheet" href="../css/shared/tokens.css">
+    <link rel="stylesheet" href="../css/shared/base.css">
+    <link rel="stylesheet" href="../css/planes.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+    <div id="plans-screen">
+        <main class="plans-main">
+            <div class="plans-container">
+                
+                <!-- HEADER -->
+                <header style="text-align:center; margin-bottom:40px;">
+                    <h1 style="color:#0f172a; font-size:2.4rem; margin:0; font-family:var(--font-display); letter-spacing:-1.5px; font-weight:900;">Planes de <span style="color:var(--primary); opacity:0.8;">Suscripción</span></h1>
+                    <p style="color:#64748b; font-weight:600; font-size:1rem; margin-top:8px;">Selecciona el plan que mejor se ajuste a tu negocio</p>
+                </header>
+
+                <!-- PLANS GRID -->
+                <main class="plans-grid" id="plansGrid"></main>
+                
+                <!-- NOTE -->
+                <div class="plans-note" id="planNote"></div>
+
+                <footer style="text-align:center; margin-top:30px; padding-top:20px; border-top:1px solid #e2e8f0;">
+                    <small style="color:#64748b; font-weight:600;">Pago simulado para demostración. No se procesarán cargos reales.</small>
+                </footer>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../js/shared/utils.js"></script>
+    <script src="../js/planes.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>

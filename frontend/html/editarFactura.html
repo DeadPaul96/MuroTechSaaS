@@ -22,6 +22,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <link rel="stylesheet" href="../css/editarFactura.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body class="reg-body" style="margin:0; overflow-x:hidden;">
     <!-- Sidebar Premium MUROTECH -->
@@ -270,5 +273,12 @@
     </div>
 
     <script src="../js/editarFactura.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+            });
+        }
+    </script>
 </body>
 </html>

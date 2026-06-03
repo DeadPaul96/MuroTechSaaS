@@ -1,0 +1,2 @@
+/* Alias para service worker — reexporta estilos móviles */
+@import url("./shared/mobile.css");

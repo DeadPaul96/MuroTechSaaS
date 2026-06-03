@@ -1,79 +1,200 @@
-# MUROTECH SaaS - Sistema de Facturación Electrónica
+# 🧾 MUROTECH SaaS — Facturación Electrónica Costa Rica
 
-Plataforma profesional de facturación electrónica, cotizaciones y gestión de inventario, optimizada para el cumplimiento tributario en Costa Rica (v4.4).
+Sistema de facturación electrónica multi-empresa compatible con la API v4.4 del Ministerio de Hacienda de Costa Rica.
 
-## 🚀 Estructura del Proyecto
+---
 
-El proyecto ha sido modernizado y organizado profesionalmente:
+## 🚀 Inicio Rápido
 
-- **`frontend/`**: Aplicación de cliente (HTML/CSS/JS) moderna con diseño "Flat & Dense".
-- **`backend/`**: Servidor API Flask (Python) para procesamiento de datos y lógica de negocio.
-- **`excel/`**: Catálogos y datos de soporte.
+### Requisitos
 
-## 🛠️ Tecnologías
+| Requisito | Versión | Descarga |
+|-----------|---------|----------|
+| Python | 3.10+ | [python.org](https://www.python.org/downloads/) |
+| Git | Cualquiera | [git-scm.com](https://git-scm.com/) |
 
-- **Frontend**: HTML5, Vanilla JavaScript, CSS3 (Tokens & Custom Properties).
-- **Backend**: Python 3.9+, Flask, Gunicorn.
-- **Base de Datos**: SQL Server (LocalDB/Express).
-- **Librerías Clave**: SweetAlert2, jsPDF, SheetJS.
+> **Nota:** No necesitas Node.js, PostgreSQL ni Redis. El sistema funciona con **SQLite** local y todas las dependencias se instalan automáticamente.
 
-## 💻 Instalación Local
+### Opción A: Un solo comando (recomendado)
 
-### 1. Requisitos
-- Python 3.9 o superior.
-- SQL Server (LocalDB recomendado).
-- Driver ODBC 17 para SQL Server.
-
-### 2. Configuración del Backend
+**Windows:**
 ```bash
-# Entrar a la carpeta del backend
-cd backend
+# 1. Clonar el repositorio
+git clone https://github.com/TU_USUARIO/MUROTECH-SaaS.git
+cd MUROTECH-SaaS
 
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Iniciar servidor de desarrollo
-python api/app.py
+# 2. Ejecutar el script de inicio
+start.bat
 ```
 
-### 3. Ejecución del Frontend
-Simplemente abra `frontend/index.html` en su navegador o use un servidor local (Live Server).
+**Mac / Linux:**
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/TU_USUARIO/MUROTECH-SaaS.git
+cd MUROTECH-SaaS
+
+# 2. Dar permisos y ejecutar
+chmod +x start.sh
+./start.sh
+```
+
+El script se encarga de:
+- ✅ Crear el entorno virtual (`venv/`)
+- ✅ Instalar todas las dependencias
+- ✅ Crear el archivo `.env` con configuración por defecto
+- ✅ Inicializar la base de datos SQLite
+- ✅ Cargar datos de prueba (opcional)
+- ✅ Iniciar el servidor en **http://localhost:5001**
+
+### Opción B: Paso a paso
+
+```bash
+# 1. Clonar
+git clone https://github.com/TU_USUARIO/MUROTECH-SaaS.git
+cd MUROTECH-SaaS
+
+# 2. Crear entorno virtual
+cd backend
+python -m venv venv
+
+# 3. Activar entorno virtual
+# Windows:
+venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
+
+# 4. Instalar dependencias
+pip install -r requirements.txt
+
+# 5. Configurar variables de entorno
+copy .env.example .env    # Windows
+cp .env.example .env      # Mac/Linux
+
+# 6. Iniciar servidor
+python run.py
+```
 
 ---
 
-## 🌐 Despliegue (Production)
+## 🔐 Credenciales de Prueba
 
-### ☁️ Netlify (Frontend)
-1. Conecte su repositorio de GitHub a Netlify.
-2. La configuración ya está lista en `netlify.toml`.
-3. Netlify detectará automáticamente la carpeta `frontend` como el directorio de publicación.
+Después de cargar los datos de prueba:
 
-### ☁️ Render (Backend)
-1. Cree un nuevo "Web Service" en Render.
-2. Conecte su repositorio de GitHub.
-3. Configure los siguientes parámetros:
-   - **Environment**: `Python`
-   - **Build Command**: `pip install -r backend/requirements.txt`
-   - **Start Command**: `gunicorn --chdir backend api.app:app`
-4. Agregue las variables de entorno necesarias (DB_CONNECTION_STRING, etc.).
+| Campo | Valor |
+|-------|-------|
+| URL | http://localhost:5001 |
+| Email | `admin@qa.com` |
+| Password | `admin123` |
 
-### 🐙 GitHub
-1. Inicialice el repositorio: `git init`
-2. Añada los archivos: `git add .`
-3. Realice el commit: `git commit -m "Modernización de MUROTECH y preparación para despliegue"`
-4. Suba a su repositorio remoto.
+> **⚠️ Primera vez:** Al abrir el navegador, ve a **http://localhost:5001/api/seed** para crear los datos de prueba automáticamente.
 
 ---
 
-## ✨ Características Principales
-- ✅ **Facturación Electrónica**: Generación de XML v4.4 y PDF profesional.
-- ✅ **Cotizaciones**: Creación de proformas comerciales con descarga en PDF.
-- ✅ **Inventario**: Control de existencias con búsqueda inteligente CABYS.
-- ✅ **Clientes**: Base de datos de clientes con autocompletado premium.
-- ✅ **Seguridad**: Sistema de login y registro integrado.
+## 📁 Estructura del Proyecto
+
+```
+MUROTECH-SaaS/
+├── start.bat              # Script de inicio Windows
+├── start.sh               # Script de inicio Mac/Linux
+├── README.md              # Este archivo
+│
+├── backend/               # API Flask (Python)
+│   ├── run.py             # Punto de entrada
+│   ├── requirements.txt   # Dependencias Python
+│   ├── .env.example       # Plantilla de configuración
+│   ├── .env               # Tu configuración (no se sube a Git)
+│   ├── app/               # Aplicación Flask modular
+│   │   ├── __init__.py    # Factory (crea la app + sirve frontend)
+│   │   ├── config.py      # Configuración por entorno
+│   │   ├── models.py      # Modelos SQLAlchemy
+│   │   └── api/blueprints/ # Endpoints API
+│   ├── fiscal/            # Integración Hacienda CR
+│   ├── core/              # Utilidades compartidas
+│   └── tests/             # Tests unitarios
+│
+└── frontend/              # Interfaz web (HTML/CSS/JS)
+    ├── index.html          # Punto de entrada
+    ├── manifest.json       # PWA manifest
+    ├── service-worker.js   # Service Worker PWA
+    ├── html/               # Páginas HTML
+    ├── css/                # Estilos
+    ├── js/                 # Lógica JavaScript
+    └── imagenes/           # Imágenes y logos
+```
 
 ---
 
-**Desarrollado por**: [Paul Zuñiga/ZenithTech CR]  
-**Versión**: 2.0.0 (Modernizada)  
-**Licencia**: Propietaria - MUROTECH SOLUTIONS S.A.
+## 🔧 Configuración Avanzada
+
+### Conectar a Supabase (PostgreSQL en la nube)
+
+1. Crea un proyecto en [supabase.com](https://supabase.com)
+2. Copia la URL de conexión desde **Settings → Database**
+3. Edita `backend/.env`:
+
+```env
+DATABASE_URL=postgresql://postgres.TU_PROYECTO:TU_PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres
+```
+
+4. Reinicia el servidor
+
+> Sin `DATABASE_URL`, el sistema usa SQLite automáticamente.
+
+### Generar claves seguras (para producción)
+
+```bash
+# SECRET_KEY
+python -c "import secrets; print(secrets.token_hex(32))"
+
+# ENCRYPTION_KEY
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+---
+
+## 🧪 Funcionalidades
+
+- ✅ Facturación electrónica (Hacienda v4.4)
+- ✅ Factura Electrónica (01), Tiquete (04), NC (02), ND (03)
+- ✅ Modo Contingencia (09, 10)
+- ✅ Multi-empresa y multi-sucursal
+- ✅ Gestión de clientes, productos e inventario
+- ✅ Cotizaciones
+- ✅ Panel de administración
+- ✅ Auditoría y logs
+- ✅ Reportes
+- ✅ PWA instalable
+- ✅ Validación XSD de comprobantes
+- ✅ Firma digital XAdES-BES
+- ✅ Rate limiting
+- ✅ Programación de envíos a Hacienda (horario hábil)
+
+---
+
+## ❓ Preguntas Frecuentes
+
+### ¿Puedo usarlo sin internet?
+Sí. En modo local con SQLite, toda la funcionalidad de facturación funciona sin internet. Solo el envío real a Hacienda requiere conexión.
+
+### ¿Cómo cambio el puerto?
+Edita `PORT=5001` en `backend/.env` al puerto que desees.
+
+### ¿Cómo ejecuto los tests?
+```bash
+cd backend
+python -m pytest tests/ -v
+```
+
+### El servidor no inicia
+1. Verifica que Python 3.10+ esté instalado: `python --version`
+2. Elimina `backend/venv/` y vuelve a ejecutar `start.bat`
+3. Verifica que el archivo `backend/.env` exista
+
+### Error de CORS
+Asegúrate de acceder desde **http://localhost:5001** (no desde `file://`).
+
+---
+
+## 📜 Licencia
+
+Proyecto privado — MUROTECH © 2026

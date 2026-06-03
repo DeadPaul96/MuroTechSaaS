@@ -14,6 +14,108 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'inicioSesion.html';
         return;
     }
+    
+    // Verificar que SuperAdmin no pueda acceder a esta pantalla
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.is_superadmin) {
+        // Si es SuperAdmin, redirigir a superAdmin.html
+        Swal.fire({
+            icon: 'error',
+            title: 'Acceso Denegado',
+            text: 'Los SuperAdministradores deben usar el panel de SuperAdmin.',
+            confirmButtonColor: '#ef4444'
+        }).then(() => {
+            window.location.href = 'superAdmin.html';
+        });
+        return;
+    }
+
+    function renderPlanSummary(userData) {
+        const container = document.getElementById('planSummary');
+        if (!container) return;
+
+        const planLabel = userData.plan_label || 'Starter';
+        const planType = userData.plan_tipo || 'start';
+        const planQuota = userData.plan_cuota || 0;
+        const planState = (userData.plan_estado || 'activo').toUpperCase();
+
+        container.innerHTML = `
+            <div style="min-width:240px;">
+                <div class="plan-summary-title">Plan activo</div>
+                <h2 class="plan-summary-name">${planLabel}</h2>
+            </div>
+            <div class="plan-summary-details">
+                <div class="plan-summary-item">Tipo: ${planType}</div>
+                <div class="plan-summary-item">Cuota: ${planQuota} facturas</div>
+                <div class="plan-summary-status">Estado: ${planState}</div>
+            </div>
+        `;
+    }
+
+    renderPlanSummary(user);
+
+    // Filtrar accesos rápidos y botones del header según permisos del usuario
+    try {
+        const permisos = Array.isArray(user?.pantallas) ? user.pantallas : [];
+        // Alias map igual que en sidebar
+        const aliasMap = {
+            facturacion: ['facturacion', 'pantallaFacturacion'],
+            dashboard: ['dashboard', 'panelControl'],
+            editarFactura: ['editarFactura'],
+            clientes: ['clientes'],
+            inventario: ['inventario'],
+            auditoria: ['auditoria'],
+            notificaciones: ['notificaciones'],
+            configuracion: ['configuracion'],
+            reportes: ['reportes'],
+            cotizaciones: ['cotizaciones'],
+            pos: ['pos'],
+            registro: ['registro']
+        };
+
+        function hasPerm(perms, key) {
+            const ids = aliasMap[key] || [key];
+            return ids.some(i => perms.includes(i));
+        }
+
+        if (!user.is_superadmin) {
+            const mapFileToModule = {
+                'pantallaFacturacion.html': 'facturacion',
+                'clientes.html': 'clientes',
+                'inventario.html': 'inventario',
+                'editarFactura.html': 'editarFactura',
+                'auditoria.html': 'auditoria',
+                'notificaciones.html': 'notificaciones',
+                'configuracion.html': 'configuracion',
+                'reportes.html': 'reportes',
+                'cotizaciones.html': 'cotizaciones',
+                'pos.html': 'pos',
+                'panelControl.html': 'dashboard'
+            };
+
+            // Header buttons
+            document.querySelectorAll('.header-nav .header-nav-btn').forEach(btn => {
+                const onclick = btn.getAttribute('onclick') || '';
+                const m = onclick.match(/irA\('([^']+)'\)/);
+                if (m) {
+                    const file = m[1];
+                    const mod = mapFileToModule[file];
+                    if (mod && !hasPerm(permisos, mod)) btn.style.display = 'none';
+                }
+            });
+
+            // Quick-access cards
+            document.querySelectorAll('.quick-access-card').forEach(card => {
+                const onclick = card.getAttribute('onclick') || '';
+                const m = onclick.match(/irA\('([^']+)'\)/);
+                if (m) {
+                    const file = m[1];
+                    const mod = mapFileToModule[file];
+                    if (mod && !hasPerm(permisos, mod)) card.style.display = 'none';
+                }
+            });
+        }
+    } catch (e) { console.error('Error aplicando filtro de permisos en panelControl:', e); }
 
     // Cargar datos reales del API
     // Cargar datos reales del API
@@ -44,10 +146,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateVal('dash-clientes', data.clientesActivos || 0);
                 updateVal('dash-conversion', data.tasaConversion || '0.0%');
 
-                // Actualizar variaciones
+                // Actualizar variaciones con iconos dinámicos
                 const updateVar = (id, val) => {
                     const el = document.getElementById(id);
-                    if (el) el.innerHTML = `<i class="fas fa-arrow-up"></i> ${val}`;
+                    if (el) {
+                        const isPositive = val.startsWith('+');
+                        const isNegative = val.startsWith('-');
+                        const icon = isPositive ? 'fa-arrow-up' : (isNegative ? 'fa-arrow-down' : 'fa-minus');
+                        const color = isPositive ? '#10b981' : (isNegative ? '#ef4444' : '#64748b');
+                        el.innerHTML = `<i class="fas ${icon}" style="color: ${color};"></i> ${val}`;
+                        el.style.color = color;
+                    }
                 };
                 updateVar('var-facturas', data.facturasVariacion || '0%');
                 updateVar('var-ingresos', data.ingresosVariacion || '0%');

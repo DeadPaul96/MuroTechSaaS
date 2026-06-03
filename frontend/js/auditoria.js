@@ -52,7 +52,6 @@
     async function render() {
         const desde = document.getElementById('aud-desde').value;
         const hasta = document.getElementById('aud-hasta').value;
-        const estado = document.getElementById('aud-estado').value;
         const vendedor = document.getElementById('aud-vendedor').value;
         const pago = document.getElementById('aud-pago').value;
         const q = document.getElementById('aud-search').value;
@@ -60,7 +59,7 @@
         Swal.fire({ title: 'Analizando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         try {
-            const url = `${CONFIG.API_BASE_URL}/api/auditoria?desde=${desde}&hasta=${hasta}&estado=${estado}&vendedor_id=${vendedor}&medio_pago=${pago}&q=${encodeURIComponent(q)}`;
+            const url = `${CONFIG.API_BASE_URL}/api/auditoria?desde=${desde}&hasta=${hasta}&estado=todos&vendedor_id=${vendedor}&medio_pago=${pago}&q=${encodeURIComponent(q)}`;
             const res = await fetchAPI(url);
             Swal.close();
 
@@ -91,10 +90,10 @@
                             </td>
                             <td><span class="badge b-success"><i class="fas fa-check-circle"></i> ${f.estado.toUpperCase()}</span></td>
                             <td style="text-align:center; display:flex; gap:5px; justify-content:center;">
-                                <button class="btn-circle ${f.has_pdf ? 'yellow-btn' : 'disabled-btn'}" title="Descargar PDF" onclick="descargarArchivo(${f.id}, 'pdf')">
+                                <button class="btn-circle ${f.has_pdf ? 'yellow-btn' : 'disabled-btn'}" title="Descargar PDF" onclick="descargarArchivo('${f.id}', 'pdf')">
                                     <i class="fas fa-file-pdf"></i>
                                 </button>
-                                <button class="btn-circle ${f.has_xml ? 'yellow-btn' : 'disabled-btn'}" title="Descargar XML" onclick="descargarArchivo(${f.id}, 'xml')">
+                                <button class="btn-circle ${f.has_xml ? 'yellow-btn' : 'disabled-btn'}" title="Descargar XML" onclick="descargarArchivo('${f.id}', 'xml')">
                                     <i class="fas fa-code"></i>
                                 </button>
                             </td>

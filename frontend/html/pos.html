@@ -14,6 +14,9 @@
     
 
     <link rel="stylesheet" href="../css/pos.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
     
@@ -159,5 +162,12 @@
 
     <!-- Micro Lógica del POS Base -->
     <script src="../js/pos.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+            });
+        }
+    </script>
 </body>
 </html>

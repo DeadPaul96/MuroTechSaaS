@@ -96,11 +96,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     Swal.fire({
                         icon: 'success',
                         title: '¡Bienvenido!',
-                        text: `Hola de nuevo, ${data.user.nombre}`,
-                        timer: 1500,
+                        text: `Hola de nuevo, ${data.user.nombre}. Plan activo: ${data.user.plan_label || 'Starter'}.`,
+                        timer: 1800,
                         showConfirmButton: false
                     }).then(() => {
-                        window.location.href = 'panelControl.html';
+                        // Redirigir según el tipo de usuario
+                        if (data.user.is_superadmin) {
+                            // SuperAdmin → Panel de SuperAdmin
+                            window.location.href = 'superAdmin.html';
+                        } else {
+                            // Administrador → Panel de Control
+                            window.location.href = 'panelControl.html';
+                        }
                     });
                 } else {
                     if (btn) {

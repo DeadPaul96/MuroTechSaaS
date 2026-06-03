@@ -8,19 +8,19 @@
         .cot-main {
             display: flex;
             justify-content: center;
-            padding: 30px 4% 60px;
-            margin-left: 100px; /* Sidebar offset */
+            padding: 28px 5% 60px 110px; /* Igual que pantallaFacturacion para compensar sidebar */
             min-height: 100vh;
+            width: 100%;
         }
 
         .cot-container {
             width: 100%;
-            max-width: 1140px;
+            max-width: 1160px; /* Igual que .fac-card para paridad visual */
             background: rgba(255, 255, 255, 0.90); /* Glassmorphism */
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 28px;
-            padding: 40px;
+            padding: 38px 42px; /* Igual que .fac-card */
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             border: 1px solid rgba(255, 255, 255, 0.4);
             animation: fadeInScale 0.6s ease-out forwards;
@@ -34,11 +34,12 @@
         /* Reutilización de estilos de Factura Premium */
         .section-box {
             background: #ffffff;
-            border-radius: 20px;
-            padding: 26px;
+            border-radius: 18px;
+            padding: 22px 26px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.06);
+            position: relative;
             margin-bottom: 24px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
         .section-title {
@@ -57,12 +58,13 @@
 
         /* Emisor Chip (Estilo Unificado) */
         .emisor-card {
-            background: var(--primary-grad);
+            background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 55%, #3b82f6 100%);
             border-radius: 20px;
-            padding: 24px 30px;
+            padding: 22px 28px;
+            box-shadow: 0 10px 30px rgba(30,64,175,0.25);
             color: white;
             margin-bottom: 28px;
-            box-shadow: 0 12px 24px -10px rgba(30, 64, 175, 0.4);
+            border: 1px solid rgba(255,255,255,0.12);
             position: relative;
             overflow: hidden;
         }
@@ -74,16 +76,59 @@
             font-size: 8rem; opacity: 0.05; transform: rotate(-15deg);
         }
 
+        .emisor-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 18px;
+        }
+
+        .emisor-icon {
+            background: rgba(255,255,255,0.18);
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            backdrop-filter: blur(6px);
+        }
+
         .emisor-badge {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255,255,255,0.18);
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.65rem;
+            font-size: 0.72rem;
             font-weight: 800;
-            text-transform: uppercase;
             letter-spacing: 1px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+            white-space: nowrap;
+            border: 1px solid rgba(255,255,255,0.20);
         }
+
+        /* Emisor chip pills */
+        .emisor-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.20);
+            backdrop-filter: blur(6px);
+            border-radius: 50px;
+            padding: 7px 15px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #ffffff;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .emisor-chip i {
+            opacity: 0.80;
+            font-size: 0.78rem;
+        }
+        .emisor-chip:hover { background: rgba(255,255,255,0.22); }
 
         /* Inputs Modernos */
         .fi {
@@ -97,7 +142,94 @@
             transition: all 0.2s;
         }
         .fi:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1); outline: none; }
+        .autocomplete-wrapper { width: 100%; position: relative; }
+        .autocomplete-wrapper .fi { width: 100%; }
+
+        /* Premium Select */
+        .premium-select {
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            width: 100%;
+            padding: 11px 13px;
+            border-radius: 11px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            box-sizing: border-box;
+            transition: border 0.2s;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+        .premium-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+        }
+
+        /* Botones */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            background: #1e40af;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 18px 30px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #1e40af;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover { background: #eff6ff; }
         .label-sm { font-size: 0.68rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: block; }
+
+        /* Cond Grid */
+        .cond-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        /* Stat Badge */
+        .stat-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-badge.status-aceptado {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
 
         /* Tabla de Ítems (Optimización de Dimensiones) */
         .items-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; table-layout: fixed; }
@@ -126,6 +258,16 @@
         }
         .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(30, 64, 175, 0.4); opacity: 0.95; }
 
+        .totals-panel {
+            background: #f8fafc;
+            padding: 22px;
+            border-radius: 14px;
+            text-align: right;
+            border: 1px solid #e2e8f0;
+        }
+        .totals-panel p { margin: 0 0 4px; font-size: 0.82rem; color: #64748b; font-weight: 700; }
+        .totals-panel h2 { margin: 0; font-size: 2.3rem; color: var(--primary); font-weight: 900; }
+
         /* Rediseño de Divisas (Hacienda Widget) */
         .fx-card-mini {
             background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
@@ -137,13 +279,15 @@
 
         /* Cliente Info (Tarjetas Premium) */
         .cliente-info-premium {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-top: 18px;
             display: none;
+            flex-direction: column;
+            gap: 14px;
+            background: #ffffff;
+            border: 1.5px solid #eef2f6;
+            border-radius: 12px;
+            padding: 16px;
         }
-        .cliente-info-premium.visible { display: grid; }
+        .cliente-info-premium.visible { display: flex; }
         .cliente-card-segment {
             background: #ffffff; border-radius: 16px; padding: 18px;
             border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);

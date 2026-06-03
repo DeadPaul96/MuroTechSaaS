@@ -1,0 +1,84 @@
+{
+  "name": "MUROTECH Facturación Electrónica",
+  "short_name": "MUROTECH",
+  "description": "Sistema de facturación electrónica — Ministerio de Hacienda Costa Rica v4.4",
+  "start_url": "/html/panelControl.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1e40af",
+  "background_color": "#000a1e",
+  "categories": ["productivity", "business", "finance"],
+  "lang": "es",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/imagenes/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "/imagenes/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/imagenes/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/imagenes/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/imagenes/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/imagenes/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/imagenes/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/imagenes/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nueva Factura",
+      "short_name": "Facturar",
+      "description": "Crear una factura electrónica",
+      "url": "/html/pantallaFacturacion.html",
+      "icons": [
+        {
+          "src": "/imagenes/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Inventario",
+      "short_name": "Inventario",
+      "description": "Gestionar productos e inventario",
+      "url": "/html/inventario.html",
+      "icons": [
+        {
+          "src": "/imagenes/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

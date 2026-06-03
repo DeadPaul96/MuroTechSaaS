@@ -26,11 +26,32 @@ document.addEventListener('DOMContentLoaded', () => {
   // Obtener permisos del usuario desde el localStorage
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
-  const permisos = (user && user.pantallas) ? user.pantallas : [];
+  const permisos = Array.isArray(user?.pantallas) ? user.pantallas : [];
+
+  // Alias entre identificadores frontend/backend (históricos)
+  const aliasMap = {
+    facturacion: ['facturacion', 'pantallaFacturacion'],
+    dashboard: ['dashboard', 'panelControl'],
+    editarFactura: ['editarFactura'],
+    clientes: ['clientes'],
+    inventario: ['inventario'],
+    auditoria: ['auditoria'],
+    notificaciones: ['notificaciones'],
+    configuracion: ['configuracion'],
+    reportes: ['reportes'],
+    cotizaciones: ['cotizaciones'],
+    pos: ['pos'],
+    registro: ['registro']
+  };
+
+  function hasPerm(perms, key) {
+    const ids = aliasMap[key] || [key];
+    return ids.some(i => perms.includes(i));
+  }
   
   // Modo Invitado/Local (para cuando se abren los archivos directamente o no hay login)
   const isLocal = location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  const showAll = !user || user.is_superadmin || isLocal;
+  const showAll = !user || user?.is_superadmin || (isLocal && !user);
 
   const renderButtons = () => {
     // 1. Dashboard
@@ -51,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     mainModules.forEach(m => {
-      if (showAll || permisos.includes(m.id)) {
+      if (showAll || hasPerm(permisos, m.id)) {
         html += btn(m.file, m.icon, m.title, `irA('${m.file}')`);
       }
     });
@@ -66,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     secondModules.forEach(m => {
-      if (showAll || permisos.includes(m.id)) {
+      if (showAll || hasPerm(permisos, m.id)) {
         html += btn(m.file, m.icon, m.title, `irA('${m.file}')`);
       }
     });

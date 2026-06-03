@@ -84,8 +84,8 @@
                     </td>
                     <td style="padding:16px 20px; text-align:center;">
                         <div style="display:flex; justify-content:center; gap:8px;">
-                            <button class="btn-action edit" onclick="editarCliente(${c.id})" title="Editar Cliente" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                            <button class="btn-action del" onclick="eliminarCliente(${c.id})" title="Eliminar Cliente" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                            <button class="btn-action edit" onclick="editarCliente('${c.id}')" title="Editar Cliente" style="width:34px; height:34px; border-radius:10px; border:none; background:#eff6ff; color:#3b82f6; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                            <button class="btn-action del" onclick="eliminarCliente('${c.id}')" title="Eliminar Cliente" style="width:34px; height:34px; border-radius:10px; border:none; background:#fef2f2; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </td>
                 `;
@@ -148,6 +148,17 @@
                         <div>
                             <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Dirección Exacta</label>
                             <input id="swal-direccion" class="fi" value="${cli.direccion || ''}" style="width:100%; box-sizing:border-box;">
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Actividad Económica</label>
+                                <input id="swal-actividad" class="fi" value="${cli.actividad || ''}" style="width:100%; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; font-weight:800; color:#64748b; margin-left:12px; display:block; margin-bottom:4px;">Régimen Tributario</label>
+                                <input id="swal-regimen" class="fi" value="${cli.regimen || ''}" style="width:100%; box-sizing:border-box;">
+                            </div>
                         </div>
                     </div>
                 `,
@@ -216,7 +227,9 @@
                         canton: document.getElementById('swal-canton').value,
                         distrito: document.getElementById('swal-distrito').value,
                         barrio: document.getElementById('swal-barrio').value,
-                        direccion: document.getElementById('swal-direccion').value
+                        direccion: document.getElementById('swal-direccion').value,
+                        actividad: document.getElementById('swal-actividad').value,
+                        regimen: document.getElementById('swal-regimen').value
                     };
                     
                     fetchAPI(`${CONFIG.API_BASE_URL}/api/clientes/${id}`, {

@@ -1,0 +1,277 @@
+/**
+ * MUROTECH — Compatibilidad móvil global
+ * Se carga vía base.css en todas las pantallas del SaaS.
+ */
+
+/* Safe area (notch / barra inferior) */
+:root {
+    --muro-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --muro-safe-top: env(safe-area-inset-top, 0px);
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+img,
+video,
+svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Evita zoom automático en inputs en iOS (mín. 16px) */
+input,
+select,
+textarea,
+.fi,
+.fi-capsule {
+    font-size: max(16px, 1em);
+}
+
+/* Áreas táctiles mínimas */
+button,
+.btn,
+.sidebar-btn,
+.header-nav-btn,
+a.btn {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* ─── Contenido principal ─── */
+main,
+.fac-main,
+.module-content,
+.dashboard-full-width,
+.pos-container,
+.register-container {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.fac-main,
+.module-content {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+}
+
+#billing-screen,
+.billing-layout {
+    min-height: 100dvh;
+}
+
+/* ─── Tablas: scroll horizontal sin romper layout ─── */
+.table-wrap,
+.table-container,
+.pos-table-area,
+.premium-table-container,
+[class*="table-scroll"] {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table,
+.premium-data-table {
+    min-width: 520px;
+}
+
+.premium-data-table th,
+.premium-data-table td {
+    white-space: nowrap;
+}
+
+/* ─── Grillas comunes → una columna en móvil ─── */
+@media (max-width: 900px) {
+    .grid-2,
+    .grid-3,
+    .grid-4,
+    .info-grid-inner,
+    .fac-form-grid,
+    .pos-form-grid,
+    .form-row-2,
+    .form-row-3,
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .metrics-row {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+        padding: 0 !important;
+    }
+
+    /* Headers de facturación / cards */
+    .fac-card > header,
+    .fac-card header[style*="display:flex"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 16px !important;
+    }
+
+    .fac-card h1,
+    .fac-card h1[style*="font-size"] {
+        font-size: 1.75rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Panel control: métricas y bienvenida */
+    .metrics-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dashboard-header .header-content {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 12px;
+    }
+
+    .dashboard-header .header-nav {
+        width: 100%;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 8px;
+        padding-bottom: 4px;
+        justify-content: flex-start;
+    }
+
+    .dashboard-header .header-brand img {
+        max-height: 32px !important;
+    }
+
+    /* Bloques con estilos inline grandes */
+    main h1[style*="font-size: 3rem"],
+    .module-content h1[style*="3rem"] {
+        font-size: 1.85rem !important;
+        line-height: 1.2 !important;
+    }
+
+    main p[style*="font-size: 1.2rem"] {
+        font-size: 1rem !important;
+    }
+
+    /* Modales / SweetAlert */
+    .swal2-popup,
+    .premium-swal-popup {
+        width: calc(100vw - 24px) !important;
+        max-width: 100% !important;
+        margin: 12px !important;
+    }
+
+    /* Tarjetas y padding */
+    .fac-card,
+    .register-card,
+    .modern-card,
+    .pos-card {
+        padding: 16px !important;
+        border-radius: 16px !important;
+    }
+
+    .pos-section {
+        padding: 16px !important;
+    }
+
+    /* Botoneras */
+    .btn-row,
+    .action-bar,
+    .footer-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .btn-row button,
+    .action-bar button {
+        width: 100% !important;
+    }
+
+    /* Configuración: tabs / columnas */
+    .config-layout,
+    .two-cols {
+        flex-direction: column !important;
+    }
+
+    /* SuperAdmin tablas */
+    .sa-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Sidebar inferior: scroll si hay muchos íconos */
+    .sidebar {
+        height: calc(65px + var(--muro-safe-bottom)) !important;
+        padding-bottom: var(--muro-safe-bottom) !important;
+    }
+
+    .sidebar > .sidebar-section:first-child {
+        flex: 1;
+        flex-direction: row !important;
+        justify-content: flex-start !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+        gap: 4px !important;
+        padding: 0 8px;
+        max-width: calc(100% - 56px);
+    }
+
+    .sidebar > .sidebar-section:first-child hr {
+        display: none !important;
+    }
+
+    .sidebar > .sidebar-section:last-child {
+        flex-shrink: 0;
+        width: auto;
+        padding-right: 8px;
+    }
+
+    .sidebar-btn {
+        width: 48px !important;
+        height: 48px !important;
+        flex-shrink: 0;
+        scroll-snap-align: center;
+    }
+
+    main,
+    .fac-main,
+    #billing-screen main {
+        padding-bottom: calc(80px + var(--muro-safe-bottom)) !important;
+    }
+
+    .fac-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+}
+
+/* Pantallas muy pequeñas */
+@media (max-width: 380px) {
+    .sidebar-btn {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 0.95rem !important;
+    }
+
+    .fac-card h1 {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* Preferencia movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

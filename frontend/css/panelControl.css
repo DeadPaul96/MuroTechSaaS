@@ -340,6 +340,64 @@
             font-size: 0.95rem;
         }
 
+        .plan-summary-card {
+            background: #ffffff !important;
+            border-radius: 24px;
+            padding: 24px 28px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .plan-summary-card .plan-summary-title {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #0f172a;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .plan-summary-card .plan-summary-name {
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: #111827;
+            margin: 0;
+        }
+
+        .plan-summary-card .plan-summary-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            width: 100%;
+        }
+
+        .plan-summary-card .plan-summary-item {
+            background: #f8fafc;
+            padding: 14px 16px;
+            border-radius: 18px;
+            color: #334155;
+            font-weight: 700;
+            min-width: 130px;
+        }
+
+        .plan-summary-card .plan-summary-status {
+            background: #eff6ff;
+            color: #1d4ed8;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            min-width: 150px;
+        }
+
         .activity-client {
             color: #0f172a !important;
             font-weight: 800 !important;

@@ -1,0 +1,31 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - 'Practica-Profeciona-Facturacion-MUROTECH--main/backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'Practica-Profeciona-Facturacion-MUROTECH--main/backend/**'
+
+defaults:
+  run:
+    working-directory: Practica-Profeciona-Facturacion-MUROTECH--main/backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Pytest
+        env:
+          SECRET_KEY: ci-test-secret-key-32-chars-min!!
+          FLASK_ENV: development
+          DATABASE_URL: sqlite:///:memory:
+        run: python -m pytest tests/test_fiscal_xml.py tests/test_security_config.py tests/test_hacienda_client.py tests/test_xsd_validator.py -q

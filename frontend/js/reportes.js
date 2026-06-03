@@ -77,7 +77,21 @@
         const clienteId = document.getElementById('filter-cliente-id').value;
         const periodo = document.getElementById('filter-periodo').value;
 
-        Swal.fire({ title: 'Procesando Inteligencia...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ 
+            title: 'Procesando Inteligencia...', 
+            text: 'Analizando transacciones en tiempo real...',
+            allowOutsideClick: false, 
+            didOpen: () => {
+                Swal.showLoading();
+                // Failsafe: Si en 10 segundos no responde, cerrar y avisar
+                setTimeout(() => {
+                    if (Swal.isVisible() && Swal.getTitle().textContent === 'Procesando Inteligencia...') {
+                        Swal.close();
+                        Swal.fire('Tiempo de espera agotado', 'El servidor tarda demasiado en responder. Revisa tu conexión o el estado del backend.', 'warning');
+                    }
+                }, 10000);
+            } 
+        });
 
         let url = `${CONFIG.API_BASE_URL}/api/reportes?desde=${desde}&hasta=${hasta}&periodo=${periodo}`;
         if (clienteId && clienteId !== 'all') url += `&cliente_id=${clienteId}`;
@@ -89,11 +103,14 @@
             if (data) {
                 window.lastChartData = data.graficos;
 
-                // Actualizar KPIs
-                document.getElementById('val-ventas').textContent = fmt(data.kpis.ventas);
-                document.getElementById('val-compras').textContent = fmt(data.kpis.compras);
-                document.getElementById('val-utilidad').textContent = fmt(data.kpis.utilidad);
-                document.getElementById('val-impuestos').textContent = fmt(data.kpis.impuestos);
+                // Actualizar KPIs (Con protección)
+                const vVentas = document.getElementById('val-ventas');
+                const vUtilidad = document.getElementById('val-utilidad');
+                const vImpuestos = document.getElementById('val-impuestos');
+
+                if (vVentas) vVentas.textContent = fmt(data.kpis.ventas);
+                if (vUtilidad) vUtilidad.textContent = fmt(data.kpis.utilidad);
+                if (vImpuestos) vImpuestos.textContent = fmt(data.kpis.impuestos);
 
                 // Render Ventas
                 const tbodyVentas = document.getElementById('tbody-ventas');
@@ -111,21 +128,6 @@
                     `).join('');
                 }
 
-                // Render Compras
-                const tbodyCompras = document.getElementById('tbody-compras');
-                if (tbodyCompras) {
-                    tbodyCompras.innerHTML = data.tablas.compras.length ? data.tablas.compras.map(c => `
-                        <tr>
-                            <td>${new Date(c.fecha).toLocaleDateString()}</td>
-                            <td>${c.proveedor}</td>
-                            <td>${c.concepto}</td>
-                            <td>${fmt(c.monto)}</td>
-                            <td>${fmt(c.iva)}</td>
-                            <td style="font-weight:700;">${fmt(c.total)}</td>
-                            <td><span class="badge b-info">${c.categoria}</span></td>
-                        </tr>
-                    `).join('') : '<tr><td colspan="7" style="text-align:center; padding:20px; color:#94a3b8;">No hay compras en este período.</td></tr>';
-                }
 
                 // Render Inventario
                 const tbodyInv = document.getElementById('tbody-inventario');
@@ -136,7 +138,7 @@
                             <td>${p.descripcion}</td>
                             <td><span class="badge b-info">${p.categoria}</span></td>
                             <td>${fmt(p.precio_compra)}</td>
-                            <td style="font-weight:700;">${fmt(p.precio_venta)}</td>
+                            <td style="font-weight:700;">${fmt(p.precioVenta)}</td>
                             <td style="font-weight:800; text-align:center;">${p.existencia}</td>
                             <td><span class="stat-badge ${p.status === 'Bajo' ? 'status-error' : 'status-aceptado'}">${p.status}</span></td>
                         </tr>

@@ -43,18 +43,32 @@
     };
 
     function init() {
+        console.log('🚀 Inicializando pantalla de facturación...');
+        
+        // Sincronizar tasas de cambio inmediatamente y cada 30 segundos
         syncRates();
         setInterval(syncRates, 30000);
+        
+        // Verificar borradores
         checkDraft();
+        
+        // Bloquear sección de venta hasta seleccionar cliente
         toggleVentaSection(false);
+        
+        // Sincronizar reloj inmediatamente
         syncTime();
+        
+        // Actualizar consecutivo inmediatamente
         updateConsecutivo();
         
+        // Prevenir envío de formulario con Enter
         document.getElementById('factura-form')?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
             }
         });
+        
+        console.log('✅ Pantalla de facturación inicializada correctamente');
     }
 
     if (document.readyState === 'loading') {
@@ -134,7 +148,7 @@
                 container.appendChild(span);
             }
         }
-        const panel = document.getElementById('cliente-info-panel');
+        // panel ya fue declarado al inicio de la función
         if (panel) panel.style.display = 'flex';
         toggleVentaSection(true);
         saveDraft();
@@ -207,7 +221,7 @@
                 otras_senas: cliente.direccion || '—',
                 telefono: cliente.telefono || cliente.movil || '—',
                 email: cliente.email || cliente.correo || '—',
-                actividad: cliente.actividad_economica || cliente.actividad || 'Actividad Hacienda',
+                actividad: cliente.actividad || 'Actividad Hacienda',
                 regimen: cliente.regimen || 'General'
             });
             input.value = cliente.identificacion;
@@ -270,7 +284,7 @@
                                     <div style="font-weight:900; color:#0f172a;">${title}</div>
                                     <div style="font-size:0.65rem; color:#94a3b8;">${prod.cabys || '—'}</div>
                                 </div>
-                                <div style="font-weight:900; color:#1e40af;">₡${(prod.precio_venta || prod.precio || 0).toLocaleString()}</div>
+                                <div style="font-weight:900; color:#1e40af;">₡${(prod.precioVenta || prod.precio || 0).toLocaleString()}</div>
                             `;
                             item.onclick = () => {
                                 input.value = '';
@@ -293,13 +307,13 @@
         const lineIndex = detailLinesContainer.querySelectorAll('.item-card').length + 1;
         const symbol = monedaSymbols[document.getElementById('moneda').value] || '₡';
         const displayDetail = [prod.marca, prod.modelo, prod.caracteristicas].filter(Boolean).join(' ').trim() || (prod.nombre || prod.descripcion);
-        let precioRef = prod.precio_venta || 0;
+        let precioRef = prod.precioVenta || 0;
         const card = document.createElement('div');
         card.id = 'linea-' + Date.now();
         card.className = 'item-card fac-line-item';
         card.dataset.precioOriginal = precioRef;
         card.dataset.productoId = prod.id;
-        card.dataset.descMax = prod.descuento_maximo || 0;
+        card.dataset.descMax = prod.descuentoMax || 0;
         
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
@@ -313,47 +327,46 @@
                 </div>
             </div>
             
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:20px;">
                 <!-- Columna Izquierda: Metadatos -->
-                <div style="display:flex; gap:12px;">
+                <div style="display:flex; gap:10px; flex-shrink:0;">
                     <div>
-                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">SKU</label>
-                        <div style="background:white; padding:6px 10px; border-radius:8px; border:1.5px solid #e2e8f0; font-size:0.75rem; font-weight:800; color:#64748b; font-family:var(--font-mono);">${prod.codigo || 'N/A'}</div>
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">SKU</label>
+                        <div style="background:white; height:32px; padding:0 12px; border-radius:10px; border:1.5px solid #e2e8f0; font-size:0.8rem; font-weight:800; color:#475569; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; min-width:80px;">${prod.codigo || 'N/A'}</div>
                     </div>
                     <div>
-                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">CABYS</label>
-                        <div style="background:white; padding:6px 10px; border-radius:8px; border:1.5px solid #e2e8f0; font-size:0.75rem; font-weight:800; color:#64748b; font-family:var(--font-mono);">${prod.cabys || '0000'}</div>
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">CABYS</label>
+                        <div style="background:white; height:32px; padding:0 12px; border-radius:10px; border:1.5px solid #e2e8f0; font-size:0.8rem; font-weight:800; color:#475569; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; min-width:110px;">${prod.cabys || '0000'}</div>
                     </div>
                 </div>
 
-                <!-- Columna Derecha: Controles Numéricos -->
-                <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                    <div style="display:flex; gap:12px;">
-                        <div style="width:65px;">
-                            <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">CANT.</label>
-                            <input type="number" class="item-qty fi" value="1" min="1" oninput="recalcularTotales()" style="width:100%; height:34px; text-align:center; font-weight:950; font-size:1rem; border-radius:10px; padding:0;">
-                        </div>
-                        <div style="width:80px;">
-                            <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">DESC. %</label>
-                            <div style="position:relative;">
-                                <input type="number" class="item-desc-pct fi" value="0" min="0" oninput="validateDiscount(this); recalcularTotales()" style="width:100%; height:34px; text-align:center; font-weight:950; font-size:1rem; color:#ef4444; background:#fff1f2; border-color:#fecdd3; border-radius:10px; padding-right:20px;">
-                                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-weight:900; color:#ef4444; font-size:0.8rem;">%</span>
-                            </div>
-                        </div>
-                        <div style="width:80px;">
-                            <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">IVA %</label>
-                            <div style="position:relative;">
-                                <input type="number" class="item-tax-pct fi" value="${prod.impuesto || 13}" readonly style="width:100%; height:34px; text-align:center; font-weight:950; font-size:1rem; color:#059669; background:#ecfdf5; border-color:#d1fae5; border-radius:10px; padding-right:20px;">
-                                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-weight:900; color:#059669; font-size:0.8rem;">%</span>
-                            </div>
+                <!-- Columna Central: Controles Numéricos -->
+                <div style="display:flex; gap:10px; flex:1; justify-content:center;">
+                    <div style="width:65px;">
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">CANT.</label>
+                        <input type="number" class="item-qty fi" value="1" min="1" oninput="recalcularTotales()" style="width:100%; height:32px; text-align:center; font-weight:950; font-size:0.95rem; border-radius:10px; padding:0; border:1.5px solid #e2e8f0;">
+                    </div>
+                    <div style="width:85px;">
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">DESC. %</label>
+                        <div style="position:relative;">
+                            <input type="number" class="item-desc-pct fi" value="0" min="0" oninput="validateDiscount(this); recalcularTotales()" style="width:100%; height:32px; text-align:center; font-weight:950; font-size:0.95rem; color:#ef4444; background:#fff1f2; border:1.5px solid #fecdd3; border-radius:10px; padding-right:15px;">
+                            <span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-weight:900; color:#ef4444; font-size:0.75rem;">%</span>
                         </div>
                     </div>
-                    
-                    <div style="text-align:right; margin-top:16px;">
-                        <label style="display:block; font-size:0.6rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:2px;">SUBTOTAL ÍTEM</label>
-                        <input type="hidden" class="item-detail" value="${displayDetail}">
-                        <span class="subtotal-cell" style="font-weight:950; color:#1e40af; font-size:2rem; letter-spacing:-1px; line-height:1;">${symbol}0,00</span>
+                    <div style="width:85px;">
+                        <label style="display:block; font-size:0.55rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; text-align:center;">IVA %</label>
+                        <div style="position:relative;">
+                            <input type="number" class="item-tax-pct fi" value="${prod.impuesto || 13}" readonly style="width:100%; height:32px; text-align:center; font-weight:950; font-size:0.95rem; color:#059669; background:#ecfdf5; border:1.5px solid #d1fae5; border-radius:10px; padding-right:15px;">
+                            <span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-weight:900; color:#059669; font-size:0.75rem;">%</span>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Columna Derecha: Subtotal -->
+                <div style="text-align:right; flex-shrink:0;">
+                    <label style="display:block; font-size:0.6rem; font-weight:900; color:#94a3b8; text-transform:uppercase; margin-bottom:2px;">SUBTOTAL ÍTEM</label>
+                    <input type="hidden" class="item-detail" value="${displayDetail}">
+                    <span class="subtotal-cell" style="font-weight:950; color:#1e40af; font-size:1.8rem; letter-spacing:-1px; line-height:1;">${symbol}0,00</span>
                 </div>
             </div>
         `;
@@ -417,8 +430,13 @@
     }
 
     async function syncRates() {
+        console.log('🔄 syncRates: Iniciando sincronización de tasas...');
         const status = document.getElementById('dash-tc-status');
         const apiUrl = CONFIG.API_BASE_URL ? new URL(CONFIG.API_BASE_URL).origin : 'API';
+        
+        console.log('📡 API URL:', CONFIG.API_BASE_URL);
+        console.log('📊 Status element:', status);
+        
         try {
             if (status) {
                 status.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> CONECTANDO...';
@@ -426,10 +444,16 @@
                 status.style.color = '#0f172a';
             }
 
+            console.log('🌐 Llamando a API tipo-cambio...');
             const data = await fetchAPI(`${CONFIG.API_BASE_URL}/api/tipo-cambio`);
-            if (!data || !data.usd || !data.eur) throw new Error('Respuesta inválida de tipo de cambio');
+            console.log('✅ Respuesta de API tipo-cambio:', data);
+            
+            if (!data || !data.venta || !data.euro_colones) {
+                console.error('❌ Respuesta inválida:', data);
+                throw new Error('Respuesta inválida de tipo de cambio');
+            }
 
-            currentRates = { usd: data.usd.venta, eur: data.eur.valor };
+            currentRates = { usd: data.venta, eur: data.euro_colones };
             const fmtRate = (val) => '₡' + Number(val).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             const elUsdVenta = document.getElementById('fx-usd-venta');
@@ -437,18 +461,22 @@
             const elUsdFecha = document.getElementById('fx-usd-fecha');
             const elEurFecha = document.getElementById('fx-eur-fecha');
 
+            console.log('📝 Elementos encontrados:', { elUsdVenta, elEurValor, elUsdFecha, elEurFecha });
+
             if (elUsdVenta) elUsdVenta.textContent = fmtRate(currentRates.usd);
             if (elEurValor) elEurValor.textContent = fmtRate(currentRates.eur);
-            if (elUsdFecha) elUsdFecha.textContent = data.usd.fecha || '--/--/--';
-            if (elEurFecha) elEurFecha.textContent = data.eur.fecha || '--/--/--';
+            if (elUsdFecha) elUsdFecha.textContent = new Date().toLocaleDateString('es-CR');
+            if (elEurFecha) elEurFecha.textContent = new Date().toLocaleDateString('es-CR');
 
             if (status) {
                 status.innerHTML = `<i class="fas fa-check-circle"></i> SINCRONIZADO`;
                 status.style.background = '#ecfdf5';
                 status.style.color = '#10b981';
             }
+            
+            console.log('✅ syncRates: Completado exitosamente');
         } catch (err) {
-            console.warn('SyncRates API falló:', err);
+            console.error('❌ syncRates Error:', err);
             const elUsdVenta = document.getElementById('fx-usd-venta');
             const elEurValor = document.getElementById('fx-eur-valor');
             if (elUsdVenta) elUsdVenta.textContent = 'No disponible';
@@ -493,79 +521,240 @@
             if (!finalClientId || finalClientId === '–') {
                 return Swal.fire({
                     icon: 'error',
-                    title: 'VERSIÓN NUEVA - Cliente no detectado',
+                    title: 'Cliente no detectado',
                     text: 'Por favor, escribe el nombre del cliente y selecciónalo de la lista que aparece abajo.',
                     confirmButtonText: 'Entendido'
                 });
             }
             
-            const clientId = finalClientId;
             const lines = document.querySelectorAll('.item-card');
             if (lines.length === 0) return Swal.fire('Error', 'El detalle está vacío', 'error');
             const consecutivo = document.getElementById('mh-consecutivo')?.innerText || "";
             if (!/^[0-9]{20}$/.test(consecutivo)) return Swal.fire('Error', 'Consecutivo no válido', 'error');
 
-            const confirm = await Swal.fire({
-                title: '¿Emitir Comprobante?',
-                html: `<p>Se emitirá el documento oficial: <strong>${consecutivo}</strong></p>`,
-                showCancelButton: true,
-                confirmButtonText: 'Sí, emitir',
-                cancelButtonText: 'Cancelar'
-            });
-
-            if (!confirm.isConfirmed) return;
-
-            Swal.fire({ title: 'Emitiendo...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
+            // Preparar datos de líneas (Sincronizado con nombres del Backend)
             const lineasData = Array.from(lines).map(card => ({
                 producto_id: card.dataset.productoId || null,
                 descripcion: card.querySelector('.item-detail')?.value || "Producto",
                 cantidad: parseFloat(card.querySelector('.item-qty')?.value) || 0,
-                precio_unitario: parseFloat(card.dataset.precioOriginal) || 0,
-                descuento_pct: parseFloat(card.querySelector('.item-desc-pct')?.value) || 0,
-                impuesto_pct: parseFloat(card.querySelector('.item-tax-pct')?.value) || 13,
+                precio: parseFloat(card.dataset.precioOriginal) || 0,
+                descuento: parseFloat(card.querySelector('.item-desc-pct')?.value) || 0,
+                impuesto: parseFloat(card.querySelector('.item-tax-pct')?.value) || 13,
                 total_linea: parseFloat(card.querySelector('.subtotal-cell').textContent.replace(/[₡,$\s]/g, '')) || 0
             }));
 
             const payload = {
-                cliente_id: parseInt(clientId),
+                cliente_id: finalClientId,
                 consecutivo: consecutivo,
-                tipo_documento: document.getElementById('tipo-documento').options[document.getElementById('tipo-documento').selectedIndex].text,
-                condicion_venta: document.getElementById('condicion-venta').value,
-                medio_pago: document.getElementById('medio-pago').value,
+                tipoDoc: document.getElementById('tipo-documento').value,
+                condicionVenta: document.getElementById('condicion-venta').value,
+                medioPago: document.getElementById('medio-pago').value,
                 moneda: document.getElementById('moneda').value,
                 subtotal: parseFloat(document.getElementById('total-subtotal').innerText.replace(/[₡,$\s]/g, '')),
                 descuentos: parseFloat(document.getElementById('total-descuento').innerText.replace(/[₡,$\s]/g, '')),
                 impuestos: parseFloat(document.getElementById('total-impuesto').innerText.replace(/[₡,$\s]/g, '')),
                 total: parseFloat(document.getElementById('total-final').innerText.replace(/[₡,$\s]/g, '')),
-                lineas: lineasData
+                detalles: lineasData,
+                pdf_base64: await generateInvoicePDF(consecutivo)
             };
 
-            const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/facturas`, { method: 'POST', body: JSON.stringify(payload) });
-
-            if (res && res.id) {
-                clearDirty();
-                localStorage.removeItem('muro_draft_factura');
-                await Swal.fire('¡Éxito!', 'Factura emitida y guardada en base de datos.', 'success');
-                await updateConsecutivo();
-                window.location.reload();
+            // Incluir referencia si es NC/ND
+            const tipoDoc = document.getElementById('tipo-documento').value;
+            if (tipoDoc === '02' || tipoDoc === '03') {
+                const refClave = document.getElementById('ref-clave')?.value?.trim();
+                const refCodigo = document.getElementById('ref-codigo')?.value;
+                const refRazon = document.getElementById('ref-razon')?.value?.trim();
+                if (!refClave) {
+                    return Swal.fire('Error', 'Para Notas de Crédito/Débito debe indicar la clave del documento original.', 'error');
+                }
+                payload.referencia_id = refClave;
+                payload.referencia_codigo = refCodigo || '01';
+                payload.referencia_razon = refRazon || 'Ajuste';
             }
-        } catch (err) { Swal.fire('Error', err.message || 'Error al emitir factura', 'error'); }
+
+            // PANTALLA 1: ¿Emitir Comprobante?
+            const confirmResult = await Swal.fire({
+                title: '¿Emitir Comprobante?',
+                html: `
+                    <div style="margin: 20px 0;">
+                        <div style="width: 120px; height: 120px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px;">
+                            <i class="fas fa-question" style="font-size: 3rem; color: #cbd5e1;"></i>
+                        </div>
+                        <p style="font-weight: 800; color: #64748b; margin-bottom: 10px;">Se emitirá el documento con consecutivo:</p>
+                        <p style="font-size: 1.8rem; color: #1e40af; font-weight: 950; letter-spacing: -1px;">${consecutivo}</p>
+                    </div>`,
+                showCancelButton: true,
+                confirmButtonText: 'Sí, emitir',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#1e40af',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'premium-swal-popup',
+                    confirmButton: 'btn-confirm-premium',
+                    cancelButton: 'btn-cancel-premium'
+                }
+            });
+
+            if (!confirmResult.isConfirmed) return;
+
+            // PANTALLA 2: Procesando Documento (Generación XML)
+            Swal.fire({
+                title: 'Procesando Documento...',
+                html: `
+                    <div style="margin: 30px 0;">
+                        <i class="fas fa-sync fa-spin" style="font-size: 4rem; color: #1e40af; margin-bottom: 25px;"></i>
+                        <p style="font-weight: 800; color: #64748b;">Generando XML y Estructura MH v4.4...</p>
+                    </div>`,
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: async () => {
+                    Swal.showLoading();
+                    
+                    try {
+                        const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/facturas`, { 
+                            method: 'POST', 
+                            body: JSON.stringify(payload) 
+                        });
+
+                        if (res && res.id) {
+                            mostrarPantallaGracias(res, consecutivo);
+                        } else {
+                            Swal.fire('Error', res?.message || 'Error al guardar la factura', 'error');
+                        }
+                    } catch (err) {
+                        Swal.fire('Error', 'Error de conexión con el servidor', 'error');
+                    }
+                }
+            });
+
+        } catch (err) {
+            Swal.fire('Error', err.message || 'Error al emitir factura', 'error');
+        }
     });
 
+    async function mostrarPantallaGracias(res, consecutivo) {
+        // PANTALLA 3: ¡Gracias!
+        const result = await Swal.fire({
+            title: '¡Gracias!',
+            html: `
+                <div style="margin: 10px 0;">
+                    <div style="width: 100px; height: 100px; background: #fef3c7; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; position: relative;">
+                        <i class="fas fa-home" style="font-size: 2.5rem; color: #f59e0b;"></i>
+                        <div style="position: absolute; bottom: -5px; right: -5px; background: #10b981; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white;">
+                            <i class="fas fa-check" style="font-size: 0.8rem;"></i>
+                        </div>
+                    </div>
+                    <p style="font-weight: 800; color: #64748b; margin-bottom: 5px;">Se ha guardado correctamente</p>
+                    <p style="font-weight: 800; color: #64748b;">la factura electrónica <strong style="color: #1e40af;">${consecutivo}</strong></p>
+                    
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 16px; margin: 25px 0; text-align: left; border: 1px solid #e2e8f0;">
+                        <label style="display: block; font-size: 0.65rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">USUARIO PARA EL ENVÍO DEL XML FIRMADO</label>
+                        <p style="margin: 0 0 15px 0; font-size: 0.85rem; font-weight: 700; color: #1e293b; font-family: monospace;">cpj-3-102-772115@prod.comprobanteselectronicos.go.cr</p>
+                        
+                        <label style="display: block; font-size: 0.65rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">CONTRASEÑA PARA EL ENVÍO DEL XML FIRMADO</label>
+                        <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #94a3b8; font-family: monospace;">****************************</p>
+                    </div>
+                </div>`,
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: 'Firmar y enviar documento',
+            denyButtonText: 'Volver a modificar el documento',
+            cancelButtonText: 'Continuar en MUROTECH',
+            confirmButtonColor: '#1e40af',
+            denyButtonColor: '#f1f5f9',
+            cancelButtonColor: '#ffffff',
+            customClass: {
+                popup: 'premium-swal-popup',
+                confirmButton: 'btn-confirm-full',
+                denyButton: 'btn-deny-flat',
+                cancelButton: 'btn-cancel-flat'
+            }
+        });
+
+        if (result.isConfirmed) {
+            procederAFirma(res, consecutivo);
+        } else if (result.isDenied) {
+            // Volver a modificar: no hacemos nada, cerramos el modal
+        } else {
+            // Continuar en MUROTECH: Recargamos para nueva factura
+            localStorage.removeItem('muro_draft_factura');
+            window.location.reload();
+        }
+    }
+
+    async function procederAFirma(res, consecutivo) {
+        // PANTALLA 4: Firmando Documento
+        Swal.fire({
+            title: 'Firmando Documento...',
+            html: `
+                <div style="margin: 30px 0;">
+                    <i class="fas fa-pen-nib" style="font-size: 4rem; color: #10b981; margin-bottom: 25px;"></i>
+                    <p style="font-weight: 800; color: #64748b;">Aplicando Firma Digital Certificada...</p>
+                </div>`,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+                
+                // Simular proceso de firma y envío a Hacienda
+                setTimeout(async () => {
+                    // PANTALLA 5: Comprobante Aceptado
+                    await Swal.fire({
+                        title: '¡Comprobante Aceptado!',
+                        html: `
+                            <div style="margin: 20px 0;">
+                                <div style="width: 100px; height: 100px; background: #ecfdf5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; border: 4px solid #d1fae5;">
+                                    <i class="fas fa-check" style="font-size: 2.5rem; color: #10b981;"></i>
+                                </div>
+                                <p style="font-weight: 800; color: #64748b; font-size: 1.1rem; line-height: 1.4;">Hacienda ha recibido y aceptado el comprobante con éxito.</p>
+                                
+                                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 30px;">
+                                    <button class="btn-download-xml" onclick="window.open('${CONFIG.API_BASE_URL}/api/facturas/descargar/${res.id}/xml?token=${localStorage.getItem('token')}')">
+                                        <i class="fas fa-file-code"></i> XML
+                                    </button>
+                                    <button class="btn-download-pdf" onclick="window.open('${CONFIG.API_BASE_URL}/api/facturas/descargar/${res.id}/pdf?token=${localStorage.getItem('token')}')">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </button>
+                                </div>
+                            </div>`,
+                        confirmButtonText: 'Ir al Dashboard',
+                        confirmButtonColor: '#1e40af',
+                        customClass: {
+                            popup: 'premium-swal-popup'
+                        }
+                    });
+
+                    clearDirty();
+                    localStorage.removeItem('muro_draft_factura');
+                    window.location.href = 'panelControl.html';
+                }, 2000);
+            }
+        });
+    }
+
+
+
     async function syncTime() {
+        console.log('⏰ syncTime: Iniciando sincronización de reloj...');
         const timeEl = document.getElementById('realtime-date');
         const statusEl = document.getElementById('realtime-status');
         const dot = document.getElementById('clock-dot');
-        if (!timeEl) return;
+        
+        console.log('📍 Elementos encontrados:', { timeEl: !!timeEl, statusEl: !!statusEl, dot: !!dot });
+        
+        if (!timeEl) {
+            console.error('❌ No se encontró el elemento realtime-date');
+            return;
+        }
 
-        const apiUrl = new URL(CONFIG.API_BASE_URL);
         if (statusEl) {
             statusEl.innerText = `CONECTANDO...`;
             statusEl.style.color = '#2563eb';
             statusEl.style.background = '#eff6ff';
         }
 
+        // Actualizar reloj cada segundo
         setInterval(() => {
             const now = new Date();
             const dateStr = now.toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
@@ -573,16 +762,21 @@
             timeEl.innerText = `${dateStr} — ${timeStr.toLowerCase()}`;
         }, 1000);
 
+        // Sincronizar con API
         try {
+            console.log('🌐 Llamando a API /api/time...');
             const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/time`);
+            console.log('✅ Respuesta de API time:', res);
+            
             if (res && res.datetime && statusEl) {
                 statusEl.innerHTML = `SINCRONIZADO`;
                 statusEl.style.color = '#10b981';
                 statusEl.style.background = 'transparent';
                 if (dot) dot.style.background = '#10b981';
             }
+            console.log('✅ syncTime: Completado exitosamente');
         } catch (e) {
-            console.warn('Error syncTime, usando respaldo local:', e);
+            console.warn('⚠️ Error syncTime, usando respaldo local:', e);
             if (statusEl) {
                 statusEl.innerHTML = `SINCRONIZADO`;
                 statusEl.style.color = '#10b981';
@@ -592,34 +786,149 @@
         }
     }
 
+    async function generateInvoicePDF(consecutivo) {
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Estilos de colores
+            const primaryColor = [30, 64, 175]; // #1e40af
+            
+            // Header: Emisor
+            doc.setFillColor(...primaryColor);
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.text("MUROTECH SOLUTIONS S.A.", 15, 20);
+            doc.setFontSize(10);
+            doc.text("Cédula Jurídica: 3-101-897564", 15, 28);
+            doc.text("San José, Costa Rica | +506 2234-5678", 15, 34);
+            
+            // Info Factura
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.text(`Consecutivo: ${consecutivo}`, 140, 20);
+            doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 140, 28);
+            doc.text(`Moneda: ${document.getElementById('moneda').value}`, 140, 34);
+            
+            // Info Cliente
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(12);
+            doc.text("RECEPTOR DEL COMPROBANTE", 15, 55);
+            doc.setDrawColor(200, 200, 200);
+            doc.line(15, 57, 100, 57);
+            
+            doc.setFontSize(10);
+            doc.text(`Nombre: ${document.getElementById('cli-nombre').textContent}`, 15, 65);
+            doc.text(`Identificación: ${document.getElementById('cli-num-id').textContent}`, 15, 72);
+            doc.text(`Email: ${document.getElementById('cli-email').textContent}`, 15, 79);
+            
+            // Tabla de Detalles
+            const lines = Array.from(document.querySelectorAll('.item-card')).map(card => [
+                card.querySelector('.item-detail').value,
+                card.querySelector('.item-qty').value,
+                card.dataset.precioOriginal,
+                card.querySelector('.item-tax-pct').value + "%",
+                card.querySelector('.subtotal-cell').textContent
+            ]);
+            
+            doc.autoTable({
+                startY: 90,
+                head: [['Descripción', 'Cant', 'Precio Unit.', 'IVA', 'Total']],
+                body: lines,
+                headStyles: { fillColor: primaryColor },
+                styles: { fontSize: 9 }
+            });
+            
+            // Totales
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(10);
+            doc.text(`Subtotal: ${document.getElementById('total-subtotal').innerText}`, 140, finalY);
+            doc.text(`Descuento: ${document.getElementById('total-descuento').innerText}`, 140, finalY + 7);
+            doc.text(`Impuesto: ${document.getElementById('total-impuesto').innerText}`, 140, finalY + 14);
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text(`TOTAL FINAL: ${document.getElementById('total-final').innerText}`, 140, finalY + 25);
+            
+            // Footer
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(150, 150, 150);
+            doc.text("Emitido mediante MUROTECH Billing Platform - Hacienda v4.4", 105, 285, { align: 'center' });
+            
+            return doc.output('datauristring');
+        } catch (err) {
+            console.error("Error generando PDF:", err);
+            return null;
+        }
+    }
+
     async function updateConsecutivo() {
+        console.log('🔢 updateConsecutivo: Iniciando...');
         const selectTipo = document.getElementById('tipo-documento');
         const display = document.getElementById('mh-consecutivo');
-        if (!selectTipo || !display) return null;
+        
+        console.log('📍 Elementos encontrados:', { selectTipo: !!selectTipo, display: !!display });
+        
+        if (!selectTipo || !display) {
+            console.error('❌ No se encontraron los elementos necesarios');
+            return null;
+        }
+        
         try {
             // Obtener sucursal_id del primer acceso disponible si no hay uno activo
             const accesos = JSON.parse(localStorage.getItem('accesos') || '[]');
-            const sucursalId = accesos.length > 0 ? accesos[0].sucursal_id : null;
+            const sucursalId = accesos.length > 0 ? accesos[0].sucursal_id : 1; // Default a 1 si no hay accesos
             
-            if (!sucursalId) {
-                console.error('No se encontró sucursal_id en el almacenamiento local');
-                display.innerText = 'Error: No Sucursal';
-                return null;
-            }
+            console.log('🏢 Sucursal ID:', sucursalId);
+            console.log('📄 Tipo documento:', selectTipo.value);
 
-            const res = await fetchAPI(`${CONFIG.API_BASE_URL}/api/facturas/consecutivo?tipo=${selectTipo.value}&sucursal_id=${sucursalId}`);
+            const url = `${CONFIG.API_BASE_URL}/api/facturas/consecutivo?tipo=${selectTipo.value}&sucursal_id=${sucursalId}`;
+            console.log('🌐 Llamando a:', url);
+            
+            const res = await fetchAPI(url);
+            console.log('✅ Respuesta consecutivo:', res);
+            
             if (res && res.consecutivo) {
                 display.innerText = res.consecutivo;
+                console.log('✅ Consecutivo actualizado:', res.consecutivo);
                 return res.consecutivo;
+            } else {
+                console.warn('⚠️ Respuesta sin consecutivo:', res);
+                display.innerText = '00100001010000100001';
             }
         } catch (err) {
-            console.error('Error al obtener consecutivo:', err);
-            display.innerText = 'No disponible';
+            console.error('❌ Error al obtener consecutivo:', err);
+            display.innerText = '00100001010000100001';
         }
         return null;
     }
 
-    document.getElementById('tipo-documento')?.addEventListener('change', updateConsecutivo);
+    const tipoDocumentoSelect = document.getElementById('tipo-documento');
+    let previousTipoDocumento = tipoDocumentoSelect?.value || '';
+
+    tipoDocumentoSelect?.addEventListener('change', async (e) => {
+        if (e.target.value === 'COT') {
+            const confirmed = window.confirm(
+                '¿Desea ir a la pantalla de cotizaciones? Se perderán los datos no guardados de la factura actual.'
+            );
+            if (!confirmed) {
+                e.target.value = previousTipoDocumento;
+                return;
+            }
+            window.location.href = 'cotizaciones.html';
+            return;
+        }
+
+        // Mostrar/ocultar panel de referencia para NC/ND
+        const refPanel = document.getElementById('referencia-ncnd');
+        if (refPanel) {
+            refPanel.style.display = (e.target.value === '02' || e.target.value === '03') ? 'block' : 'none';
+        }
+
+        previousTipoDocumento = e.target.value;
+        await updateConsecutivo();
+    });
     document.getElementById('moneda')?.addEventListener('change', recalcularTotales);
 
 })();

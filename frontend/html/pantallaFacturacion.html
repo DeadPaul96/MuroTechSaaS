@@ -21,6 +21,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <link rel="stylesheet" href="../css/pantallaFacturacion.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body class="reg-body">
     <canvas id="particles-canvas"></canvas>
@@ -141,6 +144,32 @@
                     </div>
 
                     <!-- ═══════════════════════════════════════════════════ -->
+                    <!--  REFERENCIA NC/ND (visible solo para tipos 02,03)   -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div id="referencia-ncnd" class="section-box" style="display:none; padding:16px 20px;">
+                        <h3 class="section-title"><i class="fas fa-link"></i> Documento de Referencia</h3>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 2fr; gap:14px;">
+                            <div>
+                                <label class="label-sm" for="ref-clave">Clave del documento</label>
+                                <input type="text" id="ref-clave" class="fi" placeholder="50 dígitos de la factura original" maxlength="50">
+                            </div>
+                            <div>
+                                <label class="label-sm" for="ref-codigo">Código de referencia</label>
+                                <select id="ref-codigo" class="premium-select">
+                                    <option value="01">01 – Anula documento</option>
+                                    <option value="02">02 – Corregir monto</option>
+                                    <option value="03">03 – Corregir detalle</option>
+                                    <option value="04">04 – Otro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-sm" for="ref-razon">Razón</label>
+                                <input type="text" id="ref-razon" class="fi" placeholder="Describa el motivo de la nota (máx. 180 caracteres)" maxlength="180">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
                     <!--  TARJETA 2 – CONFIGURACIÓN RÁPIDA + DIVISAS        -->
                     <!-- ═══════════════════════════════════════════════════ -->
                     <div class="section-box" style="display: flex; gap: 24px; align-items: flex-start;">
@@ -156,7 +185,8 @@
                                     <option value="03">03 – Nota de Crédito Electrónica</option>
                                     <option value="04">04 – Tiquete Electrónico</option>
                                     <option value="08">08 – Comprobante Electrónico de Exportación</option>
-                                    <option value="09">09 – Comprobante Electrónico de Compra</option>
+                                    <option value="09">09 – Contingencia Factura Electrónica</option>
+                                    <option value="10">10 – Contingencia Tiquete Electrónico</option>
                                 </select>
                             </div>
 
@@ -444,5 +474,12 @@
 
     <!-- Partículas animadas -->
     
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+            });
+        }
+    </script>
 </body>
 </html>
