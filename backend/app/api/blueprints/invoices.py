@@ -1,3 +1,5 @@
+import logging
+
 import os
 from datetime import datetime, timedelta
 import zlib
@@ -17,6 +19,7 @@ from app.models import (
 )
 from app.api.decorators.auth import token_required
 from app.api.decorators.rbac import require_role
+from app.api.decorators.audit import audit_log
 from app.api.blueprints.companies import (
     _read_empresa_secret, _store_empresa_secret, _empresa_ambiente, _mh_credenciales,
     validate_sucursal, create_notification
@@ -33,6 +36,8 @@ from fiscal.xsd_validator import validate_comprobante_xml, XmlSchemaError, valid
 from app.services.contingencia_service import crear_comprobante_contingencia, sincronizar_contingencia
 
 bp = Blueprint('invoices', __name__, url_prefix='/api')
+
+logger = logging.getLogger(__name__)
 
 # Cache para tipo de cambio
 _tipo_cambio_cache = {
@@ -61,7 +66,7 @@ def get_tipo_cambio():
             _tipo_cambio_cache['timestamp'] = ahora
             return rates
     except Exception as e:
-        print(f"Error consultando API Hacienda: {e}")
+        logger.warning("Error consultando API Hacienda tipo cambio: %s", e)
 
     # Fallback local
     fallback = {'venta': 525.50, 'compra': 515.20, 'euro_colones': 542.11, 'euro_dolares': 1.1772}
@@ -116,14 +121,18 @@ def verificar_cupo_facturas(empresa):
 
 def enviar_comprobante_email(destinatario, factura_data, xml_bin, pdf_bin):
     """Envía el comprobante electrónico (XML y PDF) al receptor."""
-    SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 587
-    SMTP_USER = "soporte@murotech.com"
-    SMTP_PASS = "tu_password_seguro"
-    
+    smtp_server = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+    smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+    smtp_user = os.environ.get('SMTP_USER', '')
+    smtp_pass = os.environ.get('SMTP_PASSWORD', '')
+
+    if not smtp_user or not smtp_pass:
+        current_app.logger.warning('SMTP no configurado. No se envió correo a %s', destinatario)
+        return False
+
     try:
         msg = MIMEMultipart()
-        msg['From'] = f"MUROTECH Facturación <{SMTP_USER}>"
+        msg['From'] = f"MUROTECH Facturación <{smtp_user}>"
         msg['To'] = destinatario
         msg['Subject'] = f"Comprobante Electrónico: {factura_data['consecutivo']}"
 
@@ -169,12 +178,13 @@ def enviar_comprobante_email(destinatario, factura_data, xml_bin, pdf_bin):
         print(f"Correo enviado exitosamente a {destinatario}")
         return True
     except Exception as e:
-        print(f"Error enviando correo: {str(e)}")
+        logger.error("Error enviando correo a %s: %s", destinatario, e)
         return False
 
 @bp.route('/facturas', methods=['GET', 'POST'])
 @token_required
 @require_role(['Administrador', 'Emisor'])
+@audit_log('factura')
 def facturas_endpoint(current_user):
     sucursal_id = request.headers.get('X-Sucursal-ID')
     sucursal = validate_sucursal(current_user, sucursal_id)
@@ -200,12 +210,13 @@ def facturas_endpoint(current_user):
         if not detalles:
             return jsonify({'message': 'Debe enviar al menos un detalle de factura.'}), 400
 
+        tipo_doc = data.get('tipoDoc', '01')
+
         # Validar referencia obligatoria para NC/ND
         if tipo_doc in ('02', '03') and not data.get('referencia_id'):
             return jsonify({'message': 'Para Notas de Crédito/Débito es obligatorio indicar la clave del documento original (referencia_id).'}), 400
 
         try:
-            db.session.commit()
             
             sucursal = db.session.query(Sucursal).with_for_update().filter_by(id=sucursal_id, empresa_id=current_user.empresa_id).first()
             if not sucursal:
@@ -330,7 +341,7 @@ def facturas_endpoint(current_user):
                         db.session.add(movimiento)
                         
                         producto.stock = nuevo_stock
-                        print(f"[STOCK] Inventario Actualizado: {producto.codigo} ({anterior} -> {nuevo_stock})")
+                        logger.info("Inventario Actualizado: %s (%d -> %d)", producto.codigo, anterior, nuevo_stock)
 
                         if nuevo_stock < 5:
                             notificacion = Notificacion(
@@ -343,7 +354,7 @@ def facturas_endpoint(current_user):
                                 link='/frontend/html/inventario.html'
                             )
                             db.session.add(notificacion)
-                            print(f"[ALERTA] Alerta: Stock bajo para {producto.codigo}")
+                            logger.info("Alerta: Stock bajo para %s", producto.codigo)
 
             nueva_factura.subtotal = quantize_money(subtotal_total)
             nueva_factura.descuentos = quantize_money(descuentos_total)
@@ -373,7 +384,7 @@ def facturas_endpoint(current_user):
                 else:
                     nueva_factura.xml_comprobante = zlib.compress(xml_bytes_para_mh)
             except Exception as sign_err:
-                print(f"Error en firma: {str(sign_err)}")
+                logger.warning("Error en firma XML: %s", sign_err)
                 nueva_factura.xml_comprobante = zlib.compress(xml_bytes_para_mh)
 
             mh_envio = None
@@ -382,7 +393,7 @@ def facturas_endpoint(current_user):
                     permitido, motivo = validar_horario_envio()
                     if not permitido:
                         nueva_factura.estado = 'Pendiente Horario'
-                        print(f"[MH] {motivo} Se enviará en próximo horario hábil.")
+                        logger.info("[MH] %s Se enviará en próximo horario hábil.", motivo)
                     else:
                         creds = _mh_credenciales(empresa)
                         cliente_mh = HaciendaClient(ambiente=_empresa_ambiente(empresa))
@@ -406,9 +417,9 @@ def facturas_endpoint(current_user):
                         _guardar_respuesta_mh(nueva_factura, body_mh)
                         nueva_factura.estado = mapear_estado_mh(body_mh) if body_mh else 'Enviada'
                 except HaciendaError as mh_err:
-                    print(f"MH recepción: {mh_err} payload={getattr(mh_err, 'payload', None)}")
+                    logger.warning("MH recepción: %s payload=%s", mh_err, getattr(mh_err, 'payload', None))
                 except Exception as mh_err:
-                    print(f"MH recepción error: {mh_err}")
+                    logger.error("MH recepción error: %s", mh_err)
 
             pdf_base64 = data.get('pdf_base64')
             if pdf_base64:
@@ -418,7 +429,7 @@ def facturas_endpoint(current_user):
                     pdf_bin = base64.b64decode(pdf_base64)
                     nueva_factura.pdf_comprobante = zlib.compress(pdf_bin)
                 except Exception as pdf_err:
-                    print(f"Error procesando PDF base64: {str(pdf_err)}")
+                    logger.warning("Error procesando PDF base64: %s", pdf_err)
                     nueva_factura.pdf_comprobante = zlib.compress(b"ERROR_GENERACION_PDF")
             else:
                 nueva_factura.pdf_comprobante = zlib.compress(b"SIN_PDF_ADJUNTO")
@@ -428,7 +439,7 @@ def facturas_endpoint(current_user):
             try:
                 Factura.query.filter_by(sucursal_id=sucursal.id, is_draft=True).delete()
                 db.session.commit()
-            except:
+            except Exception:
                 db.session.rollback()
 
             resp = {
@@ -582,6 +593,7 @@ def hacienda_xsd_status(current_user):
 @bp.route('/facturas/<string:id>', methods=['GET', 'PUT'])
 @token_required
 @require_role(['Administrador', 'Emisor'])
+@audit_log('factura')
 def factura_detalle(current_user, id):
     sucursal_id = request.headers.get('X-Sucursal-ID')
     sucursal = validate_sucursal(current_user, sucursal_id)
@@ -637,7 +649,7 @@ def factura_detalle(current_user, id):
         if data.get('fecha'):
             try:
                 factura.fecha_emision = datetime.fromisoformat(data.get('fecha').replace('Z', ''))
-            except:
+            except (ValueError, TypeError):
                 pass
         factura.condicion_venta = data.get('condicionVenta', factura.condicion_venta)
         factura.medio_pago = data.get('medioPago', factura.medio_pago)
@@ -709,7 +721,7 @@ def descargar_comprobante(current_user, id, tipo):
             'Content-Type': mimetype,
             'Content-Disposition': f'attachment; filename={factura.numero_consecutivo}.{ext}'
         }
-    except:
+    except Exception:
         return jsonify({'message': 'Archivo no disponible'}), 404
 
 @bp.route('/cotizaciones/proforma', methods=['POST'])
@@ -831,8 +843,6 @@ def cotizaciones_endpoint(current_user):
             return jsonify({'message': 'Debe enviar al menos un detalle de cotización.'}), 400
 
         try:
-            db.session.commit()
-            
             moneda = data.get('moneda', 'CRC')
             tc = Decimal('1.00')
             if moneda != 'CRC':
@@ -900,7 +910,7 @@ def cotizaciones_endpoint(current_user):
                     pdf_bin = base64.b64decode(pdf_base64)
                     nueva_cotizacion.pdf_comprobante = zlib.compress(pdf_bin)
                 except Exception as pdf_err:
-                    print(f"Error procesando PDF base64: {str(pdf_err)}")
+                    logger.warning("Error procesando PDF base64 cotización: %s", pdf_err)
                     nueva_cotizacion.pdf_comprobante = zlib.compress(b"ERROR_GENERACION_PDF")
             else:
                 nueva_cotizacion.pdf_comprobante = zlib.compress(b"SIN_PDF_ADJUNTO")
@@ -1032,7 +1042,7 @@ def cotizacion_detalle(current_user, id):
         if data.get('fecha_vencimiento'):
             try:
                 cotizacion.fecha_vencimiento = datetime.fromisoformat(data.get('fecha_vencimiento').replace('Z', ''))
-            except:
+            except (ValueError, TypeError):
                 pass
 
         subtotal_total = Decimal('0.00')
@@ -1098,7 +1108,7 @@ def descargar_cotizacion(current_user, id):
             'Content-Type': 'application/pdf',
             'Content-Disposition': f'attachment; filename=cotizacion_{cotizacion.id}.pdf'
         }
-    except:
+    except Exception:
         return jsonify({'message': 'Archivo no disponible'}), 404
 
 # ─── MODO CONTINGENCIA ──────────────────────────────────────

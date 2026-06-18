@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 
 from flask import Flask, send_from_directory
@@ -64,5 +65,25 @@ def create_app(config_name=None):
     if env.lower() in ('testing', 'development'):
         with app.app_context():
             db.create_all()
+
+    # ── Logging ─────────────────────────────────────────────
+    log_level = logging.DEBUG if env.lower() in ('testing', 'development') else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    )
+    # Silenciar loggers ruidosos
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    logging.getLogger('engineio').setLevel(logging.WARNING)
+
+    # Sentry (si está configurado)
+    sentry_dsn = os.environ.get('SENTRY_DSN')
+    if sentry_dsn and env.lower() in ('production', 'prod'):
+        try:
+            import sentry_sdk
+            from sentry_sdk.integrations.flask import FlaskIntegration
+            sentry_sdk.init(dsn=sentry_dsn, integrations=[FlaskIntegration()], traces_sample_rate=0.1)
+        except ImportError:
+            app.logger.warning('sentry-sdk instalado pero no importable')
 
     return app

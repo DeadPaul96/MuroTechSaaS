@@ -7,7 +7,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-from api.app import app, db
+from dotenv import load_dotenv
+load_dotenv()
+from app import create_app
+app = create_app()
+from app.models import db
 from api.models import Empresa
 from core.crypto_utils import ENC_PREFIX, encrypt_text
 

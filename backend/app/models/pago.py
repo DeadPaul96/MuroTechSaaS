@@ -4,6 +4,9 @@ from app.models.base import db
 
 class Pago(db.Model):
     __tablename__ = 'pagos'
+    __table_args__ = (
+        db.Index('ix_pagos_empresa_status', 'empresa_id', 'status'),
+    )
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     empresa_id = db.Column(db.String(36), db.ForeignKey('empresas.id'), nullable=False)
     usuario_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'), nullable=True)
@@ -18,3 +21,6 @@ class Pago(db.Model):
     checkout_url = db.Column(db.String(250), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    empresa = db.relationship('Empresa', backref=db.backref('pagos', lazy=True))
+    usuario = db.relationship('Usuario', backref=db.backref('pagos', lazy=True))

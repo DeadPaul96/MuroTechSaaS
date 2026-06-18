@@ -1,12 +1,13 @@
 import io
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, Response
 from werkzeug.security import generate_password_hash
 from app.models import (
     db, Empresa, Sucursal, Rol, Usuario, AccesoSucursal, RevokedToken, SuperAdminEmpresa, Factura
 )
 from app.api.decorators.auth import superadmin_required
+from app.models import AuditoriaLog
 
 bp = Blueprint('superadmin', __name__, url_prefix='/api/supadmin')
 
@@ -531,7 +532,7 @@ def stats_usuarios(current_user):
         superadmins = Usuario.query.filter_by(is_superadmin=True).count()
         
         treinta_dias = datetime.utcnow() - timedelta(days=30)
-        nuevos = Usuario.query.filter(Usuario.id >= treinta_dias).count()
+        nuevos = Usuario.query.filter(Usuario.fecha_creacion >= treinta_dias).count()
         
         return jsonify({
             'success': True,
@@ -566,18 +567,41 @@ def stats_empresas(current_user):
 @bp.route('/audit-log', methods=['GET'])
 @superadmin_required
 def audit_log(current_user):
-    """Registro de acciones del SuperAdmin"""
+    """Registro de auditoría del sistema"""
     try:
         page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 50, type=int)
+        per_page = min(request.args.get('per_page', 50, type=int), 100)
         accion = request.args.get('accion', '')
-        
+        entidad = request.args.get('entidad', '')
+
+        query = AuditoriaLog.query.order_by(AuditoriaLog.timestamp.desc())
+        if accion:
+            query = query.filter(AuditoriaLog.accion.ilike(f'%{accion}%'))
+        if entidad:
+            query = query.filter(AuditoriaLog.entidad.ilike(f'%{entidad}%'))
+
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        logs = [{
+            'id': entry.id,
+            'usuario_id': entry.usuario_id,
+            'entidad': entry.entidad,
+            'accion': entry.accion,
+            'valores_antes': entry.valores_antes,
+            'valores_despues': entry.valores_despues,
+            'timestamp': entry.timestamp.isoformat() if entry.timestamp else None,
+            'ip_address': entry.ip_address,
+            'user_agent': entry.user_agent,
+        } for entry in pagination.items]
+
         return jsonify({
             'success': True,
-            'message': 'Sistema de auditoría en desarrollo',
-            'logs': []
+            'logs': logs,
+            'page': page,
+            'per_page': per_page,
+            'total': pagination.total,
+            'pages': pagination.pages,
         }), 200
-        
+
     except Exception as e:
         return jsonify({'error': str(e), 'code': 'AUDIT_ERROR'}), 500
 

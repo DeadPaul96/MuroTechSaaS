@@ -5,7 +5,7 @@ from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
 from lxml import etree
-from signxml import XMLSigner
+from signxml import XMLSigner, SignatureConstructionMethod
 
 
 def decrypt_p12_data(p12_data: bytes, encryption_key: str | None = None) -> bytes:
@@ -37,6 +37,6 @@ def firmar_xml(xml_content, p12_data: bytes, p12_password: str, encryption_key: 
         encryption_algorithm=serialization.NoEncryption(),
     )
     cert_pem = certificate.public_bytes(serialization.Encoding.PEM)
-    signer = XMLSigner(method='enveloped', signature_algorithm='rsa-sha256', digest_algorithm='sha256')
+    signer = XMLSigner(method=SignatureConstructionMethod.enveloped, signature_algorithm='rsa-sha256', digest_algorithm='sha256')
     signed_root = signer.sign(root, key=key_pem, cert=cert_pem)
     return etree.tostring(signed_root, encoding='utf-8', xml_declaration=True)

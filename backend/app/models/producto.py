@@ -34,7 +34,7 @@ class Producto(db.Model):
     
     # Operación
     stock = db.Column(db.Integer, default=0)
-    
+
     factura_detalles = db.relationship('FacturaDetalle', backref='producto_rel', lazy=True)
     movimientos = db.relationship('InventarioMovimiento', backref='producto', lazy=True, cascade='all, delete-orphan')
 

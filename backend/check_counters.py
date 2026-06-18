@@ -9,7 +9,11 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-from api.app import app, db
+from dotenv import load_dotenv
+load_dotenv()
+from app import create_app
+app = create_app()
+from app.models import db
 from api.models import Sucursal
 
 with app.app_context():

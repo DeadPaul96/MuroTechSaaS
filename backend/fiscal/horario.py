@@ -45,6 +45,7 @@ def segundos_hasta_proximo_horario() -> int:
     """Calcula segundos hasta el próximo horario hábil de MH."""
     ahora = datetime.now(CR_TZ)
     dia = ahora.weekday()
+    hora = ahora.hour
 
     if dia == 6:
         proximo = (ahora + timedelta(days=1)).replace(hour=8, minute=0, second=0, microsecond=0)

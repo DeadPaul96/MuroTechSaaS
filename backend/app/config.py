@@ -44,6 +44,13 @@ class Config:
     JWT_EXPIRY = int(os.environ.get('JWT_EXPIRY', '3600'))  # seconds
     JWT_LEEWAY = int(os.environ.get('JWT_LEEWAY', '30'))
 
+    # Celery
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/2')
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/3')
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+
     @classmethod
     def cors_origins(cls):
         raw = os.environ.get('CORS_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000')

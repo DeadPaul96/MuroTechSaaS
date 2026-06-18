@@ -18,5 +18,5 @@ class Cliente(db.Model):
     distrito = db.Column(db.String(100))
     barrio = db.Column(db.String(100))
     direccion = db.Column(db.Text)
-    
+
     facturas = db.relationship('Factura', backref='cliente', lazy=True)

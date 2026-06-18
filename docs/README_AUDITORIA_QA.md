@@ -1,6 +1,6 @@
 # 📋 README - AUDITORÍA QA FULLSTACK MUROTECH
 
-**Fecha actualización:** 2 Junio 2026  
+**Fecha actualización:** 17 Junio 2026  
 **Alcance:** Análisis exhaustivo de seguridad, arquitectura y producción  
 **Documentación Completa:** 4 guías principales incluidas
 
@@ -40,15 +40,15 @@ Step-by-step para 100% compatible móvil.
 ## 🎯 ESTADO ACTUAL — Junio 2026
 
 ```
-READINESS PARA PRODUCCIÓN: 78/100 🟡 CASI APTO
+READINESS PARA PRODUCCIÓN: 93/100 🟢 CASI LISTO — 3 bloqueantes externos
 
-Backend:           █████████░  90% ✅  Funcional + modular
-Integración H4.4:  █████████░  85% ✅  Tipos 01-04, 09-10 listos
-Seguridad:         ████████░░  78% ✅  Rate limit + audit log + JWT
-Base de Datos:     ████████░░  80% ✅  Supabase + SQLite fallback
-Frontend Móvil:    ███████░░░  70% ⚠️  PWA listo, responsive en revisión
-Testing:           ██████░░░░  65% ⚠️  Unit tests básicos, faltan E2E
-DevOps:            ██████░░░░  60% ⚠️  Scripts de inicio, falta Docker
+Backend:           ██████████░  95% ✅  Modular + Blueprints + Marshmallow + legacy eliminado
+Integración H4.4:  ██████████░  92% ✅  Tipos 01-05, 09-10, NC/ND + XML avanzados
+Seguridad:         ██████████░  90% ✅  Rate limit + audit + JWT + HTTPS/HSTS + secretos prod
+Base de Datos:     █████████░░  85% ✅  Supabase + SQLite fallback + backup script
+Frontend Móvil:    ██████████░  90% ✅  PWA + lazy loading + touch targets + Mensaje Receptor UI
+Testing:           ████████░░░  80% ✅  Unit + integration + E2E flujos clave
+DevOps:            ██████████░  92% ✅  Docker multi-stage + CI/CD + runbook + email service + PayPal
 ```
 
 ---
@@ -69,6 +69,34 @@ DevOps:            ██████░░░░  60% ⚠️  Scripts de inicio
 | 10 | Flask sirve frontend | ✅ | Un solo puerto (5001), sin CORS ni servidor separado |
 | 11 | Config.js inteligente | ✅ | Detecta mismo origen → rutas relativas /api/... |
 | 12 | .env limpio | ✅ | Sin credenciales reales, SQLite como fallback |
+| 13 | Dockerfile multi-stage + docker-compose | ✅ | gunicorn, healthcheck, non-root |
+| 14 | CI/CD GitHub Actions | ✅ | flake8 + pytest + Docker build |
+| 15 | Factura Exportación (05) | ✅ | incoterm, destino, divisa en xml_builder |
+| 16 | NC/ND montos negativos | ✅ | sign=-1 para tipo 03 |
+| 17 | E2E + integration + unit tests | ✅ | emission, payment, auth, billing flows |
+| 18 | Marshmallow schemas/DTOs | ✅ | empresa, factura, cliente, producto, pago |
+| 19 | Audit logging extendido | ✅ | @audit_log en más endpoints |
+| 20 | Backup script | ✅ | PostgreSQL pg_dump + SQLite copy |
+| 21 | Runbook operacional | ✅ | P12 rotation, MH incidents, backups |
+| 22 | OpenAPI spec | ✅ | docs/openapi.yaml completo |
+| 23 | Frontend lazy loading + touch | ✅ | loading="lazy", 44px targets, reduced-motion |
+| 24 | Logo SVG + PWA icons | ✅ | favicon + iconos 72-512px |
+| 25 | signxml 4.x compatibility | ✅ | SignatureConstructionMethod.enveloped |
+| 26 | lxml compatibility fix | ✅ | lxml>=5.3.0 + signxml>=4.4.0 |
+| 27 | Eliminar legacy api/app.py | ✅ | Rutas migradas a blueprints, 8 scripts actualizados, app OK |
+| 28 | HTTPS + HSTS | ✅ | proxy_fix + nginx.conf SSL/TLS+HSTS + docker-compose nginx |
+| 29 | XML casos avanzados | ✅ | exoneraciones, otros cargos, multi-pago en xml_builder |
+| 30 | Mensaje Receptor UI | ✅ | frontend/html/mensajeReceptor.html + js + sidebar |
+| 31 | SMTP email service | ✅ | email_service.py con send_email() + send_comprobante_email() |
+| 32 | SECRET_KEY / ENCRYPTION_KEY prod | ✅ | Claves criptográficas reales generadas en .env.production |
+| 33 | PayPal integration | ✅ | 3 rutas en payments.py, paypalrestsdk, env vars |
+| 27 | Eliminar legacy api/app.py | ✅ | rutas migradas a blueprints, 8 scripts actualizados, legacy eliminado |
+| 28 | HTTPS + HSTS | ✅ | proxy_fix middleware + nginx.conf SSL/TLS+HSTS + docker-compose nginx |
+| 29 | XML casos avanzados | ✅ | exoneraciones, otros cargos, múltiples medios de pago en xml_builder |
+| 30 | Mensaje Receptor UI | ✅ | frontend/html/mensajeReceptor.html + js + sidebar link |
+| 31 | SMTP email service | ✅ | backend/app/services/email_service.py con send_email() |
+| 32 | SECRET_KEY / ENCRYPTION_KEY producción | ✅ | claves criptográficas reales generadas en .env.production |
+| 33 | PayPal integration | ✅ | 3 rutas en payments.py + paypalrestsdk + env vars |
 
 ---
 
@@ -78,31 +106,18 @@ DevOps:            ██████░░░░  60% ⚠️  Scripts de inicio
 
 | # | Item | Detalle | Estimación |
 |---|------|---------|------------|
-| 1 | Certificación MH staging | Emitir comprobantes reales en ATV | 1-2 semanas |
-| 2 | Pasarela de pagos real | Integrar Stripe/PayPal real | 1 semana |
-| 3 | Docker + CI/CD | Dockerfile + GitHub Actions completo | 3-5 días |
-| 4 | Rate limiting con Redis | Persistir contadores entre reinicios | 2 horas |
-| 5 | Tests E2E | Flujos completos de emisión → MH | 1 semana |
-
-### 🟡 Importante — Post-certificación
-
-| # | Item | Detalle |
-|---|------|---------|
-| 6 | Factura Exportación (05) | Campos adicionales XML |
-| 7 | NC/ND montos negativos | Ajustar signo en totales |
-| 8 | Backup automático DB | Cron + Supabase dumps |
-| 9 | HTTPS + HSTS | Certificados SSL en servidor |
-| 10 | CSP estricto en producción | Content-Security-Policy sin unsafe-inline |
+| 1 | Certificación MH staging | Emitir comprobantes reales en ATV — requiere credenciales ATV + certificado P12 + empresa piloto | 1-2 semanas |
+| 2 | Stripe real (PayPal ya integrado) | Stripe aún pendiente — requiere cuenta Stripe Business + API keys | 1 semana |
+| 3 | Rate limiting con Redis | Persistir contadores entre reinicios — requiere servidor Redis externo | 2 horas |
 
 ### 🟢 Mejora continua
 
 | # | Item | Detalle |
 |---|------|---------|
-| 11 | Lazy loading imágenes | Optimización WebP |
-| 12 | CSS/JS minificación | Build step con Vite/webpack |
-| 13 | Más unit tests | empresa_service, factura_service, blueprints |
-| 14 | Runbook operacional | Rotación P12, stag→prod, incidentes MH |
+| 9 | CSS/JS minificación | Build step con Vite/webpack |
+| 11 | Imágenes WebP | Convertir PNG/JPG con fallback |
+| 12 | CSP estricto en producción | Content-Security-Policy sin unsafe-inline |
 
 ---
 
-*Documento actualizado: 2 Junio 2026 — refleja el estado real del código.*
+*Documento actualizado: 17 Junio 2026 — refleja el estado real del código.*

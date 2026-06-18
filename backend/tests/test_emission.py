@@ -9,7 +9,11 @@ import traceback
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from api.app import app, db
+from dotenv import load_dotenv
+load_dotenv()
+from app import create_app
+app = create_app()
+from app.models import db
 from api.models import Usuario, Empresa, Sucursal, Cliente, Producto, Factura
 import json
 import jwt

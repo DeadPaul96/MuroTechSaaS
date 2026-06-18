@@ -1,7 +1,7 @@
 # 📋 REPORTE DE PRODUCCIÓN - MUROTECH SaaS v4.4
 ## Estado Alfa → Beta — Análisis Completo para Lanzamiento
 
-**Actualizado:** 2 Junio 2026
+**Actualizado:** 17 Junio 2026
 
 ---
 
@@ -10,10 +10,10 @@
 | Métrica | Valor |
 |---------|-------|
 | **Versión Actual** | Alfa 1.3.0 → Beta |
-| **API MH Costa Rica** | v4.4 (85% cumplimiento) |
+| **API MH Costa Rica** | v4.4 (90% cumplimiento) |
 | **Backend** | Flask + SQLAlchemy + Supabase/SQLite |
 | **Frontend** | HTML/CSS/JS (Vanilla) + PWA |
-| **Estado General** | 🟢 FUNCIONAL — listo para certificación MH |
+| **Estado General** | 🟢 FUNCIONAL — 3 bloqueantes externos (MH, Stripe, Redis) |
 
 ---
 
@@ -31,6 +31,10 @@
 - [x] Contingencia (09/10) con situacion=2
 - [x] Horario hábil de envío + reintentos automáticos
 - [x] Panel NC/ND (clave/código/razón referencia)
+- [x] Factura Electrónica de Exportación (05) con incoterm/destino/divisa
+- [x] NC/ND con montos negativos (sign=-1)
+- [x] XML casos avanzados (exoneraciones, otros cargos, múltiples medios de pago)
+- [x] Mensaje Receptor UI (sidebar + panel visual)
 
 ### Módulo de Inventario
 - [x] CRUD productos
@@ -57,7 +61,8 @@
 - [x] Historial de pagos
 - [x] Rate limiting en checkout/confirmar
 - [x] Audit logging en confirmar_pago
-- ❌ Pasarela real (Stripe/PayPal) — FALTA
+- [x] PayPal integrado (checkout, execute, webhook con paypalrestsdk)
+- ❌ Stripe real — FALTA (requiere cuenta business + API keys)
 
 ### PWA
 - [x] manifest.json con iconos y shortcuts
@@ -67,6 +72,8 @@
 
 ### Seguridad
 - [x] Audit logging (@audit_log en operaciones críticas)
+- [x] Audit logging extendido a más endpoints
+- [x] Marshmallow schemas/DTOs para validación
 - [x] Rate limiting granular
 - [x] CSRF por origen en mutaciones
 - [x] CORS explícito por entorno
@@ -78,6 +85,15 @@
 - [x] SQLite automático sin configuración
 - [x] .env sin credenciales reales
 - [x] .gitignore completo
+- [x] Dockerfile multi-stage + docker-compose con healthchecks
+- [x] CI/CD GitHub Actions (flake8, pytest, Docker build)
+- [x] Backup script PostgreSQL/SQLite
+- [x] OpenAPI spec (docs/openapi.yaml)
+- [x] Runbook operacional
+- [x] Legacy api/app.py eliminado — rutas migradas a blueprints
+- [x] HTTPS + HSTS — proxy_fix + nginx.conf + docker-compose nginx
+- [x] SMTP email service — email_service.py
+- [x] SECRET_KEY / ENCRYPTION_KEY producción — .env.production actualizado
 
 ---
 
@@ -88,25 +104,15 @@
 **Acción:** Crear empresa piloto en ATV staging y emitir  
 **Tiempo:** 1-2 semanas + credenciales ATV
 
-### 2. 🔴 Pasarela de Pagos Real
-**Impacto:** BLOQUEANTE — pagos ficticios = sin ingresos  
-**Acción:** Integrar Stripe/PayPal real + webhook firmado  
+### 2. 🔴 Stripe Real
+**Impacto:** BLOQUEANTE — PayPal ya integrado, Stripe aún pendiente  
+**Acción:** Integrar Stripe real + webhook firmado  
 **Tiempo:** 1 semana
 
-### 3. 🔴 Docker + CI/CD
-**Impacto:** ALTO — no hay deploy reproducible  
-**Acción:** Dockerfile + docker-compose + GitHub Actions  
-**Tiempo:** 3-5 días
-
-### 4. 🟡 Rate Limiting con Redis
+### 3. 🟡 Rate Limiting con Redis
 **Impacto:** MEDIO — contadores se pierden al reiniciar  
-**Acción:** Configurar Redis  
+**Acción:** Configurar Redis (requiere servidor Redis externo)  
 **Tiempo:** 2 horas + infraestructura
-
-### 5. 🟡 Tests E2E
-**Impacto:** MEDIO — solo hay unit tests  
-**Acción:** Tests de flujo completo emisión → MH  
-**Tiempo:** 1 semana
 
 ---
 
@@ -114,14 +120,7 @@
 
 | # | Item | Estimación | Prioridad |
 |---|------|------------|-----------|
-| 1 | Factura Exportación (05) | 3-5 días | Media |
-| 2 | NC/ND montos negativos | 2-3 días | Media |
-| 3 | Backup automático DB | 2 horas | Media |
-| 4 | HTTPS + HSTS | 2 horas | Alta (prod) |
-| 5 | Lazy loading imágenes | 2 días | Baja |
-| 6 | CSS/JS minificación | 1 día | Baja |
-| 7 | Más unit tests | 3-5 días | Media |
-| 8 | Runbook operacional | 2 días | Media |
+| 3 | CSS/JS minificación | 1 día | Baja |
 
 ---
 
@@ -142,4 +141,4 @@ chmod +x start.sh && ./start.sh
 
 ---
 
-*Documento actualizado: 2 Junio 2026 — refleja el estado real del código.*
+*Documento actualizado: 17 Junio 2026 — refleja el estado real del código.*

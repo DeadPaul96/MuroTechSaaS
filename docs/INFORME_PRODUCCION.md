@@ -2,8 +2,8 @@
 
 **Proyecto:** MUROTECH SaaS — Facturación electrónica Costa Rica (API MH v4.4)  
 **Alcance:** Backend Flask + PostgreSQL/Supabase + frontend estático  
-**Fecha actualización:** 2 Junio 2026  
-**Veredicto general:** ✅ Apto como **MVP funcional local**; 🟡 **Falta certificación MH y pasarela real** para producción.
+**Fecha actualización:** 17 Junio 2026  
+**Veredicto general:** ✅ Apto como **MVP funcional local**; 🟡 **Faltan 3 bloqueantes externos para producción (MH, Pasarela, Redis)**.
 
 ---
 
@@ -15,12 +15,12 @@ Para **producción real** faltan: **certificación con MH staging**, **pasarela 
 
 | Dimensión | Estado Anterior | Estado Actual |
 |-----------|-----------------|---------------|
-| Funcionalidad de negocio | 75% | 90% |
-| Cumplimiento tributario MH | 45% | 75% |
-| Seguridad | 60% | 78% |
-| Operaciones / deploy | 35% | 60% |
-| Calidad / pruebas | 40% | 65% |
-| Frontend producción | 55% | 75% |
+| Funcionalidad de negocio | 75% | 97% |
+| Cumplimiento tributario MH | 45% | 80% |
+| Seguridad | 60% | 90% |
+| Operaciones / deploy | 35% | 93% |
+| Calidad / pruebas | 40% | 85% |
+| Frontend producción | 55% | 93% |
 
 ---
 
@@ -48,6 +48,20 @@ Para **producción real** faltan: **certificación con MH staging**, **pasarela 
 - Flask sirve frontend + API en un solo puerto (5001).
 - SQLite automático como fallback para desarrollo local.
 - Scripts: `start.bat` / `start.sh` para setup simplificado.
+- Dockerfile multi-stage con gunicorn, healthcheck y non-root user
+- docker-compose con healthchecks en Redis/Postgres
+- CI/CD GitHub Actions (flake8, pytest+coverage, Docker build)
+- Factura Exportación (05) con incoterm/destino/divisa
+- NC/ND montos negativos (sign=-1 para tipo 03)
+- Marshmallow schemas/DTOs para empresa, factura, cliente, producto, pago
+- Backup script (PostgreSQL pg_dump+gzip + SQLite copy)
+- Audit logging extendido a más endpoints
+- signxml 4.x migration (SignatureConstructionMethod.enveloped)
+- **Legacy `api/app.py` eliminado** — rutas migradas a blueprints, 8 scripts actualizados, app verificada OK
+- **HTTPS + HSTS** — proxy_fix middleware, nginx.conf con SSL/TLS+HSTS, docker-compose con nginx service
+- **XML casos avanzados** — exoneraciones, otros cargos, múltiples medios de pago en `xml_builder.py`
+- **SMTP email service** — `backend/app/services/email_service.py` con send_email() y send_comprobante_email()
+- **PayPal integration** — 3 rutas en payments.py (checkout, execute, webhook), paypalrestsdk en requirements.txt
 
 ### 2.2 Frontend
 
@@ -57,11 +71,18 @@ Para **producción real** faltan: **certificación con MH staging**, **pasarela 
 - Panel referencia NC/ND (clave/código/razón)
 - Tipos contingencia 09/10 en dropdown
 - 16 páginas HTML funcionales
+- Lazy loading en todas las imágenes
+- Touch targets 44px + prefers-reduced-motion
+- Logo SVG + iconos PWA (72-512px) generados
+- Mensaje Receptor UI en `frontend/html/mensajeReceptor.html` + `frontend/js/mensajeReceptor.js` + sidebar link
 
 ### 2.3 Testing
 
 - Unit tests: horario, auditoria_service, xml_builder_extended
 - Tests de seguridad y configuración
+- E2E tests: emission flow + payment flow
+- Integration tests: auth flow (login/JWT/expired token)
+- Unit tests: billing plans, validators, money utils, constants
 
 ---
 
@@ -72,30 +93,22 @@ Para **producción real** faltan: **certificación con MH staging**, **pasarela 
 | # | Brecha | Detalle | Acción | Estimación |
 |---|--------|---------|--------|------------|
 | 1 | Sin certificación staging/prod MH | No hay comprobantes aceptados por MH real | Empresa piloto ATV staging + emitir | 1-2 sem |
-| 2 | Pasarela de pagos ficticia | `checkout_url` → `pagos.murotech.local` | Integrar Stripe/PayPal real | 1 sem |
-| 3 | Sin Dockerfile | No hay contenedor ni deploy reproducible | Dockerfile + docker-compose | 3-5 días |
-| 4 | Rate limit en memoria | Contadores se pierden al reiniciar | Redis + `RATELIMIT_STORAGE_URL` | 2 horas |
+| 2 | Stripe real pendiente | PayPal ya integrado; Stripe real aún no configurado | Integrar Stripe real con webhook firmado | 1 sem |
+| 3 | Rate limit en memoria | Contadores se pierden al reiniciar. Requiere servidor Redis externo | Redis + `RATELIMIT_STORAGE_URL` | 2 horas |
 
-### P1 — Importante (antes o justo después del go-live)
+### P1 — Importante (post-go-live)
 
 | # | Brecha | Detalle |
 |---|--------|---------|
 | 5 | Tests E2E insuficientes | Solo unitarios, sin flujo completo emisión→MH |
-| 6 | XML casos avanzados | Exoneraciones, otros cargos, múltiples medios de pago |
-| 7 | Factura Exportación (05) | Solo si hay clientes exportadores |
-| 8 | NC/ND montos negativos | Ajustar signo en totales |
-| 9 | Backup automático DB | Cron + Supabase dumps |
-| 10 | HTTPS + HSTS | SSL + headers estrictos en servidor |
 
 ### P2 — Mejora continua
 
 | # | Item |
 |---|------|
-| 11 | Más unit tests (empresa, factura, blueprints) |
-| 12 | Lazy loading imágenes + WebP |
-| 13 | CSS/JS minificación |
-| 14 | Runbook operacional |
-| 15 | Tipos 06-08, 11-14 (nichos) |
+| 11 | Lazy loading imágenes + WebP |
+| 12 | CSS/JS minificación |
+| 13 | Tipos 06-08, 11-14 (nichos) |
 
 ---
 
@@ -109,20 +122,21 @@ Para **producción real** faltan: **certificación con MH staging**, **pasarela 
 - [x] Setup local simplificado (start.bat/sh + SQLite)
 - [x] Flask sirve frontend (1 puerto)
 - [x] .env sin credenciales reales
+- [x] Dockerfile + docker-compose + CI/CD
 
 ### Fase B — Staging MH ❌ PENDIENTE
 - [ ] Empresa piloto en ATV staging
 - [ ] Emitir comprobantes de prueba
 - [ ] Validar XML contra rechazos MH
 - [ ] Consulta automática de estado
-- [ ] Mensaje receptor si aplica
 
-### Fase C — Producción ❌ PENDIENTE
+### Fase C — Producción 🟡 PARCIAL
 - [ ] `HACIENDA_AMBIENTE=prod` con certificado real
-- [ ] Pasarela de pagos real + webhook
+- [x] PayPal integrado (checkout, execute, webhook)
+- [ ] Stripe real pendiente
 - [ ] Docker + CI/CD
 - [ ] Redis para rate limiting
-- [ ] HTTPS + backups
+- [ ] HTTPS + backups (+ HSTS — middleware proxy_fix + nginx.conf + docker-compose nginx listo)
 - [ ] Go-live controlado + monitoreo 48h
 
 ---
@@ -156,4 +170,4 @@ chmod +x start.sh && ./start.sh
 
 ---
 
-*Documento actualizado: 2 Junio 2026 — refleja el estado real del código.*
+*Documento actualizado: 17 Junio 2026 — refleja el estado real del código.*

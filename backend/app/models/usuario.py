@@ -21,6 +21,7 @@ class Usuario(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     is_superadmin = db.Column(db.Boolean, default=False) # Admin de toda la empresa
     pantallas_asignadas = db.Column(db.String(255), default="facturacion,inventario") # Lista de módulos permitidos (separados por coma)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     
     accesos = db.relationship('AccesoSucursal', backref='usuario', lazy=True, cascade='all, delete-orphan')
 

@@ -17,7 +17,12 @@ elif os.path.exists(os.path.join(os.path.dirname(backend_path), '.env')):
     from dotenv import load_dotenv
     load_dotenv(os.path.join(os.path.dirname(backend_path), '.env'))
 
-from api.app import app, db
+from dotenv import load_dotenv
+load_dotenv()
+from app import create_app
+app = create_app()
+db = app.extensions['sqlalchemy']
+
 from api.models import Empresa, Usuario, Rol, Sucursal
 from werkzeug.security import generate_password_hash
 

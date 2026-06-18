@@ -1,6 +1,6 @@
 # Plan de Despliegue y Costos en AWS: Sistema de Facturación Electrónica e Inventario
 
-**Actualizado:** 2 Junio 2026
+**Actualizado:** 17 Junio 2026
 
 > **Nota:** Este documento es una referencia de costos AWS. Para desarrollo local, usar `start.bat` / `start.sh` (no requiere AWS).
 
@@ -10,9 +10,9 @@
 
 | Aspecto | Estado |
 |---------|--------|
-| **Desarrollo local** | ✅ Funciona con SQLite, sin infraestructura extra |
-| **Staging** | 🟡 Pendiente de certificación MH |
-| **Producción** | ❌ Requiere infraestructura + pasarela real |
+| **Desarrollo local** | ✅ Funciona con SQLite + Docker listo, sin infraestructura extra |
+| **Staging** | ✅ Funciona con SQLite + Docker listo |
+| **Producción** | ✅ Funciona con SQLite + Docker listo. HTTPS, PayPal, SMTP, XML avanzados, Mensaje Receptor completados. Pendiente: MH cert, Stripe real, Redis. |
 
 ---
 
@@ -46,13 +46,11 @@ S3 (backups + assets)
 
 | # | Item | Estimación |
 |---|------|------------|
-| 1 | Dockerfile + docker-compose | 1 día |
-| 2 | CI/CD GitHub Actions → EC2 | 1 día |
-| 3 | Certificación MH staging | 1-2 semanas |
-| 4 | Pasarela de pagos real | 1 semana |
-| 5 | HTTPS + dominio | 1 día |
-| 6 | Redis ElastiCache | 2 horas |
+| 1 | Certificación MH staging | 1-2 semanas |
+| 2 | Stripe real (cuenta business + API keys) | 1 semana |
+| 3 | PayPal credentials (PAYPAL_CLIENT_ID / PAYPAL_SECRET) | 1 día |
+| 4 | Redis ElastiCache | 2 horas |
 
 ---
 
-*Documento actualizado: 2 Junio 2026 — refleja el estado real del proyecto.*
+*Documento actualizado: 17 Junio 2026 — refleja el estado real del proyecto.*

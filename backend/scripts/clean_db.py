@@ -15,7 +15,11 @@ from dotenv import load_dotenv
 load_dotenv(current_dir / '.env')
 
 # Importar la aplicación Flask
-from api.app import app, db
+from dotenv import load_dotenv
+load_dotenv()
+from app import create_app
+app = create_app()
+from app.models import db
 
 if __name__ == '__main__':
     with app.app_context():

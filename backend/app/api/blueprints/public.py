@@ -16,17 +16,11 @@ def health():
     try:
         db.session.execute(db.text('SELECT 1'))
         db_status = 'ok'
-    except Exception as e:
-        db_status = f'error: {str(e)}'
-
-    from flask import current_app
-    db_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
-    db_type = 'sqlite' if 'sqlite' in db_uri else 'postgresql' if 'postgresql' in db_uri else 'unknown'
+    except Exception:
+        db_status = 'error'
 
     return jsonify({
-        "status": "ok",
-        "health": "healthy",
-        "db_type": db_type,
+        "status": "ok" if db_status == 'ok' else "degraded",
         "db_status": db_status,
         "timestamp": datetime.utcnow().isoformat(),
     }), 200 if db_status == 'ok' else 503

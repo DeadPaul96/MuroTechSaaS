@@ -1,6 +1,6 @@
 # 📋 ANÁLISIS COMPLETO API 4.4 - MINISTERIO DE HACIENDA COSTA RICA
 
-**Última actualización:** 2 Junio 2026  
+**Última actualización:** 17 Junio 2026  
 **Estado del documento:** ✅ ACTUALIZADO
 
 ---
@@ -11,7 +11,7 @@
 |---------|---------|
 | **Versión Analizada** | v4.4 (Resolución MH-DGT-RES-0027-2024) |
 | **Fecha Límite Obligatoria** | 1 Septiembre 2025 |
-| **Estado del Proyecto** | 🟢 CUMPLIMIENTO AVANZADO (85%) |
+| **Estado del Proyecto** | 🟢 CUMPLIMIENTO AVANZADO (93%) |
 
 ---
 
@@ -25,7 +25,7 @@
 | **02** | Nota de Débito Electrónica | Incremento de deuda | ✅ Implementado (con referencia) |
 | **03** | Nota de Crédito Electrónica | Devolución/Descuento | ✅ Implementado (con referencia) |
 | **04** | Tiquete Electrónico | Comprobante simplificado | ✅ Implementado |
-| **05** | Factura Electrónica de Exportación | Para exportaciones | ❌ Falta |
+| **05** | Factura Electrónica de Exportación | Para exportaciones | ✅ Implementado |
 | **06** | Nota de Débito Exportación | Débito exportación | ❌ Falta |
 | **07** | Nota de Crédito Exportación | Crédito exportación | ❌ Falta |
 | **08** | Factura Electrónica Compra | Para compras | ❌ Falta |
@@ -36,7 +36,7 @@
 | **13** | Débito Fiscal Electrónico | IVA débito | ❌ Falta |
 | **14** | Gasto Fiscal Electrónico | Gasto deducible | ❌ Falta |
 
-### Progreso: 5 de 14 tipos implementados (36%) — pero los 5 más críticos están listos
+### Progreso: 6 de 14 tipos implementados (43%) — todos los tipos críticos están listos
 
 > **Nota:** Los tipos 05-08 y 11-14 son requeridos solo para nichos específicos (exportación, compras gubernamentales, IVA). Los tipos 01-04 y 09-10 cubren el 95% de los casos de uso de facturación estándar en Costa Rica.
 
@@ -58,6 +58,7 @@
 | NC/ND con InformacionReferencia | ✅ | `fiscal/xml_builder.py` |
 | Contingencia (situacion=2) | ✅ | `backend/app/services/contingencia_service.py` |
 | Mensaje Receptor | ✅ | `fiscal/xml_builder.py` |
+| Factura Exportación (05) con incoterm/destino/divisa | ✅ | `fiscal/xml_builder.py` |
 
 ---
 
@@ -69,16 +70,7 @@
 |---|------|---------|------------|
 | 1 | Certificación staging/prod con MH | Emitir comprobantes reales en ATV staging | 1-2 semanas |
 | 2 | XSD completos en repo | Descargar y versionar esquemas oficiales | 2 horas |
-| 3 | XML para casos avanzados | Exoneraciones, otros cargos, múltiples medios de pago | 1 semana |
-| 4 | Flujo asíncrono MH completo | callbackUrl + cola + consulta automática de estado | 1 semana |
-
-### 🟡 Prioridad Media (post-certificación)
-
-| # | Item | Detalle |
-|---|------|---------|
-| 5 | Factura de Exportación (05) | Requiere campos adicionales (incoterm, destino, etc.) |
-| 6 | NC/ND con montos negativos | Ajustar signo en totales para devoluciones |
-| 7 | Mensaje Receptor UI | Frontend para aceptar/rechazar comprobantes recibidos |
+| 3 | Flujo asíncrono MH completo | callbackUrl + cola + consulta automática de estado | 1 semana |
 
 ### 🟢 Prioridad Baja (nichos específicos)
 
@@ -86,6 +78,21 @@
 |---|------|---------|
 | 8 | Tipos 06-08 (Exportación/Compra) | Solo para empresas exportadoras/gubernamentales |
 | 9 | Tipos 11-14 (Liquidación/Fiscal) | Solo para regímenes especiales |
+
+---
+
+### ✅ Completado (Junio 2026)
+
+| Item | Detalle |
+|------|---------|
+| Factura Exportación (05) | Campos incoterm, destino, divisa implementados en `fiscal/xml_builder.py` |
+| NC/ND con montos negativos | sign=-1 implementado en `xml_builder` |
+| Migración signxml 4.x | Compatibilidad con nueva versión de signxml |
+| Fix compatibilidad lxml | Ajustes para lxml más reciente |
+| Exoneraciones, Otros Cargos, múltiples medios de pago | Implementados en `fiscal/xml_builder.py` |
+| Mensaje Receptor UI completo (frontend+backend) | Frontend + backend integrados, sidebar link |
+| SMTP email service | Envío de comprobantes XML por email configurado en `backend/app/services/email_service.py` |
+| PayPal integration | Pasarela de pago PayPal disponible en `/api/pagos/paypal/checkout` |
 
 ---
 
@@ -99,4 +106,4 @@
 
 ---
 
-*Documento actualizado: 2 Junio 2026 — refleja el estado real del código.*
+*Documento actualizado: 17 Junio 2026 — refleja el estado real del código.*

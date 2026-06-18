@@ -227,6 +227,7 @@ def gestionar_sucursales(current_user):
 
 @bp.route('/usuarios', methods=['GET', 'POST'])
 @token_required
+@audit_log('usuario')
 def gestionar_usuarios(current_user):
     if not AuthService.is_company_admin(current_user):
         return jsonify({'message': 'Solo el Emisor/Administrador puede gestionar usuarios.'}), 403
@@ -243,6 +244,7 @@ def gestionar_usuarios(current_user):
 
 @bp.route('/usuarios/<string:id>', methods=['PUT', 'DELETE'])
 @token_required
+@audit_log('usuario')
 def modificar_usuario(current_user, id):
     if not AuthService.is_company_admin(current_user):
         return jsonify({'message': 'Solo el Emisor/Administrador puede gestionar usuarios.'}), 403
@@ -370,3 +372,41 @@ def mark_all_notificaciones_read(current_user):
     sucursal_id = request.headers.get('X-Sucursal-ID')
     payload = EmpresaService.mark_all_notifications_read(current_user, sucursal_id=sucursal_id)
     return jsonify(payload)
+
+
+@bp.route('/hacienda/validar-llave', methods=['POST'])
+@token_required
+def validar_llave(current_user):
+    """Valida que el certificado P12 y PIN funcionen correctamente."""
+    data = request.get_json(force=True, silent=True) or {}
+    empresa_id = data.get('empresa_id') or getattr(current_user, 'empresa_id', None)
+    if not empresa_id:
+        return jsonify({'message': 'empresa_id es requerido.'}), 400
+    empresa = Empresa.query.filter_by(id=empresa_id).first()
+    if not empresa:
+        return jsonify({'message': 'Empresa no encontrada.'}), 404
+    try:
+        from fiscal.signer import decrypt_p12_data, firmar_xml
+        from app.utils.crypto import decrypt_text
+        p12_data = empresa.api_p12
+        if not p12_data:
+            return jsonify({'valid': False, 'message': 'No hay certificado P12 cargado.'}), 400
+        enc_key = os.environ.get('ENCRYPTION_KEY')
+        raw = decrypt_p12_data(p12_data, enc_key)
+        password = data.get('pin', '') or (decrypt_text(empresa.api_pin_p12, enc_key) if empresa.api_pin_p12 else '')
+        from cryptography.hazmat.primitives.serialization import pkcs12
+        private_key, cert, _ = pkcs12.load_key_and_certificates(raw, password.encode())
+        if private_key and cert:
+            return jsonify({'valid': True, 'message': 'Certificado P12 válido.', 'subject': str(cert.subject)})
+        return jsonify({'valid': False, 'message': 'Certificado P12 inválido.'}), 400
+    except Exception as e:
+        return jsonify({'valid': False, 'message': f'Error validando P12: {str(e)}'}), 400
+
+
+@bp.route('/planes/<int:plan_id>', methods=['GET'])
+def get_plan_detalle(plan_id):
+    from app.services.billing_plans import get_plan_info
+    plans = get_plan_info(plan_id)
+    if not plans:
+        return jsonify({'message': 'Plan no encontrado.'}), 404
+    return jsonify(plans)

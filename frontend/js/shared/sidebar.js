@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     configuracion: ['configuracion'],
     reportes: ['reportes'],
     cotizaciones: ['cotizaciones'],
+    mensajeReceptor: ['mensajeReceptor'],
     pos: ['pos'],
     registro: ['registro']
   };
@@ -83,7 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Módulos secundarios
     const secondModules = [
       { id: 'reportes', file: 'reportes.html', icon: 'fas fa-chart-line', title: 'Reportes' },
-      { id: 'cotizaciones', file: 'cotizaciones.html', icon: 'fas fa-file-signature', title: 'Cotizaciones' }
+      { id: 'cotizaciones', file: 'cotizaciones.html', icon: 'fas fa-file-signature', title: 'Cotizaciones' },
+      { id: 'mensajeReceptor', file: 'mensajeReceptor.html', icon: 'fas fa-envelope-open-text', title: 'Mensaje Receptor' }
     ];
 
     secondModules.forEach(m => {

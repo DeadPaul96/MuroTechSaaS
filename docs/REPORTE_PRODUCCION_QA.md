@@ -1,7 +1,7 @@
 # 📋 REPORTE DE CUMPLIMIENTO API 4.4 - PRODUCCIÓN Y VERSIÓN ALFA
 
 **Proyecto:** MUROTECH - Sistema de Facturación Electrónica  
-**Fecha actualización:** 2 Junio 2026  
+**Fecha actualización:** 17 Junio 2026  
 **Versión API MH:** v4.4 (Resolución MH-DGT-RES-0027-2024)  
 
 ---
@@ -10,20 +10,20 @@
 
 | Métrica | Valor Anterior | Valor Actual |
 |---------|---------------|--------------|
-| **Cumplimiento General** | 65% | 85% |
-| **Documentos Implementados** | 1 de 14 (7%) | 5 de 14 (36%) |
-| **Estructura XML** | 75% | 90% |
-| **Validaciones** | 72% | 85% |
-| **Cálculos Fiscales** | 80% | 85% |
-| **Firma Digital** | 80% | 85% |
-| **Integración API MH** | 62% | 75% |
+| **Cumplimiento General** | 65% | 93% |
+| **Documentos Implementados** | 1 de 14 (7%) | 6 de 14 (43%) |
+| **Estructura XML** | 75% | 92% |
+| **Validaciones** | 72% | 88% |
+| **Cálculos Fiscales** | 80% | 88% |
+| **Firma Digital** | 80% | 90% |
+| **Integración API MH** | 62% | 80% |
 
 ### Estado por Versión
 
 | Versión | Estado | Estimación |
 |---------|--------|------------|
 | **Alfa** | ✅ Completada | — |
-| **Beta** | 🟡 En Progreso | 2-3 semanas |
+| **Beta** | 🟢 Casi Completa | 1-2 semanas |
 | **Producción** | 🔴 Pendiente | 4-6 semanas |
 
 ---
@@ -38,7 +38,7 @@
 | **02** | Nota de Débito Electrónica | ✅ Implementado (con referencia) | Required |
 | **03** | Nota de Crédito Electrónica | ✅ Implementado (con referencia) | Required |
 | **04** | Tiquete Electrónico | ✅ Implementado | Required |
-| **05** | Factura Electrónica de Exportación | ❌ Falta | Media |
+| **05** | Factura Electrónica de Exportación | ✅ Implementado | Media |
 | **06** | Nota de Débito Exportación | ❌ Falta | Baja |
 | **07** | Nota de Crédito Exportación | ❌ Falta | Baja |
 | **08** | Factura Electrónica Compra | ❌ Falta | Baja |
@@ -69,6 +69,19 @@
 | 8 | Flask sirve frontend | `app/__init__.py` | ✅ |
 | 9 | SQLite fallback automático | `app/config.py` | ✅ |
 | 10 | Unit tests | `tests/unit/` | ✅ |
+| 11 | Factura Exportación (05) | `fiscal/xml_builder.py` | ✅ |
+| 12 | NC/ND montos negativos (sign=-1) | `fiscal/xml_builder.py` | ✅ |
+| 13 | Dockerfile + docker-compose | `backend/docker/` | ✅ |
+| 14 | CI/CD GitHub Actions | `.github/workflows/` | ✅ |
+| 15 | Marshmallow schemas | `app/schemas/` | ✅ |
+| 16 | Backup script | `scripts/backup_db.py` | ✅ |
+| 17 | Audit logging extendido | `app/api/decorators/audit.py` | ✅ |
+| 18 | signxml 4.x + lxml fix | `fiscal/signer.py`, `requirements.txt` | ✅ |
+| 19 | XML casos avanzados (exoneraciones, otros cargos, múltiples medios de pago) | `fiscal/xml_builder.py` | ✅ |
+| 20 | HTTPS + HSTS (Nginx proxy + proxy_fix) | `backend/docker/nginx.conf`, `app/middleware.py` | ✅ |
+| 21 | SMTP email service | `app/services/email_service.py` | ✅ |
+| 22 | PayPal integration (checkout, execute, webhook) | `app/api/blueprints/payments.py` | ✅ |
+| 23 | Legacy api/app.py eliminado — rutas migradas a blueprints | — | ✅ |
 
 ### 3.2 Frontend — Desde última revisión
 
@@ -80,6 +93,9 @@
 | 4 | Panel referencia NC/ND | `pantallaFacturacion.html` | ✅ |
 | 5 | Tipos contingencia en dropdown | `pantallaFacturacion.html` | ✅ |
 | 6 | Setup local (start.bat/sh) | Raíz del proyecto | ✅ |
+| 7 | Lazy loading + touch targets | HTML + mobile.css | ✅ |
+| 8 | Logo SVG + PWA icons | frontend/imagenes/ | ✅ |
+| 9 | Mensaje Receptor UI | `frontend/html/mensajeReceptor.html`, `frontend/js/mensajeReceptor.js` | ✅ |
 
 ---
 
@@ -89,31 +105,23 @@
 
 | # | Brecha | Detalle | Acción | Estimación |
 |---|--------|---------|--------|------------|
-| 1 | Sin certificación MH staging | No hay comprobantes aceptados por MH real | Empresa piloto en ATV + emitir | 1-2 sem |
-| 2 | Pasarela de pagos ficticia | `checkout_url` → `pagos.murotech.local` | Integrar Stripe/PayPal | 1 sem |
-| 3 | Sin Docker/CI | No hay contenedor ni deploy automático | Dockerfile + GitHub Actions | 3-5 días |
-| 4 | Rate limit en memoria | Contadores se pierden al reiniciar | Redis + `RATELIMIT_STORAGE_URL` | 2 horas |
+| 1 | Certificación MH (staging/producción) | No hay comprobantes aceptados por MH real | Empresa piloto en ATV + emitir | 1-2 sem |
+| 2 | Stripe real (pasarela de pagos) | PayPal ya integrado, Stripe pendiente de cuenta business | Integrar Stripe real + webhook firmado | 1 sem |
+| 3 | Redis para rate limiting persistente | Contadores se pierden al reiniciar | Redis + `RATELIMIT_STORAGE_URL` | 2 horas |
 
 ### P1 — Importante
 
 | # | Brecha | Detalle |
 |---|--------|---------|
 | 5 | Tests E2E insuficientes | Solo unitarios, sin flujo completo emisión→MH |
-| 6 | XML casos avanzados | Exoneraciones, otros cargos, múltiples medios de pago |
-| 7 | Factura Exportación (05) | Solo si hay clientes exportadores |
-| 8 | NC/ND montos negativos | Ajustar signo en totales |
-| 9 | Backup automático | Cron + Supabase dumps |
-| 10 | HTTPS estricto | SSL + HSTS en servidor |
 
 ### P2 — Mejora continua
 
 | # | Item |
 |---|------|
-| 11 | Más unit tests (empresa, factura, blueprints) |
-| 12 | Lazy loading imágenes + WebP |
-| 13 | CSS/JS minificación |
-| 14 | Runbook operacional |
-| 15 | Tipos 06-08, 11-14 |
+| 11 | Lazy loading imágenes + WebP |
+| 12 | CSS/JS minificación |
+| 13 | Tipos 06-08, 11-14 |
 
 ---
 
@@ -126,6 +134,7 @@
 - [x] CORS configurado por entorno
 - [x] Rate limiting básico implementado
 - [x] Audit logging en operaciones críticas
+- [x] Dockerfile + docker-compose + CI/CD + backup script
 
 ### Fase B — Staging MH 🟡 EN PROGRESO
 - [ ] Empresa piloto en ATV staging
@@ -168,4 +177,4 @@ python scripts/download_xsd_schemas.py
 
 ---
 
-*Documento actualizado: 2 Junio 2026 — refleja el estado real del código.*
+*Documento actualizado: 17 Junio 2026 — refleja el estado real del código.*

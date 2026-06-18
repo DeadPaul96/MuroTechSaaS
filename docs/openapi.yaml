@@ -1,0 +1,314 @@
+openapi: 3.0.3
+info:
+  title: MUROTECH SaaS API
+  description: Sistema de Facturación Electrónica para Costa Rica (API MH v4.4)
+  version: 1.0.0
+  contact:
+    name: MUROTECH
+    url: https://murotech.com
+
+servers:
+  - url: http://localhost:5001
+    description: Desarrollo local
+  - url: https://murotechsaas-95ru.onrender.com
+    description: Producción
+
+tags:
+  - name: Auth
+    description: Autenticación y sesión
+  - name: Empresas
+    description: Registro y gestión de empresas
+  - name: Facturas
+    description: Emisión y gestión de comprobantes electrónicos
+  - name: Cotizaciones
+    description: Gestión de cotizaciones y proformas
+  - name: Clientes
+    description: CRUD de clientes
+  - name: Productos
+    description: CRUD de productos e inventario
+  - name: Pagos
+    description: Planes y pasarela de pagos
+  - name: Configuración
+    description: Configuración pública del sistema
+
+paths:
+  /api/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200': { description: Login exitoso con token JWT }
+        '401': { description: Credenciales inválidas }
+        '403': { description: Usuario o empresa inactiva }
+
+  /api/logout:
+    post:
+      tags: [Auth]
+      summary: Cerrar sesión
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Sesión cerrada }
+        '401': { description: Token inválido }
+
+  /api/contribuyentes:
+    post:
+      tags: [Empresas]
+      summary: Registrar nueva empresa
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [identificacion, nombre, email, password, api_usuario, api_password, api_pin]
+              properties:
+                identificacion: { type: string, description: Cédula jurídica }
+                nombre: { type: string }
+                email: { type: string, format: email }
+                password: { type: string }
+                api_usuario: { type: string, description: Usuario ATV Hacienda }
+                api_password: { type: string }
+                api_pin: { type: string, description: PIN del P12 }
+                api_p12_file: { type: string, format: binary }
+      responses:
+        '201': { description: Empresa registrada con pago pendiente }
+        '400': { description: Datos inválidos }
+
+  /api/facturas:
+    get:
+      tags: [Facturas]
+      summary: Listar facturas
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: X-Sucursal-ID
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Lista de facturas }
+        '403': { description: Sin acceso a sucursal }
+    post:
+      tags: [Facturas]
+      summary: Emitir comprobante electrónico
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: X-Sucursal-ID
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacturaInput'
+      responses:
+        '201': { description: Comprobante emitido }
+        '400': { description: Datos inválidos }
+        '403': { description: Límite de plan o sin acceso }
+        '422': { description: XML no cumple XSD }
+        '500': { description: Error de emisión }
+
+  /api/facturas/{id}:
+    get:
+      tags: [Facturas]
+      summary: Obtener detalle de factura
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Sucursal-ID
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Detalle completo }
+        '404': { description: Factura no encontrada }
+
+  /api/facturas/{id}/hacienda/estado:
+    get:
+      tags: [Facturas]
+      summary: Consultar estado en Ministerio de Hacienda
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Estado de MH }
+        '502': { description: Error de Hacienda }
+
+  /api/facturas/consecutivo:
+    get:
+      tags: [Facturas]
+      summary: Obtener siguiente consecutivo
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: tipo
+          in: query
+          schema: { type: string, enum: ['01', '02', '03', '04'] }
+        - name: X-Sucursal-ID
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Consecutivo calculado }
+
+  /api/cotizaciones:
+    get:
+      tags: [Cotizaciones]
+      summary: Listar cotizaciones
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Lista de cotizaciones }
+    post:
+      tags: [Cotizaciones]
+      summary: Crear cotización
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CotizacionInput' }
+      responses:
+        '201': { description: Cotización creada }
+
+  /api/pagos/checkout:
+    post:
+      tags: [Pagos]
+      summary: Crear orden de pago
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [empresa_id]
+              properties:
+                empresa_id: { type: string }
+                plan_tipo: { type: string, enum: [basico, emisor, premium, enterprise] }
+      responses:
+        '200': { description: Orden de pago creada }
+        '404': { description: Empresa no encontrada }
+
+  /api/pagos/confirmar:
+    post:
+      tags: [Pagos]
+      summary: Confirmar pago
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payment_id]
+              properties:
+                payment_id: { type: string }
+                provider: { type: string }
+                transaction_id: { type: string }
+      responses:
+        '200': { description: Pago confirmado }
+        '400': { description: Pago ya procesado }
+
+  /api/v1/config:
+    get:
+      tags: [Configuración]
+      summary: Configuración pública del sistema
+      responses:
+        '200':
+          description: Configuración del sistema
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicConfig' }
+
+  /api/contingencia/sincronizar:
+    post:
+      tags: [Facturas]
+      summary: Sincronizar comprobantes de contingencia pendientes
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Sincronización completada }
+        '207': { description: Sincronización parcial (algunos fallaron) }
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PublicConfig:
+      type: object
+      properties:
+        app_name: { type: string }
+        version: { type: string }
+        environment: { type: string }
+        hacienda_enabled: { type: boolean }
+        supported_doc_types:
+          type: array
+          items:
+            type: object
+            properties:
+              code: { type: string }
+              label: { type: string }
+
+    FacturaInput:
+      type: object
+      required: [detalles]
+      properties:
+        tipoDoc:
+          type: string
+          enum: ['01', '02', '03', '04', '05', '08', '09', '10']
+          default: '01'
+        cliente_id: { type: string }
+        condicionVenta: { type: string, default: '01' }
+        medioPago: { type: string, default: '01' }
+        moneda:
+          type: string
+          enum: [CRC, USD, EUR]
+          default: CRC
+        detalles:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/FacturaDetalleInput' }
+        referencia_id: { type: string, description: Requerido para NC/ND }
+        referencia_codigo: { type: string }
+        referencia_razon: { type: string }
+
+    FacturaDetalleInput:
+      type: object
+      required: [descripcion, cantidad, precio]
+      properties:
+        producto_id: { type: string }
+        descripcion: { type: string, maxLength: 200 }
+        cantidad: { type: number, minimum: 0 }
+        precio: { type: number, minimum: 0 }
+        descuento: { type: number, minimum: 0, maximum: 100, default: 0 }
+        impuesto: { type: number, minimum: 0, maximum: 100, default: 13 }
+
+    CotizacionInput:
+      type: object
+      required: [detalles]
+      properties:
+        cliente_nombre: { type: string }
+        cliente_cedula: { type: string }
+        moneda: { type: string, enum: [CRC, USD, EUR], default: CRC }
+        fecha_vencimiento: { type: string, format: date }
+        detalles:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/FacturaDetalleInput' }

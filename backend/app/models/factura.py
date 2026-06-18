@@ -4,6 +4,11 @@ from app.models.base import db
 
 class Factura(db.Model):
     __tablename__ = 'facturas'
+    __table_args__ = (
+        db.Index('ix_facturas_sucursal_estado', 'sucursal_id', 'estado'),
+        db.Index('ix_facturas_fecha_emision', 'fecha_emision'),
+        db.Index('ix_facturas_sucursal_draft', 'sucursal_id', 'is_draft'),
+    )
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     sucursal_id = db.Column(db.String(36), db.ForeignKey('sucursales.id'), nullable=False)
     cliente_id = db.Column(db.String(36), db.ForeignKey('clientes.id'))

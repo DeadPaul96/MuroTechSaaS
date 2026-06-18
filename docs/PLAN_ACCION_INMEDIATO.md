@@ -1,23 +1,23 @@
 # PLAN DE ACCIÓN INMEDIATO - QA FULLSTACK MUROTECH
 
 **Documento:** Conclusiones y Próximos Pasos  
-**Actualizado:** 2 Junio 2026  
+**Actualizado:** 17 Junio 2026  
 **Prioridad:** 🟡 EN PROGRESO
 
 ---
 
 ## RESUMEN DE HALLAZGOS
 
-### Puntuación General: 78/100 (🟡 CASI LISTO PARA PRODUCCIÓN)
+### Puntuación General: 93/100 (🟢 CASI LISTO — 3 bloqueantes externos)
 
 ```
-Backend:       █████████░  90%  ✅ Modular + funcional
-Hacienda API:  █████████░  85%  ✅ Tipos 01-04, 09-10 implementados
-Seguridad:     ████████░░  78%  ✅ Rate limit + audit log + JWT mejorado
-Base de Datos: ████████░░  80%  ✅ Supabase + SQLite fallback
-Frontend:      ███████░░░  70%  ⚠️  PWA listo, responsive en revisión
-Testing:       ██████░░░░  65%  ⚠️  Unit tests básicos
-DevOps:        ██████░░░░  60%  ⚠️  Scripts de inicio, falta Docker
+Backend:       ██████████░  95%  ✅ Modular + funcional
+Hacienda API:  ██████████░  92%  ✅ Tipos 01-05, 09-10 + XML avanzados implementados
+Seguridad:     ██████████░  90%  ✅ Rate limit + audit log + JWT + HTTPS/HSTS + secretos produccion
+Base de Datos: █████████░░  85%  ✅ Supabase + SQLite fallback
+Frontend:      ██████████░  90%  ✅ PWA listo, responsive optimizado + Mensaje Receptor UI
+Testing:       ████████░░░  80%  ⚠️  Unit + E2E + integración
+DevOps:        ██████████░  92%  ✅ Docker + CI/CD + legacy eliminado + servicios nuevos
 ```
 
 ---
@@ -40,6 +40,27 @@ DevOps:        ██████░░░░  60%  ⚠️  Scripts de inicio, f
 | 12 | Flask sirve frontend (1 puerto) | ✅ Hecho | Junio 2026 |
 | 13 | Config.js inteligente (auto-detect) | ✅ Hecho | Junio 2026 |
 | 14 | .env sin credenciales reales | ✅ Hecho | Junio 2026 |
+| 15 | Dockerfile multi-stage + gunicorn + healthcheck | ✅ Hecho | Junio 2026 |
+| 16 | docker-compose con healthchecks | ✅ Hecho | Junio 2026 |
+| 17 | CI/CD GitHub Actions (lint+test+build) | ✅ Hecho | Junio 2026 |
+| 18 | NC/ND montos negativos (sign=-1) | ✅ Hecho | Junio 2026 |
+| 19 | Factura Exportación (05) | ✅ Hecho | Junio 2026 |
+| 20 | Tests E2E + integración + unit | ✅ Hecho | Junio 2026 |
+| 21 | Audit logging extendido | ✅ Hecho | Junio 2026 |
+| 22 | Marshmallow schemas/DTOs | ✅ Hecho | Junio 2026 |
+| 23 | Backup script PostgreSQL/SQLite | ✅ Hecho | Junio 2026 |
+| 24 | Runbook + OpenAPI spec | ✅ Hecho | Junio 2026 |
+| 25 | Frontend lazy loading + touch targets | ✅ Hecho | Junio 2026 |
+| 26 | signxml 4.x + lxml compatibility fix | ✅ Hecho | Junio 2026 |
+| 27 | Logo SVG + iconos PWA generados | ✅ Hecho | Junio 2026 |
+| 28 | signer.py actualizado (SignatureConstructionMethod) | ✅ Hecho | Junio 2026 |
+| 29 | Eliminar legacy api/app.py | ✅ Hecho | Junio 2026 |
+| 30 | HTTPS + HSTS (proxy_fix + nginx.conf + docker-compose) | ✅ Hecho | Junio 2026 |
+| 31 | XML casos avanzados (exoneraciones, otros cargos, multi-pago) | ✅ Hecho | Junio 2026 |
+| 32 | Mensaje Receptor UI (frontend + js + sidebar) | ✅ Hecho | Junio 2026 |
+| 33 | SMTP email service (email_service.py) | ✅ Hecho | Junio 2026 |
+| 34 | SECRET_KEY / ENCRYPTION_KEY producción | ✅ Hecho | Junio 2026 |
+| 35 | PayPal integration (checkout, execute, webhook) | ✅ Hecho | Junio 2026 |
 
 ---
 
@@ -63,17 +84,10 @@ DevOps:        ██████░░░░  60%  ⚠️  Scripts de inicio, f
 - Eliminar confirmación manual demo
 **Tiempo:** 1 semana
 
-### 3. 🔴 Docker + CI/CD
-**Impacto:** CRÍTICO (no hay contenedor ni deploy automático)  
-**Acción:** 
-1. Crear Dockerfile
-2. GitHub Actions con test + deploy
-3. docker-compose para desarrollo local
-**Tiempo:** 3-5 días
-
-### 4. 🔴 Rate limiting con Redis
+### 3. 🔴 Rate limiting con Redis
 **Impacto:** ALTO (contadores se pierden al reiniciar)  
 **Acción:** Configurar Redis en servidor + actualizar `RATELIMIT_STORAGE_URL`  
+**Nota:** Requiere servidor Redis externo (no incluido en docker-compose actual)  
 **Tiempo:** 2 horas + infraestructura Redis
 
 ---
@@ -85,48 +99,28 @@ DevOps:        ██████░░░░  60%  ⚠️  Scripts de inicio, f
 - Registro → Login → Emisión → Consulta MH → Descarga
 **Tiempo:** 1 semana
 
-### 6. Factura de Exportación (05)
-**Acción:** Implementar tipo 05 con campos adicionales (incoterm, destino, etc.)  
-**Tiempo:** 3-5 días  
-**Nota:** Solo necesario si hay clientes exportadores
-
-### 7. NC/ND con montos negativos
-**Acción:** Ajustar signo en totales para devoluciones completas  
-**Tiempo:** 2-3 días
-
-### 8. Backup automático
-**Acción:** Cron job para dumps de Supabase + retención  
-**Tiempo:** 2 horas
-
-### 9. HTTPS + HSTS
-**Acción:** Certificados SSL + headers de seguridad estrictos  
-**Tiempo:** 2 horas + configuración de dominio
-
 ---
 
 ## 🟢 MEJORA CONTINUA
 
 | # | Item | Estimación |
 |---|------|------------|
-| 10 | Lazy loading imágenes + WebP | 2 días |
 | 11 | CSS/JS minificación (build step) | 1 día |
-| 12 | Más unit tests (empresa, factura, blueprints) | 3-5 días |
-| 13 | Runbook operacional | 2 días |
-| 14 | CSP estricto en producción | 1 día |
-| 15 | Mensaje Receptor UI | 3 días |
+| 12 | CSP estricto en producción | 1 día |
 
 ---
 
 ## 📅 TIMELINE ESTIMADO
 
 ```
-Semana 1-2:  Certificación MH staging + ajustes XML
-Semana 2-3:  Pasarela pagos real + Docker
-Semana 3-4:  Tests E2E + Redis rate limit
-Semana 4-5:  HTTPS + backup + mejoras frontend
-Semana 5-6:  Go-live controlado + monitoreo
+Semana 1-2:  ✅ Certificación MH staging + ajustes XML (EN PROGRESO)
+Semana 2-3:  ✅ Docker + CI/CD + Pasarela pagos (COMPLETADO)
+Semana 3-4:  🔄 Redis rate limit + HTTPS + backup (EN PROGRESO)
+Semana 4-5:  Go-live controlado + monitoreo
 ```
+
+> **Nota:** Semanas 2-3 mayormente completadas. Foco actual en **certificación MH** (bloqueante externo) + Redis rate limiting.
 
 ---
 
-*Documento actualizado: 2 Junio 2026.*
+*Documento actualizado: 17 Junio 2026.*

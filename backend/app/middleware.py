@@ -1,11 +1,22 @@
 """Middleware global: seguridad, CSRF por origen, headers."""
+import hashlib
+import hmac
+import logging
 import os
 
 from flask import request, jsonify
 
+logger = logging.getLogger(__name__)
+
 
 def setup_middleware(app):
     """Configura middleware y encabezados de seguridad."""
+
+    @app.before_request
+    def proxy_fix():
+        """Confía en X-Forwarded-Proto del proxy inverso para HSTS."""
+        if request.headers.get('X-Forwarded-Proto') == 'https':
+            request.environ['wsgi.url_scheme'] = 'https'
 
     @app.before_request
     def validate_origin_on_mutations():
@@ -16,13 +27,15 @@ def setup_middleware(app):
             return None
         if request.headers.get('Authorization', '').startswith('Bearer '):
             return None
-        if request.headers.get('X-CSRF-Token') == os.environ.get('CSRF_SECRET', ''):
+        csrf_secret = os.environ.get('CSRF_SECRET', '')
+        if csrf_secret and request.headers.get('X-CSRF-Token') == csrf_secret:
             return None
         origin = request.headers.get('Origin') or request.headers.get('Referer', '')
         if not origin:
             return None
         allowed = app.config.get('CORS_ORIGINS') or []
         if not any(origin.startswith(o.rstrip('/')) for o in allowed):
+            logger.warning('CSRF: Origen no permitido %s en %s %s', origin, request.method, request.path)
             return jsonify({'message': 'Origen no permitido.', 'code': 'CSRF_ORIGIN'}), 403
         return None
 

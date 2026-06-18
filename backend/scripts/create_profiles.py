@@ -15,7 +15,11 @@ sys.path.insert(0, str(current_dir))
 from dotenv import load_dotenv
 load_dotenv(current_dir / '.env')
 
-from api.app import app, db
+from dotenv import load_dotenv
+load_dotenv()
+from app import create_app
+app = create_app()
+from app.models import db
 from api.models import Empresa, Usuario, Rol, Sucursal, AccesoSucursal
 
 def create_profiles():

@@ -5,6 +5,10 @@ from app.models.base import db
 class AuditoriaLog(db.Model):
     """Registro de auditoría para cambios en entidades críticas"""
     __tablename__ = 'auditoria_logs'
+    __table_args__ = (
+        db.Index('ix_auditoria_entidad_accion', 'entidad', 'accion'),
+        db.Index('ix_auditoria_timestamp', 'timestamp'),
+    )
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     usuario_id = db.Column(db.String(36), db.ForeignKey('usuarios.id'))
     entidad = db.Column(db.String(50))  # 'empresa', 'factura', etc

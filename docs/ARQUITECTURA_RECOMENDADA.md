@@ -3,7 +3,7 @@
 **Clasificación:** Especificación Técnica - Backend Reestructuración  
 **Versión:** 2.1-RELEASE  
 **Estado:** ✅ APLICADA Y EN PROGRESO  
-**Última Actualización:** 2 Junio 2026
+**Última Actualización:** 17 Junio 2026
 
 ---
 
@@ -36,6 +36,7 @@ La arquitectura recomendada se aplica con los siguientes principios:
 - Actualmente coexisten dos capas: el monolito legacy `backend/api/app.py`
   y la nueva arquitectura en `backend/app/`. La migración avanza con
   extracción de lógica a servicios.
+- **Legacy `api/app.py` eliminado.** Todas las rutas migradas a blueprints modulares.
 
 ### 1.3 Progreso de migración
 
@@ -57,6 +58,8 @@ La arquitectura recomendada se aplica con los siguientes principios:
 | Auditoria | — | `app/services/auditoria_service.py` | ✅ Nuevo |
 | Contingencia | — | `app/services/contingencia_service.py` | ✅ Nuevo |
 | Horario MH | — | `fiscal/horario.py` | ✅ Nuevo |
+| Schemas/DTOs | inline | `app/schemas/__init__.py` | ✅ Migrado |
+| Payments | inline | `app/api/blueprints/payments.py` | ✅ Migrado |
 
 ---
 
@@ -78,7 +81,10 @@ backend/
 │   │   ├── blueprints/       # 11 blueprints modulares
 │   │   └── decorators/       # auth, rbac, audit
 │   ├── services/             # Lógica de negocio
+│   │   └── email_service.py  # Envío SMTP
+│   ├── schemas/              # Schemas/DTOs marshmallow
 │   └── utils/                # crypto, validators, money, date
+├── docker/                   # Dockerfile + docker-compose + nginx.conf
 ├── fiscal/                   # Integración Hacienda CR
 │   ├── xml_builder.py        # Construcción XML v4.4
 │   ├── clave.py              # Clave + consecutivo
@@ -89,17 +95,25 @@ backend/
 │   └── schemas/              # Esquemas XSD
 ├── core/                     # Legacy (en desuso)
 ├── tests/                    # Unit tests
-└── scripts/                  # Migraciones y utilidades
+└── scripts/
+    ├── ...                   # Migraciones y utilidades
+    └── backup_db.py          # Backup de base de datos
 
 frontend/
 ├── index.html                # Entry point PWA
 ├── manifest.json             # PWA manifest
 ├── service-worker.js         # Service Worker
 ├── offline.html              # Fallback offline
-├── html/                     # 16 páginas HTML
+├── html/                     # 16 páginas HTML (+ mensajeReceptor.html)
 ├── css/                      # Estilos
-├── js/                       # Lógica (config.js centralizado)
+├── js/                       # Lógica (config.js + mensajeReceptor.js centralizados)
 └── imagenes/                 # Assets
+
+.github/
+└── workflows/                # CI/CD GitHub Actions
+
+docs/
+└── openapi.yaml              # Documentación API OpenAPI
 ```
 
 ---
@@ -108,12 +122,15 @@ frontend/
 
 | # | Item | Estado | Estimación |
 |---|------|--------|------------|
-| 1 | Eliminar `api/app.py` (legacy 3800+ líneas) | 🟡 Esperando QA | 0.5 días |
+| 1 | Eliminar `api/app.py` (legacy 3800+ líneas) | ✅ Completado | 0 días |
 | 2 | Mover todos los services restantes | 🟡 Parcial | 2-3 días |
-| 3 | Schemas/DTOs con marshmallow | ❌ Pendiente | 3-5 días |
-| 4 | Dockerfile + docker-compose | ❌ Pendiente | 1 día |
-| 5 | CI/CD GitHub Actions completo | ❌ Pendiente | 1 día |
+| 3 | Schemas/DTOs con marshmallow | ✅ Completado | 0 días |
+| 4 | Dockerfile + docker-compose | ✅ Completado | 0 días |
+| 5 | CI/CD GitHub Actions completo | ✅ Completado | 0 días |
+| 6 | Eliminar `api/app.py` (legacy) | ✅ Completado | 0 días |
 
 ---
 
-*Documento actualizado: 2 Junio 2026.*
+> **📦 Nota:** `signxml` actualizado a v4.4+ (API `SignatureConstructionMethod.enveloped`) y `lxml>=5.3.0`.
+
+*Documento actualizado: 17 Junio 2026.*

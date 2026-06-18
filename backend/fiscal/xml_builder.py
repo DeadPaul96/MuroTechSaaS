@@ -3,7 +3,11 @@ import re
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from lxml import etree
-from .constants import DOC_ROOT, DOC_XMLNS, XSI_NS, PROVEEDOR_SISTEMAS, TARIFA_IVA, DOC_TIQUETE, DOC_NOTA_CREDITO, DOC_NOTA_DEBITO
+from .constants import (
+    DOC_ROOT, DOC_XMLNS, XSI_NS, PROVEEDOR_SISTEMAS, TARIFA_IVA,
+    DOC_TIQUETE, DOC_NOTA_CREDITO, DOC_NOTA_DEBITO, DOC_FACTURA_EXPORTACION,
+    DOC_CONT_TIQUETE,
+)
 
 CR_TZ = timezone(timedelta(hours=-6))
 
@@ -18,9 +22,10 @@ def _digits(v, n=None):
     return d.zfill(n)[-n:] if n else d
 
 def _tipo_doc(t):
-    m = {'factura': '01', '01': '01', '02': '02', '03': '03', '04': '04', '08': '08',
-         '09': '09', '10': '10',
+    m = {'factura': '01', '01': '01', '02': '02', '03': '03', '04': '04',
+         '05': '05', '08': '08', '09': '09', '10': '10',
          'tiquete': '04', 'nota credito': '03', 'nota debito': '02',
+         'factura exportacion': '05', 'exportacion': '05',
          'contingencia factura': '09', 'contingencia tiquete': '10'}
     k = str(t or '01').strip().lower()
     return m.get(k, k if k in DOC_ROOT else '01')
@@ -77,16 +82,24 @@ def build_comprobante_xml(factura) -> bytes:
             etree.SubElement(ir, 'Numero').text = _digits(cliente.identificacion, 12 if cliente.tipo_id == '02' else 9)
 
     etree.SubElement(root, 'CondicionVenta').text = _digits(factura.condicion_venta, 2) or '01'
-    etree.SubElement(root, 'MedioPago').text = _digits(factura.medio_pago, 2) or '01'
+    # Múltiples medios de pago (MH v4.4 permite varios)
+    medios_raw = str(getattr(factura, 'medio_pago', '01') or '01')
+    for medio in medios_raw.split(','):
+        medio = medio.strip()
+        if medio:
+            etree.SubElement(root, 'MedioPago').text = _digits(medio, 2)
+
+    # Notas de Crédito usan montos negativos según normativa MH v4.4
+    sign = Decimal(-1) if td == DOC_NOTA_CREDITO else Decimal(1)
 
     ds = etree.SubElement(root, 'DetalleServicio')
     tg, te, ti, tdsc, tv, tc = [Decimal(0)] * 6
     for i, det in enumerate(factura.detalles, 1):
         cant, pu = _q(det.cantidad), _q(det.precio_unitario)
         desc_p, iva_p = _q(det.porcentaje_descuento), _q(det.porcentaje_impuesto)
-        mt = _q(cant * pu)
-        dm = _q(mt * desc_p / 100)
-        st = _q(mt - dm)
+        mt = _q(cant * pu * sign)
+        dm = _q(mt * desc_p / 100) if sign > 0 else _q(cant * pu * desc_p / 100)
+        st = _q(mt - dm) if sign > 0 else _q(cant * pu * sign - dm)
         im = _q(st * iva_p / 100)
         mtl = _q(st + im)
         ln = etree.SubElement(ds, 'LineaDetalle')
@@ -105,6 +118,17 @@ def build_comprobante_xml(factura) -> bytes:
             etree.SubElement(imp, 'CodigoTarifaIVA').text = TARIFA_IVA.get(int(iva_p), '08')
             etree.SubElement(imp, 'Tarifa').text = _fmt(iva_p)
             etree.SubElement(imp, 'Monto').text = _fmt(im)
+            # Exoneración (si aplica)
+            exon_pct = Decimal(str(getattr(det, 'porcentaje_exoneracion', 0) or 0))
+            if exon_pct > 0:
+                exon = etree.SubElement(imp, 'Exoneracion')
+                etree.SubElement(exon, 'TipoDocumento').text = str(getattr(det, 'tipo_doc_exoneracion', '01'))[:2]
+                etree.SubElement(exon, 'NumeroDocumento').text = str(getattr(det, 'num_doc_exoneracion', ''))[:20]
+                etree.SubElement(exon, 'NombreInstitucion').text = str(getattr(det, 'nombre_institucion', ''))[:100]
+                etree.SubElement(exon, 'FechaEmision').text = _fecha(getattr(det, 'fecha_emision_exo', None))
+                monto_exon = _q(im * exon_pct / 100)
+                etree.SubElement(exon, 'MontoExoneracion').text = _fmt(monto_exon)
+                etree.SubElement(exon, 'PorcentajeExoneracion').text = _fmt(exon_pct)
             tg += st
             ti += im
         else:
@@ -114,14 +138,14 @@ def build_comprobante_xml(factura) -> bytes:
         tv += mt
         tc += mtl
 
-    res_tag = 'ResumenTiquete' if td == DOC_TIQUETE else 'ResumenFactura'
+    res_tag = 'ResumenTiquete' if td in (DOC_TIQUETE, DOC_CONT_TIQUETE) else 'ResumenFactura'
     res = etree.SubElement(root, res_tag)
     mon = etree.SubElement(res, 'CodigoTipoMoneda')
     etree.SubElement(mon, 'CodigoMoneda').text = (factura.moneda or 'CRC')[:3]
     etree.SubElement(res, 'TotalServGravados').text = _fmt(tg)
     etree.SubElement(res, 'TotalServExentos').text = _fmt(te)
-    etree.SubElement(res, 'TotalMercanciasGravadas').text = '0.00'
-    etree.SubElement(res, 'TotalMercanciasExentas').text = '0.00'
+    etree.SubElement(res, 'TotalMercanciasGravadas').text = _fmt(Decimal(0))
+    etree.SubElement(res, 'TotalMercanciasExentas').text = _fmt(Decimal(0))
     etree.SubElement(res, 'TotalGravado').text = _fmt(tg)
     etree.SubElement(res, 'TotalExento').text = _fmt(te)
     etree.SubElement(res, 'TotalVenta').text = _fmt(tv)
@@ -130,6 +154,34 @@ def build_comprobante_xml(factura) -> bytes:
     etree.SubElement(res, 'TotalImpuesto').text = _fmt(ti)
     etree.SubElement(res, 'TotalComprobante').text = _fmt(tc)
 
+    # Campos adicionales para Factura de Exportación (05)
+    if td == DOC_FACTURA_EXPORTACION:
+        exp_info = getattr(factura, 'exportacion', None)
+        if exp_info:
+            exp = etree.SubElement(root, 'InformacionExportacion')
+            etree.SubElement(exp, 'Incoterm').text = str(getattr(exp_info, 'incoterm', 'FOB'))[:10]
+            etree.SubElement(exp, 'MedioPagoExportacion').text = str(getattr(exp_info, 'medio_pago_exportacion', '01'))[:2]
+            ub_exp = etree.SubElement(exp, 'UbicacionDestinoExportacion')
+            etree.SubElement(ub_exp, 'CodigoPaisDestino').text = str(getattr(exp_info, 'pais_destino', 'US'))[:2]
+            etree.SubElement(ub_exp, 'NombrePaisDestino').text = str(getattr(exp_info, 'nombre_pais', 'Estados Unidos'))[:50]
+            if getattr(exp_info, 'divisa', None):
+                etree.SubElement(exp, 'Divisa').text = str(exp_info.divisa)[:3]
+            if getattr(exp_info, 'tipo_cambio', None):
+                etree.SubElement(exp, 'TipoCambio').text = _fmt(exp_info.tipo_cambio)
+
+    # Otros Cargos (si aplica)
+    otros_cargos = getattr(factura, 'otros_cargos', None)
+    if otros_cargos:
+        cargo_list = otros_cargos if isinstance(otros_cargos, list) else [otros_cargos]
+        oc_root = etree.SubElement(root, 'OtrosCargos')
+        for cargo in cargo_list:
+            oc = etree.SubElement(oc_root, 'TipoDocumento')
+            oc.text = str(getattr(cargo, 'tipo_documento', '99'))[:2]
+            detalle_oc = etree.SubElement(oc_root, 'Detalle')
+            detalle_oc.text = str(getattr(cargo, 'detalle', ''))[:160]
+            monto_oc = etree.SubElement(oc_root, 'MontoCargo')
+            monto_oc.text = _fmt(getattr(cargo, 'monto', 0))
+
     if td in (DOC_NOTA_CREDITO, DOC_NOTA_DEBITO) and getattr(factura, 'referencia_id', None):
         inf = etree.SubElement(root, 'InformacionReferencia')
         etree.SubElement(inf, 'TipoDoc').text = str(factura.referencia_codigo or '01')
@@ -137,6 +189,17 @@ def build_comprobante_xml(factura) -> bytes:
         etree.SubElement(inf, 'FechaEmision').text = _fecha(factura.fecha_emision)
         etree.SubElement(inf, 'Codigo').text = '01'
         etree.SubElement(inf, 'Razon').text = (factura.referencia_razon or 'Ajuste')[:180]
+        # Referencias adicionales (si existen)
+        referencias_extra = getattr(factura, 'referencias_extra', None)
+        if referencias_extra:
+            ref_list = referencias_extra if isinstance(referencias_extra, list) else [referencias_extra]
+            for ref in ref_list:
+                inf2 = etree.SubElement(root, 'InformacionReferencia')
+                etree.SubElement(inf2, 'TipoDoc').text = str(getattr(ref, 'tipo_doc', '01'))[:2]
+                etree.SubElement(inf2, 'Numero').text = str(getattr(ref, 'numero', ''))[:50]
+                etree.SubElement(inf2, 'FechaEmision').text = _fecha(getattr(ref, 'fecha_emision', factura.fecha_emision))
+                etree.SubElement(inf2, 'Codigo').text = str(getattr(ref, 'codigo', '01'))[:2]
+                etree.SubElement(inf2, 'Razon').text = str(getattr(ref, 'razon', 'Ajuste'))[:180]
 
     return etree.tostring(root, xml_declaration=True, encoding='UTF-8')
 

@@ -1,8 +1,12 @@
-DOC_FACTURA, DOC_NOTA_DEBITO, DOC_NOTA_CREDITO, DOC_TIQUETE, DOC_FACTURA_COMPRA = '01', '02', '03', '04', '08'
+DOC_FACTURA, DOC_NOTA_DEBITO, DOC_NOTA_CREDITO, DOC_TIQUETE = '01', '02', '03', '04'
+DOC_FACTURA_EXPORTACION = '05'
+DOC_FACTURA_COMPRA = '08'
 DOC_CONT_FACTURA, DOC_CONT_TIQUETE = '09', '10'
 DOC_ROOT = {
     '01': 'FacturaElectronica', '02': 'NotaDebitoElectronica', '03': 'NotaCreditoElectronica',
-    '04': 'TiqueteElectronico', '08': 'FacturaElectronicaCompra',
+    '04': 'TiqueteElectronico',
+    '05': 'FacturaElectronicaExportacion',
+    '08': 'FacturaElectronicaCompra',
     '09': 'FacturaElectronica', '10': 'TiqueteElectronico',
 }
 DOC_XMLNS = {
@@ -10,6 +14,7 @@ DOC_XMLNS = {
     '02': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaDebitoElectronica',
     '03': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica',
     '04': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/tiqueteElectronico',
+    '05': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaExportacion',
     '08': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaCompra',
     '09': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica',
     '10': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/tiqueteElectronico',
