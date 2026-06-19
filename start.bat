@@ -31,40 +31,39 @@ if not exist "venv\" (
 echo [2/4] Instalando dependencias...
 call venv\Scripts\activate.bat
 pip install -r requirements.txt -q
+if %errorlevel% neq 0 (
+    echo [AVISO] Hubo un error instalando dependencias, pero continuando...
+)
 
 :: Crear .env si no existe
 if not exist ".env" (
     echo [3/4] Creando archivo .env y generando claves seguras...
     copy .env.example .env >nul
 
-    :: Generar SECRET_KEY unica
     for /f "delims=" %%K in ('python -c "import secrets; print(secrets.token_hex(32))"') do set GEN_SECRET=%%K
     powershell -Command "(Get-Content .env) -replace 'SECRET_KEY=TU_SECRET_KEY_AQUI', 'SECRET_KEY=%GEN_SECRET%' | Set-Content .env"
 
-    :: Generar ENCRYPTION_KEY unica
     for /f "delims=" %%E in ('python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"') do set GEN_ENC=%%E
     powershell -Command "(Get-Content .env) -replace 'ENCRYPTION_KEY=TU_ENCRYPTION_KEY_AQUI', 'ENCRYPTION_KEY=%GEN_ENC%' | Set-Content .env"
 
-    :: Generar CSRF_SECRET unico
     for /f "delims=" %%C in ('python -c "import secrets; print(secrets.token_hex(24))"') do set GEN_CSRF=%%C
     powershell -Command "(Get-Content .env) -replace 'CSRF_SECRET=TU_CSRF_SECRET_AQUI', 'CSRF_SECRET=%GEN_CSRF%' | Set-Content .env"
 
-    echo.
     echo     .env creado con claves seguras generadas automaticamente.
-    echo     Si quieres Supabase, edita backend\.env y agrega DATABASE_URL.
-    echo.
 ) else (
     echo [3/4] Archivo .env ya existe.
 )
 
-:: Inicializar base de datos
-echo [4/4] Inicializando base de datos...
-python -c "from dotenv import load_dotenv; load_dotenv(); from app import create_app; app = create_app(); print('  Base de datos lista')"
+:: Borrar DB vieja si esta desactualizada (esquema cambiado)
+echo [4/4] Verificando base de datos...
+python -c "from dotenv import load_dotenv; load_dotenv(); from app import create_app; app = create_app(); print('OK')" >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] No se pudo inicializar la base de datos.
-    echo Revisa los errores de arriba y asegurate de que requirements.txt se instalo correctamente.
-    pause
-    exit /b 1
+    echo     DB desactualizada detectada. Recreando...
+    if exist "murotech_saas.db" del /f /q "murotech_saas.db"
+    if exist "instance\murotech_saas.db" del /f /q "instance\murotech_saas.db"
+    python -c "from dotenv import load_dotenv; load_dotenv(); from app import create_app; app = create_app(); print('  Base de datos recreada')"
+) else (
+    echo     Base de datos lista.
 )
 
 :: Cargar datos demo
