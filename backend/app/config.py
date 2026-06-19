@@ -53,12 +53,12 @@ class Config:
 
     @classmethod
     def cors_origins(cls):
-        raw = os.environ.get('CORS_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000')
+        raw = os.environ.get('CORS_ORIGINS', 'http://localhost:5001,http://127.0.0.1:5001')
         origins = [o.strip() for o in raw.split(',') if o.strip()]
         # Simple verification
         if os.environ.get('FLASK_ENV') == 'production' and (not origins or '*' in origins):
             raise RuntimeError('In production, CORS_ORIGINS must not contain *.')
-        return origins or ['http://localhost:8000']
+        return origins or ['http://localhost:5001']
 
     @staticmethod
     def get_config(env=None):
