@@ -25,6 +25,18 @@
     <!-- Alertas SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- Limpiar service worker y cache viejo -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                regs.forEach(r => r.unregister());
+            });
+            caches.keys().then(keys => {
+                keys.forEach(k => caches.delete(k));
+            });
+        }
+    </script>
+
     <!-- Scripts Base -->
     <script src="../js/shared/config.js"></script>
     <script src="../js/shared/utils.js"></script>

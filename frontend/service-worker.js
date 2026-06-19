@@ -1,4 +1,4 @@
-const CACHE_NAME = 'murotech-v1';
+const CACHE_NAME = 'murotech-v3';
 const STATIC_ASSETS = [
   '/',
   '/html/panelControl.html',
