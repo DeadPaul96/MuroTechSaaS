@@ -21,29 +21,29 @@ if %errorlevel% neq 0 (
 
 :: Crear entorno virtual si no existe
 if not exist "venv\" (
-    echo [1/4] Creando entorno virtual...
+    echo [1/5] Creando entorno virtual...
     python -m venv venv
 ) else (
-    echo [1/4] Entorno virtual ya existe.
+    echo [1/5] Entorno virtual ya existe.
 )
 
 :: Activar venv e instalar dependencias
-echo [2/4] Instalando dependencias...
+echo [2/5] Instalando dependencias...
 call venv\Scripts\activate.bat
 pip install -r requirements.txt -q
 
 :: Crear .env si no existe
 if not exist ".env" (
-    echo [3/4] Creando archivo .env...
+    echo [3/5] Creando archivo .env...
     copy .env.example .env >nul
     echo     .env creado con configuracion de Supabase lista.
 ) else (
-    echo [3/4] Archivo .env ya existe.
+    echo [3/5] Archivo .env ya existe.
 )
 
-:: Inicializar base de datos
-echo [4/4] Inicializando base de datos...
-python -c "from dotenv import load_dotenv; load_dotenv(); from app import create_app; app = create_app(); print('  Base de datos lista')"
+:: Aplicar migraciones (agrega columnas faltantes sin borrar datos)
+echo [4/5] Aplicando migraciones de base de datos...
+python scripts\migrate_db.py
 if %errorlevel% neq 0 (
     echo [ERROR] No se pudo conectar a la base de datos.
     echo Verifica tu conexion a internet - el proyecto usa Supabase en la nube.
@@ -52,6 +52,7 @@ if %errorlevel% neq 0 (
 )
 
 :: Cargar datos demo
+echo [5/5] Verificando datos de prueba...
 echo.
 set /p SEED="Deseas cargar datos de prueba? (admin@qa.com / admin123) [S/n]: "
 if /i "%SEED%"=="n" (
