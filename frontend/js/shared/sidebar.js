@@ -102,10 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="sidebar-pill" id="sidebar-pill" style="opacity: 0;"></div>
       ${renderButtons()}
     </div>
-    
-    <div class="sidebar-section" style="margin-top: auto; padding-bottom: 5px;">
-      ${btn('logout', 'fas fa-power-off', 'Cerrar Sesión', "cerrarSesion()", "logout")}
-    </div>
   `;
 
   // Posicionar el Pill inicialmente (sin lag visual)
