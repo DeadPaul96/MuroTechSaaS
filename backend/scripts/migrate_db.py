@@ -17,8 +17,11 @@ from app.models.base import db
 
 MIGRACIONES = [
     # (tabla, columna, definicion_sql)
-    ("usuarios",  "fecha_creacion", "TIMESTAMP DEFAULT NOW()"),
-    ("empresas",  "fecha_creacion", "TIMESTAMP DEFAULT NOW()"),
+    ("usuarios",  "fecha_creacion",    "TIMESTAMP DEFAULT NOW()"),
+    ("empresas",  "fecha_creacion",    "TIMESTAMP DEFAULT NOW()"),
+    ("empresas",  "ambiente_hacienda", "VARCHAR(10) DEFAULT 'stag'"),
+    ("empresas",  "plan_inicio",       "TIMESTAMP DEFAULT NOW()"),
+    ("empresas",  "plan_vencimiento",  "TIMESTAMP"),
 ]
 
 def run():
