@@ -138,7 +138,7 @@
                             <td>${p.descripcion}</td>
                             <td><span class="badge b-info">${p.categoria}</span></td>
                             <td>${fmt(p.precio_compra)}</td>
-                            <td style="font-weight:700;">${fmt(p.precioVenta)}</td>
+                            <td style="font-weight:700;">${fmt(p.precio_venta)}</td>
                             <td style="font-weight:800; text-align:center;">${p.existencia}</td>
                             <td><span class="stat-badge ${p.status === 'Bajo' ? 'status-error' : 'status-aceptado'}">${p.status}</span></td>
                         </tr>
