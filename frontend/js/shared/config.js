@@ -6,24 +6,9 @@
  */
 
 const CONFIG = {
-    // Detectar automáticamente el entorno
     get API_BASE_URL() {
-        const hostname = window.location.hostname;
-        const isLocal = hostname === 'localhost' ||
-                       hostname === '127.0.0.1' ||
-                       hostname === '';
-
-        if (isLocal) {
-            // Si el frontend es servido por Flask (mismo origen), usar URL relativa
-            if (window.location.port === '5001') {
-                return '';  // Misma raíz — peticiones relativas (/api/...)
-            }
-            // Si se abre desde file:// u otro puerto, apuntar al backend
-            return 'http://localhost:5001';
-        } else {
-            // URL de producción (Render)
-            return 'https://murotechsaas-95ru.onrender.com';
-        }
+        // Siempre apunta al backend local en puerto 5001
+        return 'http://localhost:5001';
     },
 
     ENDPOINTS: {
