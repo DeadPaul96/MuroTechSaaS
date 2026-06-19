@@ -51,25 +51,17 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Cargar datos demo
-echo [5/5] Verificando datos de prueba...
-echo.
-set /p SEED="Deseas cargar datos de prueba? (admin@qa.com / admin123) [S/n]: "
-if /i "%SEED%"=="n" (
-    echo Datos de prueba omitidos.
-) else (
-    echo Cargando datos de prueba...
-    python -c "from dotenv import load_dotenv; load_dotenv(); from app import create_app; app = create_app(); app.test_client().get('/api/seed'); print('  Datos de prueba cargados')"
-)
-
 :: Iniciar servidor
 echo.
 echo  ----------------------------------------
 echo   Servidor listo en: http://localhost:5001
-echo   Demo: admin@qa.com / admin123
+echo   Usuarios disponibles:
+echo     superadmin@murotech.com / SuperAdmin2026!
+echo     admin@murotech.com      / Admin2026!
+echo     admin@qa.com            / admin123
 echo  ----------------------------------------
 echo.
-echo  Abre tu navegador y ve a: http://localhost:5001
+echo  Abre: frontend\html\inicioSesion.html
 echo  Presiona Ctrl+C para detener el servidor.
 echo.
 
