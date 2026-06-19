@@ -31,39 +31,24 @@ if not exist "venv\" (
 echo [2/4] Instalando dependencias...
 call venv\Scripts\activate.bat
 pip install -r requirements.txt -q
-if %errorlevel% neq 0 (
-    echo [AVISO] Hubo un error instalando dependencias, pero continuando...
-)
 
 :: Crear .env si no existe
 if not exist ".env" (
-    echo [3/4] Creando archivo .env y generando claves seguras...
+    echo [3/4] Creando archivo .env...
     copy .env.example .env >nul
-
-    for /f "delims=" %%K in ('python -c "import secrets; print(secrets.token_hex(32))"') do set GEN_SECRET=%%K
-    powershell -Command "(Get-Content .env) -replace 'SECRET_KEY=TU_SECRET_KEY_AQUI', 'SECRET_KEY=%GEN_SECRET%' | Set-Content .env"
-
-    for /f "delims=" %%E in ('python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"') do set GEN_ENC=%%E
-    powershell -Command "(Get-Content .env) -replace 'ENCRYPTION_KEY=TU_ENCRYPTION_KEY_AQUI', 'ENCRYPTION_KEY=%GEN_ENC%' | Set-Content .env"
-
-    for /f "delims=" %%C in ('python -c "import secrets; print(secrets.token_hex(24))"') do set GEN_CSRF=%%C
-    powershell -Command "(Get-Content .env) -replace 'CSRF_SECRET=TU_CSRF_SECRET_AQUI', 'CSRF_SECRET=%GEN_CSRF%' | Set-Content .env"
-
-    echo     .env creado con claves seguras generadas automaticamente.
+    echo     .env creado con configuracion de Supabase lista.
 ) else (
     echo [3/4] Archivo .env ya existe.
 )
 
-:: Borrar DB vieja si esta desactualizada (esquema cambiado)
-echo [4/4] Verificando base de datos...
-python -c "from dotenv import load_dotenv; load_dotenv(); from app import create_app; app = create_app(); print('OK')" >nul 2>&1
+:: Inicializar base de datos
+echo [4/4] Inicializando base de datos...
+python -c "from dotenv import load_dotenv; load_dotenv(); from app import create_app; app = create_app(); print('  Base de datos lista')"
 if %errorlevel% neq 0 (
-    echo     DB desactualizada detectada. Recreando...
-    if exist "murotech_saas.db" del /f /q "murotech_saas.db"
-    if exist "instance\murotech_saas.db" del /f /q "instance\murotech_saas.db"
-    python -c "from dotenv import load_dotenv; load_dotenv(); from app import create_app; app = create_app(); print('  Base de datos recreada')"
-) else (
-    echo     Base de datos lista.
+    echo [ERROR] No se pudo conectar a la base de datos.
+    echo Verifica tu conexion a internet - el proyecto usa Supabase en la nube.
+    pause
+    exit /b 1
 )
 
 :: Cargar datos demo
@@ -83,6 +68,7 @@ echo   Servidor listo en: http://localhost:5001
 echo   Demo: admin@qa.com / admin123
 echo  ----------------------------------------
 echo.
+echo  Abre tu navegador y ve a: http://localhost:5001
 echo  Presiona Ctrl+C para detener el servidor.
 echo.
 
